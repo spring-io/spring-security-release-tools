@@ -16,12 +16,13 @@
 
 package org.springframework.gradle.maven;
 
+import java.util.List;
 import java.util.concurrent.Callable;
 
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.publish.Publication;
 import org.gradle.api.publish.PublishingExtension;
+import org.gradle.api.publish.maven.plugins.MavenPublishPlugin;
 import org.gradle.plugins.signing.SigningExtension;
 import org.gradle.plugins.signing.SigningPlugin;
 
@@ -29,14 +30,18 @@ import org.gradle.plugins.signing.SigningPlugin;
  * @author Steve Riesenberg
  */
 public class SpringSigningPlugin implements Plugin<Project> {
+	private static final List<String> JAVA_PUBLICATIONS = List.of("mavenJava", "pluginMaven");
+
 	@Override
 	public void apply(Project project) {
-		project.getPluginManager().apply(SigningPlugin.class);
-		project.getPlugins().withType(SigningPlugin.class, (signingPlugin) -> {
-			boolean hasSigningKey = project.hasProperty("signing.keyId") || project.hasProperty("signingKey");
-			if (hasSigningKey) {
-				sign(project);
-			}
+		project.getPlugins().withType(MavenPublishPlugin.class, (mavenPublish) -> {
+			project.getPluginManager().apply(SigningPlugin.class);
+			project.getPlugins().withType(SigningPlugin.class, (signingPlugin) -> {
+				boolean hasSigningKey = project.hasProperty("signing.keyId") || project.hasProperty("signingKey");
+				if (hasSigningKey) {
+					sign(project);
+				}
+			});
 		});
 	}
 
@@ -52,10 +57,9 @@ public class SpringSigningPlugin implements Plugin<Project> {
 		} else {
 			signing.useInMemoryPgpKeys(signingKey, signingPassword);
 		}
-		project.getPlugins().withType(SpringPublishAllJavaComponentsPlugin.class, (publishingPlugin) -> {
-			PublishingExtension publishing = project.getExtensions().getByType(PublishingExtension.class);
-			Publication maven = publishing.getPublications().getByName("mavenJava");
-			signing.sign(maven);
-		});
+		PublishingExtension publishing = project.getExtensions().getByType(PublishingExtension.class);
+		publishing.getPublications().stream()
+				.filter((publication) -> JAVA_PUBLICATIONS.contains(publication.getName()))
+				.forEach(signing::sign);
 	}
 }

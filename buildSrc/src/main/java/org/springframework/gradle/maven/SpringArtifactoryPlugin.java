@@ -18,6 +18,7 @@ package org.springframework.gradle.maven;
 
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.publish.maven.plugins.MavenPublishPlugin;
 import org.jfrog.gradle.plugin.artifactory.ArtifactoryPlugin;
 import org.jfrog.gradle.plugin.artifactory.dsl.ArtifactoryPluginConvention;
 
@@ -29,27 +30,30 @@ import org.springframework.gradle.ProjectUtils;
 public class SpringArtifactoryPlugin implements Plugin<Project> {
 	@Override
 	public void apply(Project project) {
-		// Apply base plugin
-		project.getPlugins().apply(ArtifactoryPlugin.class);
+		project.getPlugins().withType(MavenPublishPlugin.class, (mavenPublish) -> {
+			// Apply base plugin
+			project.getPlugins().apply(ArtifactoryPlugin.class);
 
-		// Apply artifactory repository configuration
-		boolean isSnapshot = ProjectUtils.isSnapshot(project);
-		boolean isMilestone = ProjectUtils.isMilestone(project);
+			// Apply artifactory repository configuration
+			boolean isSnapshot = ProjectUtils.isSnapshot(project);
+			boolean isMilestone = ProjectUtils.isMilestone(project);
 
-		@SuppressWarnings("deprecation")
-		ArtifactoryPluginConvention artifactoryExtension = project.getConvention().getPlugin(ArtifactoryPluginConvention.class);
-		artifactoryExtension.artifactory((artifactory) -> {
-			artifactory.setContextUrl("https://repo.spring.io");
-			artifactory.publish((publish) -> {
-				publish.repository((repository) -> {
-					String repoKey = isSnapshot ? "libs-snapshot-local" : isMilestone ? "libs-milestone-local" : "libs-release-local";
-					repository.setRepoKey(repoKey);
-					if (project.hasProperty("artifactoryUsername")) {
-						repository.setUsername(project.findProperty("artifactoryUsername"));
-						repository.setPassword(project.findProperty("artifactoryPassword"));
-					}
+			@SuppressWarnings("deprecation")
+			ArtifactoryPluginConvention artifactoryExtension = project.getConvention().getPlugin(ArtifactoryPluginConvention.class);
+			artifactoryExtension.artifactory((artifactory) -> {
+				artifactory.setContextUrl("https://repo.spring.io");
+				artifactory.publish((publish) -> {
+					publish.repository((repository) -> {
+						String repoKey = isSnapshot ? "libs-snapshot-local" : isMilestone ? "libs-milestone-local" : "libs-release-local";
+						repository.setRepoKey(repoKey);
+						if (project.hasProperty("artifactoryUsername")) {
+							repository.setUsername(project.findProperty("artifactoryUsername"));
+							repository.setPassword(project.findProperty("artifactoryPassword"));
+						}
+					});
+
+					publish.defaults((defaults) -> defaults.publications("mavenJava", "pluginMaven"));
 				});
-				publish.defaults((defaults) -> defaults.publications("mavenJava"));
 			});
 		});
 	}

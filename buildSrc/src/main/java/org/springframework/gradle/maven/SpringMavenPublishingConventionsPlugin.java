@@ -40,7 +40,7 @@ public class SpringMavenPublishingConventionsPlugin implements Plugin<Project> {
 			PublishingExtension publishing = project.getExtensions().getByType(PublishingExtension.class);
 			publishing.getPublications().withType(MavenPublication.class, (mavenPublication) ->
 					customizePom(mavenPublication.getPom(), project));
-			SpringMavenPublishingConventionsPlugin.this.customizeJavaPlugin(project);
+			customizeJavaPlugin(project);
 		});
 	}
 

@@ -23,6 +23,7 @@ import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.publish.PublishingExtension;
 import org.gradle.api.publish.maven.MavenPublication;
 import org.gradle.api.publish.maven.plugins.MavenPublishPlugin;
+import org.gradle.plugin.devel.plugins.JavaGradlePluginPlugin;
 
 /**
  * @author Steve Riesenberg
@@ -31,6 +32,11 @@ public class SpringPublishAllJavaComponentsPlugin implements Plugin<Project> {
 	@Override
 	public void apply(Project project) {
 		project.getPlugins().withType(MavenPublishPlugin.class, (mavenPublish) -> {
+			// Gradle plugins use the pluginMaven publication instead
+			if (project.getPlugins().hasPlugin(JavaGradlePluginPlugin.class)) {
+				return;
+			}
+
 			PublishingExtension publishing = project.getExtensions().getByType(PublishingExtension.class);
 			publishing.getPublications().create("mavenJava", MavenPublication.class, (maven) -> {
 				project.getPlugins().withType(JavaPlugin.class, (plugin) ->
