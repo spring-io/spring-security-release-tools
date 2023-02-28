@@ -36,7 +36,7 @@ public abstract class GetGitHubUsernameTask extends DefaultTask {
 	public abstract RegularFileProperty getUsernameFile();
 
 	@TaskAction
-	public void setUsernameProperty() {
+	public void getGitHubUsername() {
 		String gitHubAccessToken = getGitHubAccessToken().get();
 
 		GitHubApi github = new GitHubApi(gitHubAccessToken);

@@ -35,6 +35,9 @@ public abstract class CreateSaganReleaseTask extends DefaultTask {
 	public abstract Property<String> getGitHubAccessToken();
 
 	@Input
+	public abstract Property<String> getProjectName();
+
+	@Input
 	public abstract Property<String> getVersion();
 
 	@Input
@@ -44,15 +47,23 @@ public abstract class CreateSaganReleaseTask extends DefaultTask {
 	public abstract Property<String> getReferenceDocUrl();
 
 	@Input
-	public abstract Property<String> getProjectName();
+	public abstract Property<Boolean> getReplaceSnapshotVersionInReferenceDocUrl();
 
 	@TaskAction
 	public void createRelease() {
 		String username = getUsername().get();
 		String gitHubAccessToken = getGitHubAccessToken().get();
 		String version = getVersion().get();
-		String referenceDocUrl = getReferenceDocUrl().get();
 		String apiDocUrl = getApiDocUrl().get();
+		String referenceDocUrl = getReferenceDocUrl().get();
+
+		// replace "-SNAPSHOT" in version numbers in referenceDocUrl for Antora
+		boolean replaceSnapshotVersion = getReplaceSnapshotVersionInReferenceDocUrl().get();
+		if (replaceSnapshotVersion && version.endsWith("-SNAPSHOT")) {
+			referenceDocUrl = referenceDocUrl
+					.replace("{version}", version)
+					.replace("-SNAPSHOT", "");
+		}
 
 		SaganApi sagan = new SaganApi(username, gitHubAccessToken);
 		Release release = new Release(version, referenceDocUrl, apiDocUrl, null, false);

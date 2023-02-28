@@ -29,6 +29,7 @@ public class SpringReleasePlugin implements Plugin<Project> {
 	public void apply(Project project) {
 		SpringReleasePluginExtension release =
 				project.getExtensions().create("springRelease", SpringReleasePluginExtension.class);
+		release.getReplaceSnapshotVersionInReferenceDocUrl().convention(true);
 
 		Provider<String> usernameProvider = createUsernameProvider(project);
 		registerCreateSaganReleaseTask(project, usernameProvider, release);
@@ -60,6 +61,7 @@ public class SpringReleasePlugin implements Plugin<Project> {
 			task.getVersion().set((String) project.findProperty("nextVersion"));
 			task.getReferenceDocUrl().set(release.getReferenceDocUrl());
 			task.getApiDocUrl().set(release.getApiDocUrl());
+			task.getReplaceSnapshotVersionInReferenceDocUrl().set(release.getReplaceSnapshotVersionInReferenceDocUrl());
 		});
 	}
 
