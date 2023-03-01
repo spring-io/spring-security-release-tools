@@ -18,5 +18,5 @@ package com.github.api;
 /**
  * @author Steve Riesenberg
  */
-public record User(String login, String name, String url) {
+public record Issue(Long number, String title, String body, String url, User user) {
 }

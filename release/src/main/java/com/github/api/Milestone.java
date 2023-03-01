@@ -15,8 +15,12 @@
  */
 package com.github.api;
 
+import java.time.LocalDateTime;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * @author Steve Riesenberg
  */
-public record User(String login, String name, String url) {
+public record Milestone(String title, Long number, @JsonProperty("due_on") LocalDateTime dueOn) {
 }

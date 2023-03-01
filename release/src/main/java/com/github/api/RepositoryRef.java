@@ -18,5 +18,5 @@ package com.github.api;
 /**
  * @author Steve Riesenberg
  */
-public record User(String login, String name, String url) {
+public record RepositoryRef(String owner, String name) {
 }
