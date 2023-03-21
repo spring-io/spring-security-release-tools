@@ -31,7 +31,7 @@ public class SpringReleasePlugin implements Plugin<Project> {
 
 	private static final String GENERATE_CHANGELOG_CONFIGURATION = "changelogGenerator";
 	private static final String GENERATE_CHANGELOG_PATH = "changelog/release-notes.md";
-	private static final String GENERATE_CHANGELOG_DEPENDENCY = "spring-io:github-changelog-generator:0.0.6";
+	private static final String GENERATE_CHANGELOG_DEPENDENCY = "spring-io:github-changelog-generator:0.0.8";
 	private static final String GENERATE_CHANGELOG_REPO_LAYOUT = "[organization]/[artifact]/releases/download/v[revision]/[artifact].[ext]";
 	private static final String GENERATE_CHANGELOG_REPO_URL = "https://github.com/";
 	private static final String GENERATE_CHANGELOG_GROUP = "spring-io";
