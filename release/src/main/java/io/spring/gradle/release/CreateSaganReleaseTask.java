@@ -19,15 +19,22 @@ package io.spring.gradle.release;
 import io.spring.api.Release;
 import io.spring.api.SaganApi;
 import org.gradle.api.DefaultTask;
+import org.gradle.api.Project;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.api.tasks.TaskProvider;
+
+import static io.spring.gradle.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY;
+import static io.spring.gradle.release.SpringReleasePlugin.NEXT_VERSION_PROPERTY;
 
 /**
  * @author Rob Winch
  * @author Steve Riesenberg
  */
 public abstract class CreateSaganReleaseTask extends DefaultTask {
+	public static final String TASK_NAME = "createSaganRelease";
+
 	@Input
 	public abstract Property<String> getUsername();
 
@@ -68,5 +75,15 @@ public abstract class CreateSaganReleaseTask extends DefaultTask {
 		SaganApi sagan = new SaganApi(username, gitHubAccessToken);
 		Release release = new Release(version, referenceDocUrl, apiDocUrl, null, false);
 		sagan.createRelease(getProjectName().get(), release);
+	}
+
+	public static TaskProvider<CreateSaganReleaseTask> register(Project project) {
+		return project.getTasks().register(TASK_NAME, CreateSaganReleaseTask.class, (task) -> {
+			task.setGroup(SpringReleasePlugin.TASK_GROUP);
+			task.setDescription("Create a new version for the specified project on spring.io.");
+			task.getGitHubAccessToken().set((String) project.findProperty(GITHUB_ACCESS_TOKEN_PROPERTY));
+			task.getProjectName().set(project.getRootProject().getName());
+			task.getVersion().set((String) project.findProperty(NEXT_VERSION_PROPERTY));
+		});
 	}
 }

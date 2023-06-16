@@ -17,11 +17,17 @@ package io.spring.gradle.release;
 
 import io.spring.api.SaganApi;
 import org.gradle.api.DefaultTask;
+import org.gradle.api.Project;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.api.tasks.TaskProvider;
+
+import static io.spring.gradle.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY;
+import static io.spring.gradle.release.SpringReleasePlugin.PREVIOUS_VERSION_PROPERTY;
 
 public abstract class DeleteSaganReleaseTask extends DefaultTask {
+	public static final String TASK_NAME = "deleteSaganRelease";
 
 	@Input
 	public abstract Property<String> getUsername();
@@ -40,5 +46,15 @@ public abstract class DeleteSaganReleaseTask extends DefaultTask {
 		String username = getUsername().get();
 		SaganApi sagan = new SaganApi(username, getGitHubAccessToken().get());
 		sagan.deleteRelease(getProjectName().get(), getVersion().get());
+	}
+
+	public static TaskProvider<DeleteSaganReleaseTask> register(Project project) {
+		return project.getTasks().register(TASK_NAME, DeleteSaganReleaseTask.class, (task) -> {
+			task.setGroup(SpringReleasePlugin.TASK_GROUP);
+			task.setDescription("Delete a version for the specified project on spring.io.");
+			task.getGitHubAccessToken().set((String) project.findProperty(GITHUB_ACCESS_TOKEN_PROPERTY));
+			task.getProjectName().set(project.getRootProject().getName());
+			task.getVersion().set((String) project.findProperty(PREVIOUS_VERSION_PROPERTY));
+		});
 	}
 }

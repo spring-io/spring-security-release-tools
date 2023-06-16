@@ -19,16 +19,22 @@ import com.github.api.GitHubApi;
 import com.github.api.User;
 import io.spring.gradle.core.RegularFileUtils;
 import org.gradle.api.DefaultTask;
+import org.gradle.api.Project;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.api.tasks.TaskProvider;
+
+import static io.spring.gradle.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY;
 
 /**
  * @author Steve Riesenberg
  */
-public abstract class GetGitHubUsernameTask extends DefaultTask {
+public abstract class GetGitHubUserNameTask extends DefaultTask {
+	public static final String TASK_NAME = "getGitHubUserName";
+
 	@Input
 	public abstract Property<String> getGitHubAccessToken();
 
@@ -47,5 +53,14 @@ public abstract class GetGitHubUsernameTask extends DefaultTask {
 		}
 
 		RegularFileUtils.writeString(getUsernameFile().get(), user.login());
+	}
+
+	public static TaskProvider<GetGitHubUserNameTask> register(Project project) {
+		return project.getTasks().register(TASK_NAME, GetGitHubUserNameTask.class, (task) -> {
+			task.setGroup(SpringReleasePlugin.TASK_GROUP);
+			task.setDescription("Use gitHubAccessToken to automatically set username property.");
+			task.getGitHubAccessToken().set((String) project.findProperty(GITHUB_ACCESS_TOKEN_PROPERTY));
+			task.getUsernameFile().set(project.getLayout().getBuildDirectory().file("github-username.txt"));
+		});
 	}
 }
