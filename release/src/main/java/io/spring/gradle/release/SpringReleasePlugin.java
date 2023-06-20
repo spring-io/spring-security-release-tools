@@ -30,6 +30,8 @@ public class SpringReleasePlugin implements Plugin<Project> {
 	static final String GITHUB_ACCESS_TOKEN_PROPERTY = "gitHubAccessToken";
 	static final String PREVIOUS_VERSION_PROPERTY = "previousVersion";
 	static final String NEXT_VERSION_PROPERTY = "nextVersion";
+	static final String CREATE_RELEASE_PROPERTY = "createRelease";
+	static final String BRANCH_PROPERTY = "branch";
 
 	@Override
 	public void apply(Project project) {
@@ -41,13 +43,19 @@ public class SpringReleasePlugin implements Plugin<Project> {
 				.flatMap(GetGitHubUserNameTask::getUsernameFile)
 				.map(RegularFileUtils::readString);
 
+		var releaseNotesProvider = GenerateChangelogTask.register(project)
+				.flatMap(GenerateChangelogTask::getReleaseNotes)
+				.map(RegularFileUtils::readString);
+
 		CreateSaganReleaseTask.register(project).configure((task) ->
 				task.getUsername().set(usernameProvider));
 
 		DeleteSaganReleaseTask.register(project).configure((task) ->
 				task.getUsername().set(usernameProvider));
 
-		GenerateChangelogTask.register(project);
+		CreateGitHubReleaseTask.register(project).configure((task) ->
+				task.getReleaseNotes().set(releaseNotesProvider));
+
 		CheckMilestoneHasNoOpenIssuesTask.register(project);
 		CheckMilestoneIsDueTodayTask.register(project);
 	}
