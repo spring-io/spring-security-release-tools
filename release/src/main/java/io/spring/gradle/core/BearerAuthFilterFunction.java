@@ -28,6 +28,10 @@ import org.springframework.web.reactive.function.client.ExchangeFunction;
 public record BearerAuthFilterFunction(String accessToken) implements ExchangeFilterFunction {
 	@Override
 	public Mono<ClientResponse> filter(ClientRequest request, ExchangeFunction next) {
+		if (this.accessToken == null) {
+			return next.exchange(request);
+		}
+
 		ClientRequest newRequest = ClientRequest.from(request)
 				.headers((headers) -> headers.setBearerAuth(this.accessToken))
 				.build();

@@ -21,6 +21,7 @@ import org.gradle.api.provider.Property;
  * @author Steve Riesenberg
  */
 public interface SpringReleasePluginExtension {
+	Property<String> getRepositoryOwner();
 	Property<String> getReferenceDocUrl();
 	Property<String> getApiDocUrl();
 	Property<Boolean> getReplaceSnapshotVersionInReferenceDocUrl();

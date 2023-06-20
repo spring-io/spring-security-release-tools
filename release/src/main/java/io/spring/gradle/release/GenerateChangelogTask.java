@@ -48,16 +48,16 @@ public abstract class GenerateChangelogTask extends JavaExec {
 	@Input
 	public abstract Property<String> getVersion();
 
-	@OutputFile
-	public abstract RegularFileProperty getReleaseNotes();
-
-	@Optional
 	@Input
+	@Optional
 	public abstract Property<String> getUsername();
 
-	@Optional
 	@Input
+	@Optional
 	public abstract Property<String> getPassword();
+
+	@OutputFile
+	public abstract RegularFileProperty getReleaseNotes();
 
 	@Override
 	public void exec() {
@@ -70,10 +70,11 @@ public abstract class GenerateChangelogTask extends JavaExec {
 			Assert.isTrue(parent.mkdirs(), "Unable to create " + outputFile);
 		}
 
-		args("--spring.config.location=scripts/release/release-notes-sections.yml", version, outputFile.toString());
+		args("--spring.config.location=scripts/release/release-notes-sections.yml");
 		if (username != null && password != null) {
 			args("--github.username=" + username, "--github.password=" + password);
 		}
+		args(version, outputFile.toString());
 		super.exec();
 	}
 
@@ -83,6 +84,8 @@ public abstract class GenerateChangelogTask extends JavaExec {
 		project.getTasks().register(TASK_NAME, GenerateChangelogTask.class, (task) -> {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
 			task.setDescription("Generate the release notes (changelog) for a milestone.");
+			task.doNotTrackState("API call to GitHub needs to check for open issues every time");
+
 			task.setWorkingDir(project.getRootDir());
 			task.classpath(project.getConfigurations().getAt(GENERATE_CHANGELOG_CONFIGURATION));
 			task.getVersion().set((String) project.findProperty(NEXT_VERSION_PROPERTY));
@@ -93,7 +96,6 @@ public abstract class GenerateChangelogTask extends JavaExec {
 				task.getPassword().set((String) project.findProperty(GITHUB_ACCESS_TOKEN_PROPERTY));
 			}
 			task.getReleaseNotes().set(project.getLayout().getBuildDirectory().file(GENERATE_CHANGELOG_PATH));
-			task.getOutputs().upToDateWhen((spec) -> false);
 		});
 	}
 

@@ -25,6 +25,8 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.TaskProvider;
 
+import org.springframework.util.Assert;
+
 import static io.spring.gradle.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY;
 import static io.spring.gradle.release.SpringReleasePlugin.NEXT_VERSION_PROPERTY;
 
@@ -78,12 +80,19 @@ public abstract class CreateSaganReleaseTask extends DefaultTask {
 	}
 
 	public static TaskProvider<CreateSaganReleaseTask> register(Project project) {
+		var springRelease = project.getExtensions().findByType(SpringReleasePluginExtension.class);
+		Assert.notNull(springRelease, "Cannot find " + SpringReleasePluginExtension.class);
+
 		return project.getTasks().register(TASK_NAME, CreateSaganReleaseTask.class, (task) -> {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
 			task.setDescription("Create a new version for the specified project on spring.io.");
 			task.getGitHubAccessToken().set((String) project.findProperty(GITHUB_ACCESS_TOKEN_PROPERTY));
 			task.getProjectName().set(project.getRootProject().getName());
 			task.getVersion().set((String) project.findProperty(NEXT_VERSION_PROPERTY));
+
+			task.getReferenceDocUrl().set(springRelease.getReferenceDocUrl());
+			task.getApiDocUrl().set(springRelease.getApiDocUrl());
+			task.getReplaceSnapshotVersionInReferenceDocUrl().set(springRelease.getReplaceSnapshotVersionInReferenceDocUrl());
 		});
 	}
 }

@@ -18,7 +18,6 @@ package io.spring.gradle.release;
 import io.spring.gradle.core.RegularFileUtils;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.provider.Provider;
 
 /**
  * @author Steve Riesenberg
@@ -34,25 +33,23 @@ public class SpringReleasePlugin implements Plugin<Project> {
 
 	@Override
 	public void apply(Project project) {
-		SpringReleasePluginExtension release =
-				project.getExtensions().create(EXTENSION_NAME, SpringReleasePluginExtension.class);
-		release.getReplaceSnapshotVersionInReferenceDocUrl().convention(true);
+		var springRelease = project.getExtensions()
+				.create(EXTENSION_NAME, SpringReleasePluginExtension.class);
+		springRelease.getReplaceSnapshotVersionInReferenceDocUrl().convention(true);
 
-		Provider<String> usernameProvider = GetGitHubUserNameTask.register(project)
+		var usernameProvider = GetGitHubUserNameTask.register(project)
 				.flatMap(GetGitHubUserNameTask::getUsernameFile)
 				.map(RegularFileUtils::readString);
 
-		CreateSaganReleaseTask.register(project).configure((task) -> {
-			task.getUsername().set(usernameProvider);
-			task.getReferenceDocUrl().set(release.getReferenceDocUrl());
-			task.getApiDocUrl().set(release.getApiDocUrl());
-			task.getReplaceSnapshotVersionInReferenceDocUrl().set(release.getReplaceSnapshotVersionInReferenceDocUrl());
-		});
+		CreateSaganReleaseTask.register(project).configure((task) ->
+				task.getUsername().set(usernameProvider));
 
 		DeleteSaganReleaseTask.register(project).configure((task) ->
 				task.getUsername().set(usernameProvider));
 
 		GenerateChangelogTask.register(project);
+		CheckMilestoneHasNoOpenIssuesTask.register(project);
+		CheckMilestoneIsDueTodayTask.register(project);
 	}
 
 }

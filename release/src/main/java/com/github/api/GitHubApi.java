@@ -121,7 +121,7 @@ public class GitHubApi {
 	 * @param milestone The milestone number
 	 * @return true if the milestone has open issues, false otherwise
 	 */
-	public boolean hasOpenIssues(RepositoryRef repository, String milestone) {
+	public boolean hasOpenIssues(RepositoryRef repository, Long milestone) {
 		Boolean result = this.webClient.get()
 				.uri("/repos/{owner}/{name}/issues?per_page=1&milestone={milestone}",
 						repository.owner(), repository.name(), milestone)
