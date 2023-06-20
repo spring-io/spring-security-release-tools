@@ -58,7 +58,7 @@ public class GitHubApi {
 	 * @param repository The repository owner/name
 	 * @param release The contents of the release
 	 */
-	public void publishRelease(RepositoryRef repository, Release release) {
+	public void publishRelease(Repository repository, Release release) {
 		this.webClient.post()
 				.uri("/repos/{owner}/{name}/releases", repository.owner(), repository.name())
 				.bodyValue(release)
@@ -73,7 +73,7 @@ public class GitHubApi {
 	 * @param repository The repository owner/name
 	 * @param milestone The milestone containing a title and due date
 	 */
-	public void createMilestone(RepositoryRef repository, Milestone milestone) {
+	public void createMilestone(Repository repository, Milestone milestone) {
 		this.webClient.post()
 				.uri("/repos/{owner}/{name}/milestones", repository.owner(), repository.name())
 				.bodyValue(milestone)
@@ -88,7 +88,7 @@ public class GitHubApi {
 	 * @param repository The repository owner/name
 	 * @return A list of milestones for the repository
 	 */
-	public List<Milestone> getMilestones(RepositoryRef repository) {
+	public List<Milestone> getMilestones(Repository repository) {
 		return this.webClient.get()
 				.uri("/repos/{owner}/{name}/milestones?per_page=100", repository.owner(), repository.name())
 				.retrieve()
@@ -104,7 +104,7 @@ public class GitHubApi {
 	 * @param title The milestone title
 	 * @return The milestone, or null if not found
 	 */
-	public Milestone getMilestone(RepositoryRef repository, String title) {
+	public Milestone getMilestone(Repository repository, String title) {
 		return this.webClient.get()
 				.uri("/repos/{owner}/{name}/milestones?per_page=100", repository.owner(), repository.name())
 				.retrieve()
@@ -121,7 +121,7 @@ public class GitHubApi {
 	 * @param milestone The milestone number
 	 * @return true if the milestone has open issues, false otherwise
 	 */
-	public boolean hasOpenIssues(RepositoryRef repository, Long milestone) {
+	public boolean hasOpenIssues(Repository repository, Long milestone) {
 		Boolean result = this.webClient.get()
 				.uri("/repos/{owner}/{name}/issues?per_page=1&milestone={milestone}",
 						repository.owner(), repository.name(), milestone)

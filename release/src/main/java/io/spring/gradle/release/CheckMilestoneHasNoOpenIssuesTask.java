@@ -17,7 +17,7 @@
 package io.spring.gradle.release;
 
 import com.github.api.GitHubApi;
-import com.github.api.RepositoryRef;
+import com.github.api.Repository;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
 import org.gradle.api.provider.Property;
@@ -36,7 +36,7 @@ public abstract class CheckMilestoneHasNoOpenIssuesTask extends DefaultTask {
 	public static final String TASK_NAME = "checkMilestoneHasNoOpenIssues";
 
 	@Input
-	public abstract Property<RepositoryRef> getRepository();
+	public abstract Property<Repository> getRepository();
 
 	@Input
 	public abstract Property<String> getGitHubAccessToken();
@@ -67,7 +67,7 @@ public abstract class CheckMilestoneHasNoOpenIssuesTask extends DefaultTask {
 
 			var owner = springRelease.getRepositoryOwner().get();
 			var repo = project.getRootProject().getName();
-			task.getRepository().set(new RepositoryRef(owner, repo));
+			task.getRepository().set(new Repository(owner, repo));
 			task.getGitHubAccessToken().set((String) project.findProperty(GITHUB_ACCESS_TOKEN_PROPERTY));
 			task.getVersion().set((String) project.findProperty(NEXT_VERSION_PROPERTY));
 		});
