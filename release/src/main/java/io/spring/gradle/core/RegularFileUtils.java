@@ -25,7 +25,7 @@ import org.gradle.api.file.RegularFile;
 /**
  * @author Steve Riesenberg
  */
-public class RegularFileUtils {
+public final class RegularFileUtils {
 	private RegularFileUtils() {
 	}
 

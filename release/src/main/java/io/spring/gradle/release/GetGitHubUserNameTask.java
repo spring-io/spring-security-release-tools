@@ -53,6 +53,7 @@ public abstract class GetGitHubUserNameTask extends DefaultTask {
 		}
 
 		RegularFileUtils.writeString(getUsernameFile().get(), user.login());
+		System.out.println(user.login());
 	}
 
 	public static TaskProvider<GetGitHubUserNameTask> register(Project project) {

@@ -20,16 +20,20 @@ import java.time.LocalDate;
 
 import com.github.api.GitHubApi;
 import com.github.api.Repository;
+import io.spring.gradle.core.RegularFileUtils;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.api.tasks.TaskProvider;
 
 import org.springframework.util.Assert;
 
+import static io.spring.gradle.core.ProjectUtils.findTaskByType;
+import static io.spring.gradle.core.ProjectUtils.getProperty;
+import static io.spring.gradle.release.SpringReleasePlugin.CURRENT_VERSION_PROPERTY;
 import static io.spring.gradle.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY;
-import static io.spring.gradle.release.SpringReleasePlugin.NEXT_VERSION_PROPERTY;
 
 /**
  * @author Steve Riesenberg
@@ -44,35 +48,40 @@ public abstract class CheckMilestoneIsDueTodayTask extends DefaultTask {
 	public abstract Property<String> getGitHubAccessToken();
 
 	@Input
-	public abstract Property<String> getVersion();
+	public abstract Property<String> getCurrentVersion();
 
 	@TaskAction
 	public void checkMilestoneHasNoOpenIssues() {
 		var gitHubAccessToken = getGitHubAccessToken().get();
 		var repository = getRepository().get();
-		var version = getVersion().get();
+		var currentVersion = getCurrentVersion().get();
 
 		GitHubApi gitHubApi = new GitHubApi(gitHubAccessToken);
-		var milestone = gitHubApi.getMilestone(repository, version);
+		var milestone = gitHubApi.getMilestone(repository, currentVersion);
 		var today = LocalDate.now();
 		var milestoneDueToday = milestone.dueOn() != null && today.compareTo(milestone.dueOn().toLocalDate()) >= 0;
 		System.out.println(milestoneDueToday);
 	}
 
-	public static void register(Project project) {
+	public static TaskProvider<CheckMilestoneIsDueTodayTask> register(Project project) {
 		var springRelease = project.getExtensions().findByType(SpringReleasePluginExtension.class);
 		Assert.notNull(springRelease, "Cannot find " + SpringReleasePluginExtension.class);
 
-		project.getTasks().register(TASK_NAME, CheckMilestoneIsDueTodayTask.class, (task) -> {
+		return project.getTasks().register(TASK_NAME, CheckMilestoneIsDueTodayTask.class, (task) -> {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
 			task.setDescription("Checks if the given version is due today or past due and outputs true or false");
-			task.doNotTrackState("API call to GitHub needs to check for open issues every time");
+			task.doNotTrackState("API call to GitHub needs to check milestone due date every time");
+
+			var versionProvider = getProperty(project, CURRENT_VERSION_PROPERTY)
+					.orElse(findTaskByType(project, GetNextReleaseMilestoneTask.class)
+							.getNextReleaseMilestoneFile()
+							.map(RegularFileUtils::readString));
 
 			var owner = springRelease.getRepositoryOwner().get();
-			var repo = project.getRootProject().getName();
-			task.getRepository().set(new Repository(owner, repo));
-			task.getGitHubAccessToken().set((String) project.findProperty(GITHUB_ACCESS_TOKEN_PROPERTY));
-			task.getVersion().set((String) project.findProperty(NEXT_VERSION_PROPERTY));
+			var name = project.getRootProject().getName();
+			task.getRepository().set(new Repository(owner, name));
+			task.getCurrentVersion().set(versionProvider);
+			task.getGitHubAccessToken().set(getProperty(project, GITHUB_ACCESS_TOKEN_PROPERTY));
 		});
 	}
 }

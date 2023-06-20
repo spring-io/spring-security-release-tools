@@ -18,6 +18,7 @@ package io.spring.gradle.release;
 
 import io.spring.api.Release;
 import io.spring.api.SaganApi;
+import io.spring.gradle.core.RegularFileUtils;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
 import org.gradle.api.provider.Property;
@@ -27,7 +28,10 @@ import org.gradle.api.tasks.TaskProvider;
 
 import org.springframework.util.Assert;
 
+import static io.spring.gradle.core.ProjectUtils.findTaskByType;
+import static io.spring.gradle.core.ProjectUtils.getProperty;
 import static io.spring.gradle.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY;
+import static io.spring.gradle.release.SpringReleasePlugin.GITHUB_USER_NAME_PROPERTY;
 import static io.spring.gradle.release.SpringReleasePlugin.NEXT_VERSION_PROPERTY;
 
 /**
@@ -50,10 +54,10 @@ public abstract class CreateSaganReleaseTask extends DefaultTask {
 	public abstract Property<String> getVersion();
 
 	@Input
-	public abstract Property<String> getApiDocUrl();
+	public abstract Property<String> getReferenceDocUrl();
 
 	@Input
-	public abstract Property<String> getReferenceDocUrl();
+	public abstract Property<String> getApiDocUrl();
 
 	@Input
 	public abstract Property<Boolean> getReplaceSnapshotVersionInReferenceDocUrl();
@@ -86,10 +90,21 @@ public abstract class CreateSaganReleaseTask extends DefaultTask {
 		return project.getTasks().register(TASK_NAME, CreateSaganReleaseTask.class, (task) -> {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
 			task.setDescription("Create a new version for the specified project on spring.io.");
-			task.getGitHubAccessToken().set((String) project.findProperty(GITHUB_ACCESS_TOKEN_PROPERTY));
-			task.getProjectName().set(project.getRootProject().getName());
-			task.getVersion().set((String) project.findProperty(NEXT_VERSION_PROPERTY));
 
+			var usernameProvider = getProperty(project, GITHUB_USER_NAME_PROPERTY)
+					.orElse(findTaskByType(project, GetGitHubUserNameTask.class)
+							.getUsernameFile()
+							.map(RegularFileUtils::readString));
+
+			var versionProvider = getProperty(project, NEXT_VERSION_PROPERTY)
+					.orElse(findTaskByType(project, GetNextReleaseMilestoneTask.class)
+							.getNextReleaseMilestoneFile()
+							.map(RegularFileUtils::readString));
+
+			task.getUsername().set(usernameProvider);
+			task.getGitHubAccessToken().set(getProperty(project, GITHUB_ACCESS_TOKEN_PROPERTY));
+			task.getProjectName().set(project.getRootProject().getName());
+			task.getVersion().set(versionProvider);
 			task.getReferenceDocUrl().set(springRelease.getReferenceDocUrl());
 			task.getApiDocUrl().set(springRelease.getApiDocUrl());
 			task.getReplaceSnapshotVersionInReferenceDocUrl().set(springRelease.getReplaceSnapshotVersionInReferenceDocUrl());

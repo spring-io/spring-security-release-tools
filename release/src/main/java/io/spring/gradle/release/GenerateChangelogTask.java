@@ -17,6 +17,7 @@ package io.spring.gradle.release;
 
 import java.io.File;
 
+import io.spring.gradle.core.RegularFileUtils;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.repositories.IvyArtifactRepository;
 import org.gradle.api.file.RegularFileProperty;
@@ -29,9 +30,11 @@ import org.gradle.api.tasks.TaskProvider;
 
 import org.springframework.util.Assert;
 
+import static io.spring.gradle.core.ProjectUtils.findTaskByType;
+import static io.spring.gradle.core.ProjectUtils.getProperty;
+import static io.spring.gradle.release.SpringReleasePlugin.CURRENT_VERSION_PROPERTY;
 import static io.spring.gradle.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY;
 import static io.spring.gradle.release.SpringReleasePlugin.GITHUB_USER_NAME_PROPERTY;
-import static io.spring.gradle.release.SpringReleasePlugin.NEXT_VERSION_PROPERTY;
 
 /**
  * @author Steve Riesenberg
@@ -47,7 +50,7 @@ public abstract class GenerateChangelogTask extends JavaExec {
 	private static final String GENERATE_CHANGELOG_GROUP = "spring-io";
 
 	@Input
-	public abstract Property<String> getVersion();
+	public abstract Property<String> getCurrentVersion();
 
 	@Input
 	@Optional
@@ -58,14 +61,14 @@ public abstract class GenerateChangelogTask extends JavaExec {
 	public abstract Property<String> getPassword();
 
 	@OutputFile
-	public abstract RegularFileProperty getReleaseNotes();
+	public abstract RegularFileProperty getReleaseNotesFile();
 
 	@Override
 	public void exec() {
-		String version = getVersion().get();
+		String currentVersion = getCurrentVersion().get();
 		String username = getUsername().getOrNull();
 		String password = getPassword().getOrNull();
-		File outputFile = getReleaseNotes().getAsFile().get();
+		File outputFile = getReleaseNotesFile().getAsFile().get();
 		File parent = outputFile.getParentFile();
 		if (!parent.exists()) {
 			Assert.isTrue(parent.mkdirs(), "Unable to create " + outputFile);
@@ -75,7 +78,7 @@ public abstract class GenerateChangelogTask extends JavaExec {
 		if (username != null && password != null) {
 			args("--github.username=" + username, "--github.password=" + password);
 		}
-		args(version, outputFile.toString());
+		args(currentVersion, outputFile.toString());
 		super.exec();
 	}
 
@@ -86,17 +89,25 @@ public abstract class GenerateChangelogTask extends JavaExec {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
 			task.setDescription("Generate the release notes (changelog) for a milestone.");
 			task.doNotTrackState("API call to GitHub needs to check for open issues every time");
-
 			task.setWorkingDir(project.getRootDir());
 			task.classpath(project.getConfigurations().getAt(GENERATE_CHANGELOG_CONFIGURATION));
-			task.getVersion().set((String) project.findProperty(NEXT_VERSION_PROPERTY));
-			if (project.hasProperty(GITHUB_USER_NAME_PROPERTY)) {
-				task.getUsername().set((String) project.findProperty(GITHUB_USER_NAME_PROPERTY));
-			}
+
+			var versionProvider = getProperty(project, CURRENT_VERSION_PROPERTY)
+					.orElse(findTaskByType(project, GetNextReleaseMilestoneTask.class)
+							.getNextReleaseMilestoneFile()
+							.map(RegularFileUtils::readString));
+
+			task.getCurrentVersion().set(versionProvider);
 			if (project.hasProperty(GITHUB_ACCESS_TOKEN_PROPERTY)) {
-				task.getPassword().set((String) project.findProperty(GITHUB_ACCESS_TOKEN_PROPERTY));
+				var usernameProvider = getProperty(project, GITHUB_USER_NAME_PROPERTY)
+						.orElse(findTaskByType(project, GetGitHubUserNameTask.class)
+								.getUsernameFile()
+								.map(RegularFileUtils::readString));
+
+				task.getUsername().set(usernameProvider);
+				task.getPassword().set(getProperty(project, GITHUB_ACCESS_TOKEN_PROPERTY));
 			}
-			task.getReleaseNotes().set(project.getLayout().getBuildDirectory().file(GENERATE_CHANGELOG_PATH));
+			task.getReleaseNotesFile().set(project.getLayout().getBuildDirectory().file(GENERATE_CHANGELOG_PATH));
 		});
 	}
 

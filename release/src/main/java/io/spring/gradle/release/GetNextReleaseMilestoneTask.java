@@ -23,17 +23,22 @@ import java.util.regex.Pattern;
 import com.github.api.GitHubApi;
 import com.github.api.Milestone;
 import com.github.api.Repository;
+import io.spring.gradle.core.RegularFileUtils;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
+import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.api.tasks.TaskProvider;
 
 import org.springframework.util.Assert;
 
+import static io.spring.gradle.core.ProjectUtils.getProperty;
+import static io.spring.gradle.release.SpringReleasePlugin.CURRENT_VERSION_PROPERTY;
 import static io.spring.gradle.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY;
-import static io.spring.gradle.release.SpringReleasePlugin.NEXT_VERSION_PROPERTY;
 
 /**
  * @author Steve Riesenberg
@@ -44,47 +49,55 @@ public abstract class GetNextReleaseMilestoneTask extends DefaultTask {
 	private static final Pattern SNAPSHOT_PATTERN = Pattern.compile("^([0-9]+)\\.([0-9]+)\\.([0-9]+)-SNAPSHOT$");
 	private static final Pattern PRE_RELEASE_PATTERN = Pattern.compile("^.*-([A-Z]+)([0-9]+)$");
 	private static final Map<String, Integer> MILESTONE_ORDER = Map.of("M", 1, "RC", 2);
+	private static final String OUTPUT_VERSION_PATH = "next-release-milestone-version.txt";
 
 	@Input
 	public abstract Property<Repository> getRepository();
 
 	@Input
-	public abstract Property<String> getVersion();
+	public abstract Property<String> getCurrentVersion();
 
 	@Input
 	@Optional
 	public abstract Property<String> getGitHubAccessToken();
 
+	@OutputFile
+	public abstract RegularFileProperty getNextReleaseMilestoneFile();
+
 	@TaskAction
 	public void getNextReleaseMilestone() {
-		var repository = getRepository().get();
-		var version = getVersion().get();
+		var currentVersion = getCurrentVersion().get();
+		var nextReleaseMilestone = findNextReleaseMilestone(currentVersion);
+		var outputFile = getNextReleaseMilestoneFile().get();
+		RegularFileUtils.writeString(outputFile, nextReleaseMilestone);
+		System.out.println(nextReleaseMilestone);
+	}
 
-		var snapshotVersion = SNAPSHOT_PATTERN.matcher(version);
+	private String findNextReleaseMilestone(String currentVersion) {
+		if (!currentVersion.endsWith("-SNAPSHOT")) {
+			return currentVersion;
+		}
+
+		var snapshotVersion = SNAPSHOT_PATTERN.matcher(currentVersion);
 		if (!snapshotVersion.find()) {
-			if (!version.endsWith("-SNAPSHOT")) {
-				throw new IllegalArgumentException(
-						"Cannot calculate next release version because given version is not a SNAPSHOT");
-			} else {
-				throw new IllegalArgumentException(
-						"Cannot calculate next release version because given version is not a valid semver version.");
-			}
+			throw new IllegalArgumentException(
+					"Cannot calculate next release version because given version is not a valid SNAPSHOT version");
 		}
 
 		var patchSegment = snapshotVersion.group(3);
-		var baseVersion = version.replace("-SNAPSHOT", "");
-		var nextReleaseMilestone = baseVersion;
+		var baseVersion = currentVersion.replace("-SNAPSHOT", "");
 		if (patchSegment.equals("0")) {
+			var repository = getRepository().get();
 			var gitHubAccessToken = getGitHubAccessToken().getOrNull();
 			var gitHubApi = new GitHubApi(gitHubAccessToken);
 			var milestones = gitHubApi.getMilestones(repository);
 			var nextPreRelease = getNextPreRelease(baseVersion, milestones);
 			if (nextPreRelease != null) {
-				nextReleaseMilestone = nextPreRelease;
+				return nextPreRelease;
 			}
 		}
 
-		System.out.println(nextReleaseMilestone);
+		return baseVersion;
 	}
 
 	private static String getNextPreRelease(String baseVersion, List<Milestone> milestones) {
@@ -109,29 +122,31 @@ public abstract class GetNextReleaseMilestoneTask extends DefaultTask {
 			var order1 = MILESTONE_ORDER.getOrDefault(milestoneType1, 0);
 			var order2 = MILESTONE_ORDER.getOrDefault(milestoneType2, 0);
 			return order1.compareTo(order2);
-		} else {
-			var milestoneNumber1 = Integer.valueOf(matcher1.group(2));
-			var milestoneNumber2 = Integer.valueOf(matcher2.group(2));
-			return milestoneNumber1.compareTo(milestoneNumber2);
 		}
+
+		var milestoneNumber1 = Integer.valueOf(matcher1.group(2));
+		var milestoneNumber2 = Integer.valueOf(matcher2.group(2));
+		return milestoneNumber1.compareTo(milestoneNumber2);
 	}
 
-	public static void register(Project project) {
+	public static TaskProvider<GetNextReleaseMilestoneTask> register(Project project) {
 		var springRelease = project.getExtensions().findByType(SpringReleasePluginExtension.class);
 		Assert.notNull(springRelease, "Cannot find " + SpringReleasePluginExtension.class);
 
-		project.getTasks().register(TASK_NAME, GetNextReleaseMilestoneTask.class, (task) -> {
+		return project.getTasks().register(TASK_NAME, GetNextReleaseMilestoneTask.class, (task) -> {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
 			task.setDescription("Calculates the next release version based on the current version and outputs the version number");
 			task.doNotTrackState("API call to GitHub needs to check for new milestones every time");
 
-			task.getRepository().set(new Repository(springRelease.getRepositoryOwner().get(), project.getRootProject().getName()));
-			if (project.hasProperty(NEXT_VERSION_PROPERTY)) {
-				task.getVersion().set((String) project.findProperty(NEXT_VERSION_PROPERTY));
-			} else {
-				task.getVersion().set(project.getRootProject().getVersion().toString());
-			}
-			task.getGitHubAccessToken().set((String) project.findProperty(GITHUB_ACCESS_TOKEN_PROPERTY));
+			var versionProvider = getProperty(project, CURRENT_VERSION_PROPERTY)
+					.orElse(project.getRootProject().getVersion().toString());
+
+			var owner = springRelease.getRepositoryOwner().get();
+			var name = project.getRootProject().getName();
+			task.getRepository().set(new Repository(owner, name));
+			task.getCurrentVersion().set(versionProvider);
+			task.getGitHubAccessToken().set(getProperty(project, GITHUB_ACCESS_TOKEN_PROPERTY));
+			task.getNextReleaseMilestoneFile().set(project.getLayout().getBuildDirectory().file(OUTPUT_VERSION_PATH));
 		});
 	}
 }

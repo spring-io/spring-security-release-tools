@@ -15,7 +15,6 @@
  */
 package io.spring.gradle.release;
 
-import io.spring.gradle.core.RegularFileUtils;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 
@@ -30,35 +29,43 @@ public class SpringReleasePlugin implements Plugin<Project> {
 	static final String GITHUB_ACCESS_TOKEN_PROPERTY = "gitHubAccessToken";
 	static final String PREVIOUS_VERSION_PROPERTY = "previousVersion";
 	static final String NEXT_VERSION_PROPERTY = "nextVersion";
+	static final String CURRENT_VERSION_PROPERTY = "currentVersion";
 	static final String CREATE_RELEASE_PROPERTY = "createRelease";
 	static final String BRANCH_PROPERTY = "branch";
 
 	@Override
 	public void apply(Project project) {
+		// Register springRelease extension for DSL usage
 		var springRelease = project.getExtensions()
 				.create(EXTENSION_NAME, SpringReleasePluginExtension.class);
 		springRelease.getReplaceSnapshotVersionInReferenceDocUrl().convention(true);
 
-		var usernameProvider = GetGitHubUserNameTask.register(project)
-				.flatMap(GetGitHubUserNameTask::getUsernameFile)
-				.map(RegularFileUtils::readString);
+		// Calculate the GitHub username for the provided access token
+		GetGitHubUserNameTask.register(project);
 
-		var releaseNotesProvider = GenerateChangelogTask.register(project)
-				.flatMap(GenerateChangelogTask::getReleaseNotes)
-				.map(RegularFileUtils::readString);
+		// Create release version using Sagan API
+		CreateSaganReleaseTask.register(project);
 
-		CreateSaganReleaseTask.register(project).configure((task) ->
-				task.getUsername().set(usernameProvider));
+		// Delete release version using Sagan API
+		DeleteSaganReleaseTask.register(project);
 
-		DeleteSaganReleaseTask.register(project).configure((task) ->
-				task.getUsername().set(usernameProvider));
-
-		CreateGitHubReleaseTask.register(project).configure((task) ->
-				task.getReleaseNotes().set(releaseNotesProvider));
-
-		CheckMilestoneHasNoOpenIssuesTask.register(project);
-		CheckMilestoneIsDueTodayTask.register(project);
+		// Calculate the next release milestone
 		GetNextReleaseMilestoneTask.register(project);
+
+		// Calculate the next SNAPSHOT version
+		GetNextSnapshotVersionTask.register(project);
+
+		// Generate release notes for the next GitHub milestone
+		GenerateChangelogTask.register(project);
+
+		// Create release with release notes using GitHub API
+		CreateGitHubReleaseTask.register(project);
+
+		// Check if the next milestone has no open issues (prints true or false)
+		CheckMilestoneHasNoOpenIssuesTask.register(project);
+
+		// Check if the next milestone is due today (prints true or false)
+		CheckMilestoneIsDueTodayTask.register(project);
 	}
 
 }
