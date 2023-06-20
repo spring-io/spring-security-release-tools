@@ -58,6 +58,7 @@ public class SpringReleasePlugin implements Plugin<Project> {
 
 		CheckMilestoneHasNoOpenIssuesTask.register(project);
 		CheckMilestoneIsDueTodayTask.register(project);
+		GetNextReleaseMilestoneTask.register(project);
 	}
 
 }
