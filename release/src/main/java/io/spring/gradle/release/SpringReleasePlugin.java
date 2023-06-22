@@ -49,7 +49,7 @@ public class SpringReleasePlugin implements Plugin<Project> {
 		// Delete release version using Sagan API
 		DeleteSaganReleaseTask.register(project);
 
-		// Calculate the next release milestone
+		// Calculate the next release milestone using GitHub API
 		GetNextReleaseMilestoneTask.register(project);
 
 		// Calculate the next SNAPSHOT version
@@ -66,6 +66,9 @@ public class SpringReleasePlugin implements Plugin<Project> {
 
 		// Check if the next milestone is due today (prints true or false)
 		CheckMilestoneIsDueTodayTask.register(project);
+
+		// Create release milestone if necessary using GitHub API
+		ScheduleNextReleaseTask.register(project);
 	}
 
 }

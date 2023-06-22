@@ -9,6 +9,7 @@ javaPlatform {
 dependencies {
 	api platform("org.springframework:spring-framework-bom:6.0.5")
 	api platform("com.fasterxml.jackson:jackson-bom:2.14.0")
+	api platform("org.junit:junit-bom:5.9.3")
 	constraints {
 		api "jakarta.servlet:jakarta.servlet-api:6.0.0"
 		api "org.junit.jupiter:junit-jupiter:5.9.1"
