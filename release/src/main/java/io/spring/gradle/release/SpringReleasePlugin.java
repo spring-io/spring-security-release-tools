@@ -38,6 +38,7 @@ public class SpringReleasePlugin implements Plugin<Project> {
 		// Register springRelease extension for DSL usage
 		var springRelease = project.getExtensions()
 				.create(EXTENSION_NAME, SpringReleasePluginExtension.class);
+		springRelease.getRepositoryOwner().convention("spring-projects");
 		springRelease.getReplaceSnapshotVersionInReferenceDocUrl().convention(true);
 
 		// Calculate the GitHub username for the provided access token
