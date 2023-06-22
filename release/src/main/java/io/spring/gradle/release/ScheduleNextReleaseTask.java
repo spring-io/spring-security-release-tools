@@ -17,6 +17,7 @@ package io.spring.gradle.release;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneOffset;
 
 import com.github.api.GitHubApi;
 import com.github.api.Milestone;
@@ -82,14 +83,14 @@ public abstract class ScheduleNextReleaseTask extends DefaultTask {
 				// not always be the same date as we intend.
 				// For example, midnight UTC is actually 8pm CDT (the previous day).
 				// We use 12pm/noon UTC to be as far from anybody's midnight as we can.
-				var milestone = new Milestone(milestoneTitle, null, dueOn.atTime(LocalTime.NOON));
+				var milestone = new Milestone(milestoneTitle, null, dueOn.atTime(LocalTime.NOON).toInstant(ZoneOffset.UTC));
 				gitHubApi.createMilestone(repository, milestone);
 			});
 		} else {
 			// Create GA milestone for patch release on the next even month
 			var startDate = LocalDate.now();
 			var dueOn = getReleaseTrain(currentVersion).getNextReleaseDate(startDate);
-			var milestone = new Milestone(currentVersion, null, dueOn.atTime(LocalTime.NOON));
+			var milestone = new Milestone(currentVersion, null, dueOn.atTime(LocalTime.NOON).toInstant(ZoneOffset.UTC));
 			gitHubApi.createMilestone(repository, milestone);
 		}
 	}

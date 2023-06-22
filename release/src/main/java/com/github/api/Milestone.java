@@ -15,12 +15,14 @@
  */
 package com.github.api;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author Steve Riesenberg
  */
-public record Milestone(String title, Long number, @JsonProperty("due_on") LocalDateTime dueOn) {
+public record Milestone(String title, Long number,
+		@JsonProperty("due_on") @JsonFormat(shape = JsonFormat.Shape.STRING) Instant dueOn) {
 }

@@ -17,8 +17,13 @@ package com.github.api;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.spring.gradle.core.BearerAuthFilterFunction;
 
+import org.springframework.http.MediaType;
+import org.springframework.http.codec.json.Jackson2JsonDecoder;
+import org.springframework.http.codec.json.Jackson2JsonEncoder;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.web.reactive.function.client.WebClient;
 
 /**
@@ -32,7 +37,20 @@ public class GitHubApi {
 	}
 
 	public GitHubApi(String baseUrl, String accessToken) {
+		var objectMapper = Jackson2ObjectMapperBuilder.json()
+				.serializationInclusion(JsonInclude.Include.NON_NULL)
+				.build();
+		var encoder = new Jackson2JsonEncoder(objectMapper, MediaType.APPLICATION_JSON);
+		var decoder = new Jackson2JsonDecoder(objectMapper, MediaType.APPLICATION_JSON);
 		this.webClient = WebClient.builder()
+				.codecs((configurer) -> configurer
+						.defaultCodecs()
+						.jackson2JsonEncoder(encoder)
+				)
+				.codecs((configurer) -> configurer
+						.defaultCodecs()
+						.jackson2JsonDecoder(decoder)
+				)
 				.baseUrl(baseUrl)
 				.filter(new BearerAuthFilterFunction(accessToken))
 				.defaultHeader("X-GitHub-Api-Version", "2022-11-28")

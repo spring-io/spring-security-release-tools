@@ -17,6 +17,7 @@
 package io.spring.gradle.release;
 
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 
 import com.github.api.GitHubApi;
 import com.github.api.Repository;
@@ -58,7 +59,10 @@ public abstract class CheckMilestoneIsDueTodayTask extends DefaultTask {
 		GitHubApi gitHubApi = new GitHubApi(gitHubAccessToken);
 		var milestone = gitHubApi.getMilestone(repository, currentVersion);
 		var today = LocalDate.now();
-		var milestoneDueToday = milestone.dueOn() != null && today.compareTo(milestone.dueOn().toLocalDate()) >= 0;
+		var dueOn = milestone.dueOn() != null
+				? milestone.dueOn().atZone(ZoneOffset.UTC).toLocalDate()
+				: null;
+		var milestoneDueToday = (dueOn != null && today.compareTo(dueOn) >= 0);
 		System.out.println(milestoneDueToday);
 	}
 
