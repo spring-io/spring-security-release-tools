@@ -22,7 +22,6 @@ import org.gradle.api.Project;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.api.tasks.TaskProvider;
 
 import static io.spring.gradle.core.ProjectUtils.findTaskByType;
 import static io.spring.gradle.core.ProjectUtils.getProperty;
@@ -52,8 +51,8 @@ public abstract class DeleteSaganReleaseTask extends DefaultTask {
 		sagan.deleteRelease(getProjectName().get(), getVersion().get());
 	}
 
-	public static TaskProvider<DeleteSaganReleaseTask> register(Project project) {
-		return project.getTasks().register(TASK_NAME, DeleteSaganReleaseTask.class, (task) -> {
+	public static void register(Project project) {
+		project.getTasks().register(TASK_NAME, DeleteSaganReleaseTask.class, (task) -> {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
 			task.setDescription("Delete a version for the specified project on spring.io.");
 

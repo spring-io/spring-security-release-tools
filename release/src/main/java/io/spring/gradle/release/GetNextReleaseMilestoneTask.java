@@ -32,7 +32,6 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.api.tasks.TaskProvider;
 
 import org.springframework.util.Assert;
 
@@ -129,11 +128,11 @@ public abstract class GetNextReleaseMilestoneTask extends DefaultTask {
 		return milestoneNumber1.compareTo(milestoneNumber2);
 	}
 
-	public static TaskProvider<GetNextReleaseMilestoneTask> register(Project project) {
+	public static void register(Project project) {
 		var springRelease = project.getExtensions().findByType(SpringReleasePluginExtension.class);
 		Assert.notNull(springRelease, "Cannot find " + SpringReleasePluginExtension.class);
 
-		return project.getTasks().register(TASK_NAME, GetNextReleaseMilestoneTask.class, (task) -> {
+		project.getTasks().register(TASK_NAME, GetNextReleaseMilestoneTask.class, (task) -> {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
 			task.setDescription("Calculates the next release version based on the current version and outputs the version number");
 			task.doNotTrackState("API call to GitHub needs to check for new milestones every time");

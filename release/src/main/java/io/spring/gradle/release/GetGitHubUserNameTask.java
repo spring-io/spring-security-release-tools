@@ -25,7 +25,6 @@ import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.api.tasks.TaskProvider;
 
 import static io.spring.gradle.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY;
 
@@ -56,8 +55,8 @@ public abstract class GetGitHubUserNameTask extends DefaultTask {
 		System.out.println(user.login());
 	}
 
-	public static TaskProvider<GetGitHubUserNameTask> register(Project project) {
-		return project.getTasks().register(TASK_NAME, GetGitHubUserNameTask.class, (task) -> {
+	public static void register(Project project) {
+		project.getTasks().register(TASK_NAME, GetGitHubUserNameTask.class, (task) -> {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
 			task.setDescription("Use gitHubAccessToken to automatically set username property.");
 			task.getGitHubAccessToken().set((String) project.findProperty(GITHUB_ACCESS_TOKEN_PROPERTY));

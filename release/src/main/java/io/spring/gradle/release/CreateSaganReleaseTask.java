@@ -24,7 +24,6 @@ import org.gradle.api.Project;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.api.tasks.TaskProvider;
 
 import org.springframework.util.Assert;
 
@@ -83,11 +82,11 @@ public abstract class CreateSaganReleaseTask extends DefaultTask {
 		sagan.createRelease(getProjectName().get(), release);
 	}
 
-	public static TaskProvider<CreateSaganReleaseTask> register(Project project) {
+	public static void register(Project project) {
 		var springRelease = project.getExtensions().findByType(SpringReleasePluginExtension.class);
 		Assert.notNull(springRelease, "Cannot find " + SpringReleasePluginExtension.class);
 
-		return project.getTasks().register(TASK_NAME, CreateSaganReleaseTask.class, (task) -> {
+		project.getTasks().register(TASK_NAME, CreateSaganReleaseTask.class, (task) -> {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
 			task.setDescription("Create a new version for the specified project on spring.io.");
 

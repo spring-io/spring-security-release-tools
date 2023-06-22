@@ -26,7 +26,6 @@ import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.api.tasks.TaskProvider;
 
 import static io.spring.gradle.core.ProjectUtils.getProperty;
 import static io.spring.gradle.release.SpringReleasePlugin.CURRENT_VERSION_PROPERTY;
@@ -77,8 +76,8 @@ public abstract class GetNextSnapshotVersionTask extends DefaultTask {
 		return "%s.%s.%s-SNAPSHOT".formatted(majorSegment, minorSegment, patchSegment);
 	}
 
-	public static TaskProvider<GetNextSnapshotVersionTask> register(Project project) {
-		return project.getTasks().register(TASK_NAME, GetNextSnapshotVersionTask.class, (task) -> {
+	public static void register(Project project) {
+		project.getTasks().register(TASK_NAME, GetNextSnapshotVersionTask.class, (task) -> {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
 			task.setDescription("Calculates the next snapshot version based on the current version and outputs the version number");
 			task.doNotTrackState("API call to GitHub needs to check for new milestones every time");

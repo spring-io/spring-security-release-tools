@@ -26,7 +26,6 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.JavaExec;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputFile;
-import org.gradle.api.tasks.TaskProvider;
 
 import org.springframework.util.Assert;
 
@@ -82,10 +81,10 @@ public abstract class GenerateChangelogTask extends JavaExec {
 		super.exec();
 	}
 
-	public static TaskProvider<GenerateChangelogTask> register(Project project) {
+	public static void register(Project project) {
 		createGenerateChangelogConfiguration(project);
 		createGenerateChangelogRepository(project);
-		return project.getTasks().register(TASK_NAME, GenerateChangelogTask.class, (task) -> {
+		project.getTasks().register(TASK_NAME, GenerateChangelogTask.class, (task) -> {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
 			task.setDescription("Generate the release notes (changelog) for a milestone.");
 			task.doNotTrackState("API call to GitHub needs to check for open issues every time");

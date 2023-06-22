@@ -26,7 +26,6 @@ import org.gradle.api.Project;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.api.tasks.TaskProvider;
 
 import org.springframework.util.Assert;
 
@@ -63,11 +62,11 @@ public abstract class CheckMilestoneIsDueTodayTask extends DefaultTask {
 		System.out.println(milestoneDueToday);
 	}
 
-	public static TaskProvider<CheckMilestoneIsDueTodayTask> register(Project project) {
+	public static void register(Project project) {
 		var springRelease = project.getExtensions().findByType(SpringReleasePluginExtension.class);
 		Assert.notNull(springRelease, "Cannot find " + SpringReleasePluginExtension.class);
 
-		return project.getTasks().register(TASK_NAME, CheckMilestoneIsDueTodayTask.class, (task) -> {
+		project.getTasks().register(TASK_NAME, CheckMilestoneIsDueTodayTask.class, (task) -> {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
 			task.setDescription("Checks if the given version is due today or past due and outputs true or false");
 			task.doNotTrackState("API call to GitHub needs to check milestone due date every time");

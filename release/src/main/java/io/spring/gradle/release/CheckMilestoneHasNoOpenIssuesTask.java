@@ -25,7 +25,6 @@ import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.api.tasks.TaskProvider;
 
 import org.springframework.util.Assert;
 
@@ -62,11 +61,11 @@ public abstract class CheckMilestoneHasNoOpenIssuesTask extends DefaultTask {
 		System.out.println(!hasOpenIssues);
 	}
 
-	public static TaskProvider<CheckMilestoneHasNoOpenIssuesTask> register(Project project) {
+	public static void register(Project project) {
 		var springRelease = project.getExtensions().findByType(SpringReleasePluginExtension.class);
 		Assert.notNull(springRelease, "Cannot find " + SpringReleasePluginExtension.class);
 
-		return project.getTasks().register(TASK_NAME, CheckMilestoneHasNoOpenIssuesTask.class, (task) -> {
+		project.getTasks().register(TASK_NAME, CheckMilestoneHasNoOpenIssuesTask.class, (task) -> {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
 			task.setDescription("Checks if there are any open issues for the specified repository and milestone and outputs true or false");
 			task.doNotTrackState("API call to GitHub needs to check for open issues every time");
