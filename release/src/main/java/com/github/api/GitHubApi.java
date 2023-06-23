@@ -32,10 +32,17 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class GitHubApi {
 	private final WebClient webClient;
 
+	/**
+	 * @param accessToken The optional access token for the GitHub API
+	 */
 	public GitHubApi(String accessToken) {
 		this("https://api.github.com", accessToken);
 	}
 
+	/**
+	 * @param baseUrl The base URL of the GitHub API (for testing)
+	 * @param accessToken The optional access token for the GitHub API
+	 */
 	public GitHubApi(String baseUrl, String accessToken) {
 		var objectMapper = Jackson2ObjectMapperBuilder.json()
 				.serializationInclusion(JsonInclude.Include.NON_NULL)
@@ -104,7 +111,7 @@ public class GitHubApi {
 	 * Get the first 100 open milestones of a repository.
 	 *
 	 * @param repository The repository owner/name
-	 * @return A list of milestones for the repository
+	 * @return A list of the first 100 milestones for the repository
 	 */
 	public List<Milestone> getMilestones(Repository repository) {
 		return this.webClient.get()
@@ -120,7 +127,7 @@ public class GitHubApi {
 	 *
 	 * @param repository The repository owner/name
 	 * @param title The milestone title
-	 * @return The milestone, or null if not found
+	 * @return The milestone, or null if not found within the first 100 milestones
 	 */
 	public Milestone getMilestone(Repository repository, String title) {
 		return this.webClient.get()
