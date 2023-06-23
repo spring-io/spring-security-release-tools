@@ -46,9 +46,17 @@ public abstract class DeleteSaganReleaseTask extends DefaultTask {
 
 	@TaskAction
 	public void createRelease() {
+		var version = getVersion().getOrNull();
+		if (version == null) {
+			System.out.println("No version provided");
+			return;
+		}
+
 		String username = getUsername().get();
-		SaganApi sagan = new SaganApi(username, getGitHubAccessToken().get());
-		sagan.deleteRelease(getProjectName().get(), getVersion().get());
+		var gitHubAccessToken = getGitHubAccessToken().get();
+		var projectName = getProjectName().get();
+		SaganApi sagan = new SaganApi(username, gitHubAccessToken);
+		sagan.deleteRelease(projectName, version);
 	}
 
 	public static void register(Project project) {
@@ -61,10 +69,15 @@ public abstract class DeleteSaganReleaseTask extends DefaultTask {
 							.getUsernameFile()
 							.map(RegularFileUtils::readString));
 
+			var versionProvider = getProperty(project, PREVIOUS_VERSION_PROPERTY)
+					.orElse(findTaskByType(project, GetPreviousReleaseMilestoneTask.class)
+							.getPreviousReleaseMilestoneFile()
+							.map(RegularFileUtils::readString));
+
 			task.getUsername().set(usernameProvider);
 			task.getGitHubAccessToken().set(getProperty(project, GITHUB_ACCESS_TOKEN_PROPERTY));
 			task.getProjectName().set(project.getRootProject().getName());
-			task.getVersion().set(getProperty(project, PREVIOUS_VERSION_PROPERTY));
+			task.getVersion().set(versionProvider);
 		});
 	}
 }
