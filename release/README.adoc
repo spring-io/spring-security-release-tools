@@ -1,0 +1,249 @@
+= Spring Release Plugin
+
+Spring Release Plugin is a Gradle plugin that provides common tasks for automating releases.
+Simply apply the plugin in your project's root build file and define your project's configuration via the `springRelease` DSL.
+
+Here is an example configuration that releases on Thursdays following the 2nd Monday of the month (i.e. Spring Framework's release day):
+
+[source,gradle]
+----
+springRelease {
+    repositoryOwner = "spring-projects"
+    weekOfMonth = 2
+    dayOfWeek = 4
+    referenceDocUrl = "https://docs.spring.io/spring-framework/reference/{version}/index.html"
+    apiDocUrl = "https://docs.spring.io/spring-framework/docs/{version}/api/"
+    replaceSnapshotVersionInReferenceDocUrl = true
+}
+----
+
+== `springRelease` Property Reference
+
+* `repositoryOwner`: GitHub user or organization name (optional, defaults to `spring-projects`)
+* `weekOfMonth`: The week of the month when releases for this project are scheduled; valid values are 1 - 3 where 1 is the first week with a Monday (required)
+* `dayOfWeek`: The day of the week when releases for this project are scheduled; valid values are 1 - 5 where 1 is Monday and 5 is Friday (required)
+* `referenceDocUrl`: The template URL for a version of the reference documentation; can contain the variable `{version}` which is automatically substituted based on the current version (required)
+* `apiDocUrl`: The template URL for a version of the API documentation; can contain the variable `{version}` which is automatically substituted based on the current version (required)
+* `replaceSnapshotVersionInReferenceDocUrl`: Flag controlling whether `{version}` should be replaced with the current base version (without -SNAPSHOT) (`true`) or left as-is (`false`) in the `referenceDocUrl`; Useful for working with Antora which does not include `-SNAPSHOT` in the URL (optional, defaults to `false`)
+
+== Tasks
+
+There are two types of tasks provided by this plugin:
+* Top-level tasks which you would normally run during CI as part of an automated release
+* Reusable tasks which are used by top-level tasks but can also be run separately
+
+Top-level tasks:
+
+* <<createSaganRelease>>
+* <<deleteSaganRelease>>
+* <<createGitHubRelease>>
+* <<scheduleNextRelease>>
+* <<checkMilestoneHasNoOpenIssues>>
+* <<checkMilestoneIsDueToday>>
+
+Reusable tasks:
+
+* <<getGitHubUserName>>
+* <<generateChangelog>>
+* <<getPreviousReleaseMilestone>>
+* <<getNextReleaseMilestone>>
+* <<getNextSnapshotVersion>>
+
+== Task Reference
+
+[[createSaganRelease]]
+=== `createSaganRelease`
+
+[[deleteSaganRelease]]
+=== `deleteSaganRelease`
+
+[[getGitHubUserName]]
+=== `getGitHubUserName`
+
+Use the `gitHubAccessToken` to look up the user and output the username.
+
+The following command looks up the GitHub username:
+
+[source,bash]
+----
+./gradlew getGitHubUserName -PgitHubAccessToken=$GITHUB_ACCESS_TOKEN
+----
+
+*Task properties:*
+
+* `gitHubAccessToken`: A personal access token used to look up the user using the GitHub API (required)
+
+[[generateChangelog]]
+=== `generateChangelog`
+
+Generate the release notes (changelog) for a milestone using https://github.com/spring-io/github-changelog-generator[github-changelog-generator].
+
+The following command determines the next available GitHub release milestone (based on the current version), and generates a changelog which is written to `build/changelog/release-notes.md`:
+
+[source,bash]
+----
+./gradlew generateChangelog
+----
+
+*Task properties:*
+
+* `nextVersion`: Specify the version used to generate the changelog (optional, uses <<getNextReleaseMilestone>> if not specified)
+* `gitHubAccessToken`: A personal access token used to avoid hitting rate limits on the GitHub API (optional)
+* `gitHubUserName`: The username that owns the `gitHubAccessToken` (optional, the GitHub API is used to look up the username if not specified)
+
+*Full example:*
+
+[source,bash]
+----
+./gradlew generateChangelog -PnextVersion=1.0.0 -PgitHubAccessToken=$GITHUB_ACCESS_TOKEN -PgitHubUserName=spring-io
+----
+
+[[createGitHubRelease]]
+=== `createGitHubRelease`
+
+Create a GitHub release with release notes using the GitHub API.
+
+The following command will perform a dry-run and provide output of what creating the next release would look like:
+
+[source,bash]
+----
+./gradlew createGitHubRelease
+----
+
+*Task properties:*
+
+* `nextVersion`: Specify the version used to create the release (optional, uses <<getNextReleaseMilestone>> if not specified)
+* `branch`: Specify the branch used to tag the release (optional, defaults to `main`)
+* `createRelease`: Flag controlling whether the release is created (`true`) or a dry-run is performed (`false`) (optional, defaults to `false`)
+* `gitHubAccessToken`: A personal access token used to avoid hitting rate limits on the GitHub API and/or create the release (optional, required if `createRelease` is `true`)
+
+*Full example:*
+
+[source,bash]
+----
+./gradlew createGitHubRelease -PnextVersion=1.0.0 -Pbranch=1.0.x -PcreateRelease=true -PgitHubAccessToken=$GITHUB_ACCESS_TOKEN
+----
+
+[[scheduleNextRelease]]
+=== `scheduleNextRelease`
+
+Schedule the next release (even months only) or release train (series of milestones starting in January or July) based on the current version.
+
+This task works with the concept of a Spring release train to automate scheduling one or more milestones using the configured `weekOfMonth` and `dayOfWeek` values from the DSL.
+All dates are calculated based on the first Monday of the month.
+
+For example, if the current date is June 1, 2023, the current version is `1.0.0-SNAPSHOT`, `weekOfMonth` is 2 and `dayOfWeek` is 4 (i.e. Spring Framework's release day), then this task can schedule a release train for July 13, 2023 (`1.0.0-M1`), August 17, 2023 (`1.0.0-M2`), September 14, 2023 (`1.0.0-M3`), October 12, 2023 (`1.0.0-RC1`) and November 16, 2023 (`1.0.0`).
+
+However with all other values being the same, if the current version is `1.0.1-SNAPSHOT`, this task will simply schedule a patch release on the next even month (which is the current month in this example) of June 15, 2023 (`1.0.1`).
+The logic to determine whether to schedule a release train or a single patch release is based on the value of the patch version, where `x.x.0` attempts to schedule a release train, and `x.x.1+` schedules a patch release.
+
+This task does nothing if the next release milestone already exists.
+
+The following command schedules the next release milestone (or release train):
+
+[source,bash]
+----
+./gradlew scheduleNextRelease -PgitHubAccessToken=$GITHUB_ACCESS_TOKEN
+----
+
+*Task properties:*
+
+* `nextVersion`: Specify the version used to schedule the next release milestone (optional, uses <<getNextReleaseMilestone>> if not specified)
+* `gitHubAccessToken`: A personal access token used to access the GitHub API (required)
+
+*Full example:*
+
+[source,bash]
+----
+./gradlew scheduleNextRelease -PnextVersion=1.0.0 -PgitHubAccessToken=$GITHUB_ACCESS_TOKEN
+----
+
+[[checkMilestoneHasNoOpenIssues]]
+=== `checkMilestoneHasNoOpenIssues`
+
+[[checkMilestoneIsDueToday]]
+=== `checkMilestoneIsDueToday`
+
+[[getPreviousReleaseMilestone]]
+=== `getPreviousReleaseMilestone`
+
+Finds the previous release version based on the current version using the https://api.spring.io/restdocs/index.html[Sagan API] (now backed by Contentful) and outputs the version number.
+
+If the current version is a `SNAPSHOT`, this task finds an existing `SNAPSHOT` version with the same major/minor version.
+If the current version is a GA version, this task finds an existing GA version with the same major/minor version.
+If multiple options or no options exist, this task outputs a message indicating the problem but does not fail.
+
+The following command determines the previous release milestone (based on the current version):
+
+[source,bash]
+----
+./gradlew getPreviousReleaseMilestone -PgitHubAccessToken=$GITHUB_ACCESS_TOKEN
+----
+
+*Task properties:*
+
+* `currentVersion`: Specify the version used to calculate the previous release milestone (optional, uses `project.version` if not specified)
+* `gitHubAccessToken`: A personal access token used to access the GitHub and Sagan APIs (required)
+* `gitHubUserName`: The username that owns the `gitHubAccessToken` (optional, the GitHub API is used to look up the username if not specified)
+
+*Full example:*
+
+[source,bash]
+----
+./gradlew getPreviousReleaseMilestone -PcurrentVersion=1.0.0 -PgitHubAccessToken=$GITHUB_ACCESS_TOKEN -PgitHubUserName=spring-io
+----
+
+[[getNextReleaseMilestone]]
+=== `getNextReleaseMilestone`
+
+Calculates the next release version based on the current version and outputs the version number.
+
+If the current version is a `SNAPSHOT`, the GitHub API is used to find the next milestone (sorted by due date) that matches the base version number.
+For example, if the current version is `1.0.0-SNAPSHOT` and milestones `1.0.0-M2`, `1.0.0-RC1` and `1.0.0` are available, then `1.0.0-M2` will be chosen based on due date.
+
+NOTE: This task is used internally by several other tasks to automatically determine the next release milestone when the `nextVersion` property is not specified.
+
+The following command determines the next available GitHub release milestone (based on the current version):
+
+[source,bash]
+----
+./gradlew getNextReleaseMilestone
+----
+
+*Task properties:*
+
+* `currentVersion`: Specify the version used to calculate the next release milestone (optional, uses `project.version` if not specified)
+* `gitHubAccessToken`: A personal access token used to avoid hitting rate limits on the GitHub API (optional)
+
+*Full example:*
+
+[source,bash]
+----
+./gradlew getNextReleaseMilestone -PcurrentVersion=1.0.0 -PgitHubAccessToken=$GITHUB_ACCESS_TOKEN
+----
+
+[[getNextSnapshotVersion]]
+=== `getNextSnapshotVersion`
+
+Calculates the next snapshot version based on the current version and outputs the version number.
+
+For example, if the current version a milestone such as `1.0.0-M2`, then this task outputs `1.0.0-SNAPSHOT`.
+If the current version is a GA version such as `1.0.0`, then this task increments the patch version and outputs `1.0.1`.
+
+The following command determines the next snapshot version (based on the current release version):
+
+[source,bash]
+----
+./gradlew getNextSnapshotVersion
+----
+
+*Task properties:*
+
+* `currentVersion`: Specify the version used to calculate the next snapshot version (optional, uses `project.version` if not specified)
+
+*Full example:*
+
+[source,bash]
+----
+./gradlew getNextSnapshotVersion -PcurrentVersion=1.0.0
+----
