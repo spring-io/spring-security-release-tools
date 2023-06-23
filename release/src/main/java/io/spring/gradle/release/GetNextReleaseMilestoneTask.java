@@ -54,7 +54,7 @@ public abstract class GetNextReleaseMilestoneTask extends DefaultTask {
 	public abstract Property<Repository> getRepository();
 
 	@Input
-	public abstract Property<String> getCurrentVersion();
+	public abstract Property<String> getVersion();
 
 	@Input
 	@Optional
@@ -65,26 +65,26 @@ public abstract class GetNextReleaseMilestoneTask extends DefaultTask {
 
 	@TaskAction
 	public void getNextReleaseMilestone() {
-		var currentVersion = getCurrentVersion().get();
-		var nextReleaseMilestone = findNextReleaseMilestone(currentVersion);
+		var version = getVersion().get();
+		var nextReleaseMilestone = findNextReleaseMilestone(version);
 		var outputFile = getNextReleaseMilestoneFile().get();
 		RegularFileUtils.writeString(outputFile, nextReleaseMilestone);
 		System.out.println(nextReleaseMilestone);
 	}
 
-	private String findNextReleaseMilestone(String currentVersion) {
-		if (!currentVersion.endsWith("-SNAPSHOT")) {
-			return currentVersion;
+	private String findNextReleaseMilestone(String version) {
+		if (!version.endsWith("-SNAPSHOT")) {
+			return version;
 		}
 
-		var snapshotVersion = SNAPSHOT_PATTERN.matcher(currentVersion);
+		var snapshotVersion = SNAPSHOT_PATTERN.matcher(version);
 		if (!snapshotVersion.find()) {
 			throw new IllegalArgumentException(
 					"Cannot calculate next release version because given version is not a valid SNAPSHOT version");
 		}
 
 		var patchSegment = snapshotVersion.group(3);
-		var baseVersion = currentVersion.replace("-SNAPSHOT", "");
+		var baseVersion = version.replace("-SNAPSHOT", "");
 		if (patchSegment.equals("0")) {
 			var repository = getRepository().get();
 			var gitHubAccessToken = getGitHubAccessToken().getOrNull();
@@ -143,7 +143,7 @@ public abstract class GetNextReleaseMilestoneTask extends DefaultTask {
 			var owner = springRelease.getRepositoryOwner().get();
 			var name = project.getRootProject().getName();
 			task.getRepository().set(new Repository(owner, name));
-			task.getCurrentVersion().set(versionProvider);
+			task.getVersion().set(versionProvider);
 			task.getGitHubAccessToken().set(getProperty(project, GITHUB_ACCESS_TOKEN_PROPERTY));
 			task.getNextReleaseMilestoneFile().set(project.getLayout().getBuildDirectory().file(OUTPUT_VERSION_PATH));
 		});

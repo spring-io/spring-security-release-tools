@@ -33,8 +33,8 @@ import static io.spring.gradle.core.ProjectUtils.findTaskByType;
 import static io.spring.gradle.core.ProjectUtils.getProperty;
 import static io.spring.gradle.release.SpringReleasePlugin.BRANCH_PROPERTY;
 import static io.spring.gradle.release.SpringReleasePlugin.CREATE_RELEASE_PROPERTY;
-import static io.spring.gradle.release.SpringReleasePlugin.CURRENT_VERSION_PROPERTY;
 import static io.spring.gradle.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY;
+import static io.spring.gradle.release.SpringReleasePlugin.NEXT_VERSION_PROPERTY;
 
 /**
  * @author Steve Riesenberg
@@ -46,7 +46,7 @@ public abstract class CreateGitHubReleaseTask extends DefaultTask {
 	public abstract Property<Repository> getRepository();
 
 	@Input
-	public abstract Property<String> getCurrentVersion();
+	public abstract Property<String> getVersion();
 
 	@Input
 	public abstract Property<String> getReleaseNotes();
@@ -65,12 +65,12 @@ public abstract class CreateGitHubReleaseTask extends DefaultTask {
 	public void createGitHubRelease() {
 		var repository = getRepository().get();
 		var body = getReleaseNotes().get();
-		var currentVersion = getCurrentVersion().get();
+		var version = getVersion().get();
 		var branch = getBranch().get();
-		var release = Release.tag(currentVersion)
+		var release = Release.tag(version)
 				.commit(branch)
 				.body(body)
-				.preRelease(currentVersion.contains("-"))
+				.preRelease(version.contains("-"))
 				.build();
 
 		var createRelease = getCreateRelease().get();
@@ -83,7 +83,7 @@ public abstract class CreateGitHubReleaseTask extends DefaultTask {
 				createRelease ? "" : "[DRY RUN] ",
 				repository.owner(),
 				repository.name(),
-				currentVersion
+				version
 		);
 		System.out.printf("%nRelease Notes:%n%n----%n%s%n----%n%n", body.trim());
 
@@ -102,7 +102,7 @@ public abstract class CreateGitHubReleaseTask extends DefaultTask {
 			task.setDescription("Create a github release");
 			task.doNotTrackState("API call to GitHub needs to check for new issues and create a release every time");
 
-			var versionProvider = getProperty(project, CURRENT_VERSION_PROPERTY)
+			var versionProvider = getProperty(project, NEXT_VERSION_PROPERTY)
 					.orElse(findTaskByType(project, GetNextReleaseMilestoneTask.class)
 							.getNextReleaseMilestoneFile()
 							.map(RegularFileUtils::readString));
@@ -117,7 +117,7 @@ public abstract class CreateGitHubReleaseTask extends DefaultTask {
 			var owner = springRelease.getRepositoryOwner().get();
 			var name = project.getRootProject().getName();
 			task.getRepository().set(new Repository(owner, name));
-			task.getCurrentVersion().set(versionProvider);
+			task.getVersion().set(versionProvider);
 			task.getReleaseNotes().set(releaseNotesProvider);
 			task.getBranch().set(getProperty(project, BRANCH_PROPERTY).orElse("main"));
 			task.getCreateRelease().set(createReleaseProvider.orElse(false));

@@ -30,8 +30,8 @@ import org.springframework.util.Assert;
 
 import static io.spring.gradle.core.ProjectUtils.findTaskByType;
 import static io.spring.gradle.core.ProjectUtils.getProperty;
-import static io.spring.gradle.release.SpringReleasePlugin.CURRENT_VERSION_PROPERTY;
 import static io.spring.gradle.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY;
+import static io.spring.gradle.release.SpringReleasePlugin.NEXT_VERSION_PROPERTY;
 
 /**
  * @author Steve Riesenberg
@@ -43,7 +43,7 @@ public abstract class CheckMilestoneHasNoOpenIssuesTask extends DefaultTask {
 	public abstract Property<Repository> getRepository();
 
 	@Input
-	public abstract Property<String> getCurrentVersion();
+	public abstract Property<String> getVersion();
 
 	@Input
 	@Optional
@@ -53,10 +53,10 @@ public abstract class CheckMilestoneHasNoOpenIssuesTask extends DefaultTask {
 	public void checkMilestoneHasNoOpenIssues() {
 		var gitHubAccessToken = getGitHubAccessToken().get();
 		var repository = getRepository().get();
-		var currentVersion = getCurrentVersion().get();
+		var version = getVersion().get();
 
 		GitHubApi gitHubApi = new GitHubApi(gitHubAccessToken);
-		var milestone = gitHubApi.getMilestone(repository, currentVersion);
+		var milestone = gitHubApi.getMilestone(repository, version);
 		var hasOpenIssues = gitHubApi.hasOpenIssues(repository, milestone.number());
 		System.out.println(!hasOpenIssues);
 	}
@@ -70,7 +70,7 @@ public abstract class CheckMilestoneHasNoOpenIssuesTask extends DefaultTask {
 			task.setDescription("Checks if there are any open issues for the specified repository and milestone and outputs true or false");
 			task.doNotTrackState("API call to GitHub needs to check for open issues every time");
 
-			var versionProvider = getProperty(project, CURRENT_VERSION_PROPERTY)
+			var versionProvider = getProperty(project, NEXT_VERSION_PROPERTY)
 					.orElse(findTaskByType(project, GetNextReleaseMilestoneTask.class)
 							.getNextReleaseMilestoneFile()
 							.map(RegularFileUtils::readString));
@@ -78,7 +78,7 @@ public abstract class CheckMilestoneHasNoOpenIssuesTask extends DefaultTask {
 			var owner = springRelease.getRepositoryOwner().get();
 			var name = project.getRootProject().getName();
 			task.getRepository().set(new Repository(owner, name));
-			task.getCurrentVersion().set(versionProvider);
+			task.getVersion().set(versionProvider);
 			task.getGitHubAccessToken().set(getProperty(project, GITHUB_ACCESS_TOKEN_PROPERTY));
 		});
 	}

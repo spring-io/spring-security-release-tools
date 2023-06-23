@@ -40,23 +40,23 @@ public abstract class GetNextSnapshotVersionTask extends DefaultTask {
 	private static final String OUTPUT_VERSION_PATH = "next-snapshot-version.txt";
 
 	@Input
-	public abstract Property<String> getCurrentVersion();
+	public abstract Property<String> getVersion();
 
 	@OutputFile
 	public abstract RegularFileProperty getNextSnapshotVersionFile();
 
 	@TaskAction
 	public void getNextSnapshotVersion() {
-		var currentVersion = getCurrentVersion().get();
-		var nextVersion = calculateNextSnapshotVersion(currentVersion);
+		var version = getVersion().get();
+		var nextVersion = calculateNextSnapshotVersion(version);
 		RegularFileUtils.writeString(getNextSnapshotVersionFile().get(), nextVersion);
 		System.out.println(nextVersion);
 	}
 
-	private static String calculateNextSnapshotVersion(String currentVersion) {
-		Matcher releaseVersion = RELEASE_VERSION_PATTERN.matcher(currentVersion);
+	private static String calculateNextSnapshotVersion(String version) {
+		Matcher releaseVersion = RELEASE_VERSION_PATTERN.matcher(version);
 		if (!releaseVersion.find()) {
-			if (currentVersion.contains("-SNAPSHOT")) {
+			if (version.contains("-SNAPSHOT")) {
 				throw new IllegalStateException(
 						"Cannot calculate next snapshot version because given version is already a SNAPSHOT");
 			} else {
@@ -85,7 +85,7 @@ public abstract class GetNextSnapshotVersionTask extends DefaultTask {
 			var versionProvider = getProperty(project, CURRENT_VERSION_PROPERTY)
 					.orElse(project.getRootProject().getVersion().toString());
 
-			task.getCurrentVersion().set(versionProvider);
+			task.getVersion().set(versionProvider);
 			task.getNextSnapshotVersionFile().set(project.getLayout().getBuildDirectory().file(OUTPUT_VERSION_PATH));
 		});
 	}

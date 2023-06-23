@@ -32,8 +32,8 @@ import org.springframework.util.Assert;
 
 import static io.spring.gradle.core.ProjectUtils.findTaskByType;
 import static io.spring.gradle.core.ProjectUtils.getProperty;
-import static io.spring.gradle.release.SpringReleasePlugin.CURRENT_VERSION_PROPERTY;
 import static io.spring.gradle.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY;
+import static io.spring.gradle.release.SpringReleasePlugin.NEXT_VERSION_PROPERTY;
 
 /**
  * @author Steve Riesenberg
@@ -48,16 +48,16 @@ public abstract class CheckMilestoneIsDueTodayTask extends DefaultTask {
 	public abstract Property<String> getGitHubAccessToken();
 
 	@Input
-	public abstract Property<String> getCurrentVersion();
+	public abstract Property<String> getVersion();
 
 	@TaskAction
 	public void checkMilestoneHasNoOpenIssues() {
 		var gitHubAccessToken = getGitHubAccessToken().get();
 		var repository = getRepository().get();
-		var currentVersion = getCurrentVersion().get();
+		var version = getVersion().get();
 
 		GitHubApi gitHubApi = new GitHubApi(gitHubAccessToken);
-		var milestone = gitHubApi.getMilestone(repository, currentVersion);
+		var milestone = gitHubApi.getMilestone(repository, version);
 		var today = LocalDate.now();
 		var dueOn = milestone.dueOn() != null
 				? milestone.dueOn().atZone(ZoneOffset.UTC).toLocalDate()
@@ -75,7 +75,7 @@ public abstract class CheckMilestoneIsDueTodayTask extends DefaultTask {
 			task.setDescription("Checks if the given version is due today or past due and outputs true or false");
 			task.doNotTrackState("API call to GitHub needs to check milestone due date every time");
 
-			var versionProvider = getProperty(project, CURRENT_VERSION_PROPERTY)
+			var versionProvider = getProperty(project, NEXT_VERSION_PROPERTY)
 					.orElse(findTaskByType(project, GetNextReleaseMilestoneTask.class)
 							.getNextReleaseMilestoneFile()
 							.map(RegularFileUtils::readString));
@@ -83,7 +83,7 @@ public abstract class CheckMilestoneIsDueTodayTask extends DefaultTask {
 			var owner = springRelease.getRepositoryOwner().get();
 			var name = project.getRootProject().getName();
 			task.getRepository().set(new Repository(owner, name));
-			task.getCurrentVersion().set(versionProvider);
+			task.getVersion().set(versionProvider);
 			task.getGitHubAccessToken().set(getProperty(project, GITHUB_ACCESS_TOKEN_PROPERTY));
 		});
 	}

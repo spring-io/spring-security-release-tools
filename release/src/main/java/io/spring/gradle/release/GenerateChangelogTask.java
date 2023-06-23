@@ -31,9 +31,9 @@ import org.springframework.util.Assert;
 
 import static io.spring.gradle.core.ProjectUtils.findTaskByType;
 import static io.spring.gradle.core.ProjectUtils.getProperty;
-import static io.spring.gradle.release.SpringReleasePlugin.CURRENT_VERSION_PROPERTY;
 import static io.spring.gradle.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY;
 import static io.spring.gradle.release.SpringReleasePlugin.GITHUB_USER_NAME_PROPERTY;
+import static io.spring.gradle.release.SpringReleasePlugin.NEXT_VERSION_PROPERTY;
 
 /**
  * @author Steve Riesenberg
@@ -49,7 +49,7 @@ public abstract class GenerateChangelogTask extends JavaExec {
 	private static final String GENERATE_CHANGELOG_GROUP = "spring-io";
 
 	@Input
-	public abstract Property<String> getCurrentVersion();
+	public abstract Property<String> getVersion();
 
 	@Input
 	@Optional
@@ -64,7 +64,7 @@ public abstract class GenerateChangelogTask extends JavaExec {
 
 	@Override
 	public void exec() {
-		String currentVersion = getCurrentVersion().get();
+		String version = getVersion().get();
 		String username = getUsername().getOrNull();
 		String password = getPassword().getOrNull();
 		File outputFile = getReleaseNotesFile().getAsFile().get();
@@ -77,7 +77,7 @@ public abstract class GenerateChangelogTask extends JavaExec {
 		if (username != null && password != null) {
 			args("--github.username=" + username, "--github.password=" + password);
 		}
-		args(currentVersion, outputFile.toString());
+		args(version, outputFile.toString());
 		super.exec();
 	}
 
@@ -91,12 +91,12 @@ public abstract class GenerateChangelogTask extends JavaExec {
 			task.setWorkingDir(project.getRootDir());
 			task.classpath(project.getConfigurations().getAt(GENERATE_CHANGELOG_CONFIGURATION));
 
-			var versionProvider = getProperty(project, CURRENT_VERSION_PROPERTY)
+			var versionProvider = getProperty(project, NEXT_VERSION_PROPERTY)
 					.orElse(findTaskByType(project, GetNextReleaseMilestoneTask.class)
 							.getNextReleaseMilestoneFile()
 							.map(RegularFileUtils::readString));
 
-			task.getCurrentVersion().set(versionProvider);
+			task.getVersion().set(versionProvider);
 			if (project.hasProperty(GITHUB_ACCESS_TOKEN_PROPERTY)) {
 				var usernameProvider = getProperty(project, GITHUB_USER_NAME_PROPERTY)
 						.orElse(findTaskByType(project, GetGitHubUserNameTask.class)

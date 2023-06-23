@@ -35,8 +35,8 @@ import org.springframework.util.Assert;
 
 import static io.spring.gradle.core.ProjectUtils.findTaskByType;
 import static io.spring.gradle.core.ProjectUtils.getProperty;
-import static io.spring.gradle.release.SpringReleasePlugin.CURRENT_VERSION_PROPERTY;
 import static io.spring.gradle.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY;
+import static io.spring.gradle.release.SpringReleasePlugin.NEXT_VERSION_PROPERTY;
 
 /**
  * @author Steve Riesenberg
@@ -51,7 +51,7 @@ public abstract class ScheduleNextReleaseTask extends DefaultTask {
 	public abstract Property<String> getGitHubAccessToken();
 
 	@Input
-	public abstract Property<String> getCurrentVersion();
+	public abstract Property<String> getVersion();
 
 	@Input
 	public abstract Property<Integer> getWeekOfMonth();
@@ -63,11 +63,11 @@ public abstract class ScheduleNextReleaseTask extends DefaultTask {
 	public void scheduleNextRelease() {
 		var repository = getRepository().get();
 		var gitHubAccessToken = getGitHubAccessToken().get();
-		var currentVersion = getCurrentVersion().get();
+		var version = getVersion().get();
 
 		var gitHubApi = new GitHubApi(gitHubAccessToken);
 		var hasExistingMilestone = gitHubApi.getMilestones(repository).stream()
-				.anyMatch((milestone) -> currentVersion.equals(milestone.title()));
+				.anyMatch((milestone) -> version.equals(milestone.title()));
 		if (hasExistingMilestone) {
 			return;
 		}
@@ -75,9 +75,9 @@ public abstract class ScheduleNextReleaseTask extends DefaultTask {
 		// Next milestone is either a patch version or minor version
 		// Note: Major versions will be handled like minor and get a release
 		// train which can be manually updated to match the desired schedule.
-		if (currentVersion.endsWith(".0")) {
+		if (version.endsWith(".0")) {
 			// Create M1, M2, M3, RC1 and GA milestones for release train
-			getReleaseTrain(currentVersion).getTrainDates().forEach((milestoneTitle, dueOn) -> {
+			getReleaseTrain(version).getTrainDates().forEach((milestoneTitle, dueOn) -> {
 				// Note: GitHub seems to store full date/time as UTC then displays
 				// as a date (no time) in your timezone, which means the date will
 				// not always be the same date as we intend.
@@ -89,8 +89,8 @@ public abstract class ScheduleNextReleaseTask extends DefaultTask {
 		} else {
 			// Create GA milestone for patch release on the next even month
 			var startDate = LocalDate.now();
-			var dueOn = getReleaseTrain(currentVersion).getNextReleaseDate(startDate);
-			var milestone = new Milestone(currentVersion, null, dueOn.atTime(LocalTime.NOON).toInstant(ZoneOffset.UTC));
+			var dueOn = getReleaseTrain(version).getNextReleaseDate(startDate);
+			var milestone = new Milestone(version, null, dueOn.atTime(LocalTime.NOON).toInstant(ZoneOffset.UTC));
 			gitHubApi.createMilestone(repository, milestone);
 		}
 	}
@@ -119,7 +119,7 @@ public abstract class ScheduleNextReleaseTask extends DefaultTask {
 			task.setDescription("Schedule the next release (even months only) or release train (series of milestones starting in January or July) based on the current version");
 			task.doNotTrackState("API call to GitHub needs to check for new milestones every time");
 
-			var versionProvider = getProperty(project, CURRENT_VERSION_PROPERTY)
+			var versionProvider = getProperty(project, NEXT_VERSION_PROPERTY)
 					.orElse(findTaskByType(project, GetNextReleaseMilestoneTask.class)
 							.getNextReleaseMilestoneFile()
 							.map(RegularFileUtils::readString));
@@ -128,7 +128,7 @@ public abstract class ScheduleNextReleaseTask extends DefaultTask {
 			var name = project.getRootProject().getName();
 			task.getRepository().set(new Repository(owner, name));
 			task.getGitHubAccessToken().set(getProperty(project, GITHUB_ACCESS_TOKEN_PROPERTY));
-			task.getCurrentVersion().set(versionProvider);
+			task.getVersion().set(versionProvider);
 			task.getWeekOfMonth().set(springRelease.getWeekOfMonth());
 			task.getDayOfWeek().set(springRelease.getDayOfWeek());
 		});
