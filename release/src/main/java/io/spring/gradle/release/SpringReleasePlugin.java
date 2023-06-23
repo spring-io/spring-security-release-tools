@@ -39,7 +39,7 @@ public class SpringReleasePlugin implements Plugin<Project> {
 		var springRelease = project.getExtensions()
 				.create(EXTENSION_NAME, SpringReleasePluginExtension.class);
 		springRelease.getRepositoryOwner().convention("spring-projects");
-		springRelease.getReplaceSnapshotVersionInReferenceDocUrl().convention(true);
+		springRelease.getReplaceSnapshotVersionInReferenceDocUrl().convention(false);
 
 		// Calculate the GitHub username for the provided access token
 		GetGitHubUserNameTask.register(project);
