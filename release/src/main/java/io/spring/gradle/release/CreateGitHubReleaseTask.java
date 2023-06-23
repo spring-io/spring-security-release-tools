@@ -99,7 +99,7 @@ public abstract class CreateGitHubReleaseTask extends DefaultTask {
 
 		project.getTasks().register(TASK_NAME, CreateGitHubReleaseTask.class, (task) -> {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
-			task.setDescription("Create a github release");
+			task.setDescription("Create a GitHub release with release notes");
 			task.doNotTrackState("API call to GitHub needs to check for new issues and create a release every time");
 
 			var versionProvider = getProperty(project, NEXT_VERSION_PROPERTY)
