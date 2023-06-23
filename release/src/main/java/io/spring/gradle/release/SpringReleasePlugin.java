@@ -50,6 +50,9 @@ public class SpringReleasePlugin implements Plugin<Project> {
 		// Delete release version using Sagan API
 		DeleteSaganReleaseTask.register(project);
 
+		// Calculate the previous release milestone using Sagan API
+		GetPreviousReleaseMilestoneTask.register(project);
+
 		// Calculate the next release milestone using GitHub API
 		GetNextReleaseMilestoneTask.register(project);
 

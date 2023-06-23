@@ -46,7 +46,7 @@ public abstract class GetNextReleaseMilestoneTask extends DefaultTask {
 	public static final String TASK_NAME = "getNextReleaseMilestone";
 
 	private static final Pattern SNAPSHOT_PATTERN = Pattern.compile("^([0-9]+)\\.([0-9]+)\\.([0-9]+)-SNAPSHOT$");
-	private static final Pattern PRE_RELEASE_PATTERN = Pattern.compile("^.*-([A-Z]+)([0-9]+)$");
+	private static final Pattern PRE_RELEASE_PATTERN = Pattern.compile("^.+-([A-Z]+)([0-9]+)$");
 	private static final Map<String, Integer> MILESTONE_ORDER = Map.of("M", 1, "RC", 2);
 	private static final String OUTPUT_VERSION_PATH = "next-release-milestone-version.txt";
 

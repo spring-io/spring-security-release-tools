@@ -15,6 +15,8 @@
  */
 package io.spring.api;
 
+import java.util.List;
+
 import io.spring.gradle.core.BasicAuthFilterFunction;
 
 import org.springframework.web.reactive.function.client.WebClient;
@@ -52,4 +54,17 @@ public class SaganApi {
 				.bodyToMono(Void.class)
 				.block();
 	}
+
+	public List<Release> getReleases(String project) {
+		return this.webClient.get()
+				.uri("/projects/{project}/releases", project)
+				.retrieve()
+				.bodyToMono(EmbeddedReleasesWrapper.class)
+				.map(EmbeddedReleasesWrapper::_embedded)
+				.map(EmbeddedReleases::releases)
+				.block();
+	}
+
+	private record EmbeddedReleasesWrapper(EmbeddedReleases _embedded) {}
+	private record EmbeddedReleases(List<Release> releases) {}
 }

@@ -63,23 +63,24 @@ public abstract class CreateSaganReleaseTask extends DefaultTask {
 
 	@TaskAction
 	public void createRelease() {
-		String username = getUsername().get();
-		String gitHubAccessToken = getGitHubAccessToken().get();
-		String version = getVersion().get();
-		String apiDocUrl = getApiDocUrl().get();
-		String referenceDocUrl = getReferenceDocUrl().get();
+		var username = getUsername().get();
+		var gitHubAccessToken = getGitHubAccessToken().get();
+		var projectName = getProjectName().get();
+		var version = getVersion().get();
+		var apiDocUrl = getApiDocUrl().get();
+		var referenceDocUrl = getReferenceDocUrl().get();
 
 		// replace "-SNAPSHOT" in version numbers in referenceDocUrl for Antora
-		boolean replaceSnapshotVersion = getReplaceSnapshotVersionInReferenceDocUrl().get();
+		var replaceSnapshotVersion = getReplaceSnapshotVersionInReferenceDocUrl().get();
 		if (replaceSnapshotVersion && version.endsWith("-SNAPSHOT")) {
 			referenceDocUrl = referenceDocUrl
 					.replace("{version}", version)
 					.replace("-SNAPSHOT", "");
 		}
 
-		SaganApi sagan = new SaganApi(username, gitHubAccessToken);
-		Release release = new Release(version, referenceDocUrl, apiDocUrl, null, false);
-		sagan.createRelease(getProjectName().get(), release);
+		var saganApi = new SaganApi(username, gitHubAccessToken);
+		var release = new Release(version, referenceDocUrl, apiDocUrl, null, false);
+		saganApi.createRelease(projectName, release);
 	}
 
 	public static void register(Project project) {
