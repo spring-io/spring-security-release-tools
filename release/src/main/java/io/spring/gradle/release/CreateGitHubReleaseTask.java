@@ -89,7 +89,7 @@ public abstract class CreateGitHubReleaseTask extends DefaultTask {
 
 		if (createRelease) {
 			var gitHubApi = new GitHubApi(gitHubAccessToken);
-			gitHubApi.publishRelease(repository, release);
+			gitHubApi.createRelease(repository, release);
 		}
 	}
 

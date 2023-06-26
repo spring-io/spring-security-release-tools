@@ -77,12 +77,12 @@ public class GitHubApi {
 	}
 
 	/**
-	 * Publish a release with no binary attachments.
+	 * Create a release with no binary attachments.
 	 *
 	 * @param repository The repository owner/name
 	 * @param release The contents of the release
 	 */
-	public void publishRelease(Repository repository, Release release) {
+	public void createRelease(Repository repository, Release release) {
 		this.webClient.post()
 				.uri("/repos/{owner}/{name}/releases", repository.owner(), repository.name())
 				.bodyValue(release)
