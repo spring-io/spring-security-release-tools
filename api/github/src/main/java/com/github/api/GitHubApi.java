@@ -18,7 +18,6 @@ package com.github.api;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import io.spring.gradle.core.BearerAuthFilterFunction;
 
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.json.Jackson2JsonDecoder;

@@ -1,11 +1,9 @@
 plugins {
-	id "io.spring.convention.spring-gradle-plugin"
+	id "io.spring.convention.spring-module"
 }
 
 dependencies {
 	management platform(project(":dependencies"))
-	implementation project(":github-api")
-	implementation project(":sagan-api")
 
 	implementation "org.springframework:spring-webflux"
 	implementation "com.fasterxml.jackson.core:jackson-databind"

@@ -17,8 +17,6 @@ package io.spring.api;
 
 import java.util.List;
 
-import io.spring.gradle.core.BasicAuthFilterFunction;
-
 import org.springframework.web.reactive.function.client.WebClient;
 
 /**

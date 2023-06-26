@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.spring.gradle.core;
+package com.github.api;
 
 import reactor.core.publisher.Mono;
 
@@ -25,23 +25,24 @@ import org.springframework.web.reactive.function.client.ExchangeFunction;
 /**
  * @author Steve Riesenberg
  */
-public final class BasicAuthFilterFunction implements ExchangeFilterFunction {
-	private final String username;
-	private final String password;
+final class BearerAuthFilterFunction implements ExchangeFilterFunction {
+	private final String accessToken;
 
 	/**
-	 * @param username The basic auth username
-	 * @param password The basic auth password
+	 * @param accessToken Optional access token used to add an Authorization header to requests (if not-null)
 	 */
-	public BasicAuthFilterFunction(String username, String password) {
-		this.username = username;
-		this.password = password;
+	public BearerAuthFilterFunction(String accessToken) {
+		this.accessToken = accessToken;
 	}
 
 	@Override
 	public Mono<ClientResponse> filter(ClientRequest request, ExchangeFunction next) {
+		if (this.accessToken == null) {
+			return next.exchange(request);
+		}
+
 		ClientRequest newRequest = ClientRequest.from(request)
-				.headers((headers) -> headers.setBasicAuth(this.username, this.password))
+				.headers((headers) -> headers.setBearerAuth(this.accessToken))
 				.build();
 		return next.exchange(newRequest);
 	}
