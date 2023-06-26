@@ -15,9 +15,8 @@
  */
 package io.spring.gradle.release;
 
+import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.github.api.GitHubApi;
@@ -46,8 +45,6 @@ public abstract class GetNextReleaseMilestoneTask extends DefaultTask {
 	public static final String TASK_NAME = "getNextReleaseMilestone";
 
 	private static final Pattern SNAPSHOT_PATTERN = Pattern.compile("^([0-9]+)\\.([0-9]+)\\.([0-9]+)-SNAPSHOT$");
-	private static final Pattern PRE_RELEASE_PATTERN = Pattern.compile("^.+-([A-Z]+)([0-9]+)$");
-	private static final Map<String, Integer> MILESTONE_ORDER = Map.of("M", 1, "RC", 2);
 	private static final String OUTPUT_VERSION_PATH = "next-release-milestone-version.txt";
 
 	@Input
@@ -102,30 +99,11 @@ public abstract class GetNextReleaseMilestoneTask extends DefaultTask {
 	private static String getNextPreRelease(String baseVersion, List<Milestone> milestones) {
 		var versionPrefix = baseVersion + "-";
 		return milestones.stream()
+				.filter((milestone) -> milestone.title().startsWith(versionPrefix))
+				.sorted(Comparator.comparing(Milestone::dueOn))
 				.map(Milestone::title)
-				.filter((milestone) -> milestone.startsWith(versionPrefix))
-				.min(GetNextReleaseMilestoneTask::comparingMilestones)
+				.findFirst()
 				.orElse(null);
-	}
-
-	private static int comparingMilestones(String milestoneVersion1, String milestoneVersion2) {
-		Matcher matcher1 = PRE_RELEASE_PATTERN.matcher(milestoneVersion1);
-		Matcher matcher2 = PRE_RELEASE_PATTERN.matcher(milestoneVersion2);
-		if (!matcher1.find() || !matcher2.find()) {
-			return milestoneVersion1.compareTo(milestoneVersion2);
-		}
-
-		var milestoneType1 = matcher1.group(1);
-		var milestoneType2 = matcher2.group(1);
-		if (!milestoneType1.equals(milestoneType2)) {
-			var order1 = MILESTONE_ORDER.getOrDefault(milestoneType1, 0);
-			var order2 = MILESTONE_ORDER.getOrDefault(milestoneType2, 0);
-			return order1.compareTo(order2);
-		}
-
-		var milestoneNumber1 = Integer.valueOf(matcher1.group(2));
-		var milestoneNumber2 = Integer.valueOf(matcher2.group(2));
-		return milestoneNumber1.compareTo(milestoneNumber2);
 	}
 
 	public static void register(Project project) {

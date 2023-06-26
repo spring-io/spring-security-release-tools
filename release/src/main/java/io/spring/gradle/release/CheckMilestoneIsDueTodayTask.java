@@ -52,7 +52,7 @@ public abstract class CheckMilestoneIsDueTodayTask extends DefaultTask {
 
 	@TaskAction
 	public void checkMilestoneHasNoOpenIssues() {
-		var gitHubAccessToken = getGitHubAccessToken().get();
+		var gitHubAccessToken = getGitHubAccessToken().getOrNull();
 		var repository = getRepository().get();
 		var version = getVersion().get();
 
