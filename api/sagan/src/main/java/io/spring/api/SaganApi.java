@@ -15,6 +15,7 @@
  */
 package io.spring.api;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.springframework.web.reactive.function.client.WebClient;
@@ -58,8 +59,9 @@ public class SaganApi {
 				.uri("/projects/{project}/releases", project)
 				.retrieve()
 				.bodyToMono(EmbeddedReleasesWrapper.class)
-				.map(EmbeddedReleasesWrapper::_embedded)
+				.mapNotNull(EmbeddedReleasesWrapper::_embedded)
 				.map(EmbeddedReleases::releases)
+				.defaultIfEmpty(Collections.emptyList())
 				.block();
 	}
 

@@ -1,0 +1,134 @@
+{
+  "_embedded": {
+    "releases": [
+      {
+        "version": "5.8.3",
+        "apiDocUrl": "https://docs.spring.io/spring-security/site/docs/{version}/api/",
+        "referenceDocUrl": "https://docs.spring.io/spring-security/reference/{version}/index.html",
+        "status": "GENERAL_AVAILABILITY",
+        "current": false,
+        "_links": {
+          "repository": {
+            "href": "https://api.spring.io/repositories/spring-releases"
+          },
+          "self": {
+            "href": "https://api.spring.io/projects/spring-security/releases/5.8.3"
+          }
+        }
+      },
+      {
+        "version": "5.8.4-SNAPSHOT",
+        "apiDocUrl": "https://docs.spring.io/spring-security/site/docs/{version}/api/",
+        "referenceDocUrl": "https://docs.spring.io/spring-security/reference/5.8.4/index.html",
+        "status": "SNAPSHOT",
+        "current": false,
+        "_links": {
+          "repository": {
+            "href": "https://api.spring.io/repositories/spring-snapshots"
+          },
+          "self": {
+            "href": "https://api.spring.io/projects/spring-security/releases/5.8.4-SNAPSHOT"
+          }
+        }
+      },
+      {
+        "version": "5.7.8",
+        "apiDocUrl": "https://docs.spring.io/spring-security/site/docs/{version}/api/",
+        "referenceDocUrl": "https://docs.spring.io/spring-security/reference/{version}/index.html",
+        "status": "GENERAL_AVAILABILITY",
+        "current": false,
+        "_links": {
+          "repository": {
+            "href": "https://api.spring.io/repositories/spring-releases"
+          },
+          "self": {
+            "href": "https://api.spring.io/projects/spring-security/releases/5.7.8"
+          }
+        }
+      },
+      {
+        "version": "5.7.9-SNAPSHOT",
+        "apiDocUrl": "https://docs.spring.io/spring-security/site/docs/{version}/api/",
+        "referenceDocUrl": "https://docs.spring.io/spring-security/reference/5.7.7/index.html",
+        "status": "SNAPSHOT",
+        "current": false,
+        "_links": {
+          "repository": {
+            "href": "https://api.spring.io/repositories/spring-snapshots"
+          },
+          "self": {
+            "href": "https://api.spring.io/projects/spring-security/releases/5.7.9-SNAPSHOT"
+          }
+        }
+      },
+      {
+        "version": "6.0.3",
+        "apiDocUrl": "https://docs.spring.io/spring-security/site/docs/{version}/api/",
+        "referenceDocUrl": "https://docs.spring.io/spring-security/reference/{version}/index.html",
+        "status": "GENERAL_AVAILABILITY",
+        "current": false,
+        "_links": {
+          "repository": {
+            "href": "https://api.spring.io/repositories/spring-releases"
+          },
+          "self": {
+            "href": "https://api.spring.io/projects/spring-security/releases/6.0.3"
+          }
+        }
+      },
+      {
+        "version": "6.0.4-SNAPSHOT",
+        "apiDocUrl": "https://docs.spring.io/spring-security/site/docs/{version}/api/",
+        "referenceDocUrl": "https://docs.spring.io/spring-security/reference/6.0.4/index.html",
+        "status": "SNAPSHOT",
+        "current": false,
+        "_links": {
+          "repository": {
+            "href": "https://api.spring.io/repositories/spring-snapshots"
+          },
+          "self": {
+            "href": "https://api.spring.io/projects/spring-security/releases/6.0.4-SNAPSHOT"
+          }
+        }
+      },
+      {
+        "version": "6.1.0",
+        "apiDocUrl": "https://docs.spring.io/spring-security/site/docs/{version}/api/",
+        "referenceDocUrl": "https://docs.spring.io/spring-security/reference/{version}/index.html",
+        "status": "GENERAL_AVAILABILITY",
+        "current": true,
+        "_links": {
+          "repository": {
+            "href": "https://api.spring.io/repositories/spring-releases"
+          },
+          "self": {
+            "href": "https://api.spring.io/projects/spring-security/releases/6.1.0"
+          }
+        }
+      },
+      {
+        "version": "6.1.1-SNAPSHOT",
+        "apiDocUrl": "https://docs.spring.io/spring-security/site/docs/{version}/api/",
+        "referenceDocUrl": "https://docs.spring.io/spring-security/reference/6.1.1/index.html",
+        "status": "SNAPSHOT",
+        "current": false,
+        "_links": {
+          "repository": {
+            "href": "https://api.spring.io/repositories/spring-snapshots"
+          },
+          "self": {
+            "href": "https://api.spring.io/projects/spring-security/releases/6.1.1-SNAPSHOT"
+          }
+        }
+      }
+    ]
+  },
+  "_links": {
+    "project": {
+      "href": "https://api.spring.io/projects/spring-security"
+    },
+    "current": {
+      "href": "https://api.spring.io/projects/spring-security/releases/current"
+    }
+  }
+}

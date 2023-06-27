@@ -1,0 +1,17 @@
+{
+  "name": "Spring Social",
+  "slug": "spring-social",
+  "repositoryUrl": "http://github.com/spring-projects/spring-social",
+  "status": "END_OF_LIFE",
+  "_links": {
+    "releases": {
+      "href": "https://api.spring.io/projects/spring-social/releases"
+    },
+    "generations": {
+      "href": "https://api.spring.io/projects/spring-social/generations"
+    },
+    "self": {
+      "href": "https://api.spring.io/projects/spring-social"
+    }
+  }
+}
