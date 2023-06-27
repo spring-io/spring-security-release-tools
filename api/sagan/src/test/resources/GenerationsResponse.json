@@ -1,0 +1,95 @@
+{
+  "_embedded": {
+    "generations": [
+      {
+        "name": "5.5.x",
+        "initialReleaseDate": "2021-05-18",
+        "ossSupportEndDate": "2022-05-18",
+        "commercialSupportEndDate": "2023-09-18",
+        "_links": {
+          "self": {
+            "href": "https://api.spring.io/projects/spring-security/generations/5.5.x"
+          },
+          "project": {
+            "href": "https://api.spring.io/projects/spring-security"
+          }
+        }
+      },
+      {
+        "name": "5.6.x",
+        "initialReleaseDate": "2021-11-15",
+        "ossSupportEndDate": "2022-11-15",
+        "commercialSupportEndDate": "2024-03-15",
+        "_links": {
+          "self": {
+            "href": "https://api.spring.io/projects/spring-security/generations/5.6.x"
+          },
+          "project": {
+            "href": "https://api.spring.io/projects/spring-security"
+          }
+        }
+      },
+      {
+        "name": "5.7.x",
+        "initialReleaseDate": "2022-05-16",
+        "ossSupportEndDate": "2023-05-16",
+        "commercialSupportEndDate": "2024-09-16",
+        "_links": {
+          "self": {
+            "href": "https://api.spring.io/projects/spring-security/generations/5.7.x"
+          },
+          "project": {
+            "href": "https://api.spring.io/projects/spring-security"
+          }
+        }
+      },
+      {
+        "name": "5.8.x",
+        "initialReleaseDate": "2022-11-20",
+        "ossSupportEndDate": "2023-11-20",
+        "commercialSupportEndDate": "2025-03-20",
+        "_links": {
+          "self": {
+            "href": "https://api.spring.io/projects/spring-security/generations/5.8.x"
+          },
+          "project": {
+            "href": "https://api.spring.io/projects/spring-security"
+          }
+        }
+      },
+      {
+        "name": "6.0.x",
+        "initialReleaseDate": "2022-11-21",
+        "ossSupportEndDate": "2023-11-21",
+        "commercialSupportEndDate": "2025-03-21",
+        "_links": {
+          "self": {
+            "href": "https://api.spring.io/projects/spring-security/generations/6.0.x"
+          },
+          "project": {
+            "href": "https://api.spring.io/projects/spring-security"
+          }
+        }
+      },
+      {
+        "name": "6.1.x",
+        "initialReleaseDate": "2023-05-15",
+        "ossSupportEndDate": "2024-05-15",
+        "commercialSupportEndDate": "2025-09-15",
+        "_links": {
+          "self": {
+            "href": "https://api.spring.io/projects/spring-security/generations/6.1.x"
+          },
+          "project": {
+            "href": "https://api.spring.io/projects/spring-security"
+          }
+        }
+      }
+    ]
+  },
+  "_links": {
+    "project": {
+      "href": "https://api.spring.io/projects/spring-security"
+    }
+  }
+}

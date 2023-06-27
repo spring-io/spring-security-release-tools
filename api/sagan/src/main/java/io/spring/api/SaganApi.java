@@ -37,26 +37,28 @@ public class SaganApi {
 				.build();
 	}
 
-	public void createRelease(String project, Release release) {
-		this.webClient.post()
-				.uri("/projects/{project}/releases", project)
-				.bodyValue(release)
-				.retrieve()
-				.bodyToMono(Void.class)
-				.block();
-	}
-
-	public void deleteRelease(String project, String release) {
-		this.webClient.delete()
-				.uri("/projects/{project}/releases/{release}", project, release)
-				.retrieve()
-				.bodyToMono(Void.class)
-				.block();
-	}
-
-	public List<Release> getReleases(String project) {
+	public List<Project> getProjects() {
 		return this.webClient.get()
-				.uri("/projects/{project}/releases", project)
+				.uri("/projects")
+				.retrieve()
+				.bodyToMono(EmbeddedProjectsWrapper.class)
+				.mapNotNull(EmbeddedProjectsWrapper::_embedded)
+				.map(EmbeddedProjects::projects)
+				.defaultIfEmpty(Collections.emptyList())
+				.block();
+	}
+
+	public Project getProject(String slug) {
+		return this.webClient.get()
+				.uri("/projects/{slug}", slug)
+				.retrieve()
+				.bodyToMono(Project.class)
+				.block();
+	}
+
+	public List<Release> getReleases(String slug) {
+		return this.webClient.get()
+				.uri("/projects/{slug}/releases", slug)
 				.retrieve()
 				.bodyToMono(EmbeddedReleasesWrapper.class)
 				.mapNotNull(EmbeddedReleasesWrapper::_embedded)
@@ -65,6 +67,54 @@ public class SaganApi {
 				.block();
 	}
 
+	public void createRelease(String slug, Release release) {
+		this.webClient.post()
+				.uri("/projects/{slug}/releases", slug)
+				.bodyValue(release)
+				.retrieve()
+				.bodyToMono(Void.class)
+				.block();
+	}
+
+	public Release getRelease(String slug, String version) {
+		return this.webClient.get()
+				.uri("/projects/{slug}/releases/{version}", slug, version)
+				.retrieve()
+				.bodyToMono(Release.class)
+				.block();
+	}
+
+	public void deleteRelease(String slug, String version) {
+		this.webClient.delete()
+				.uri("/projects/{slug}/releases/{version}", slug, version)
+				.retrieve()
+				.bodyToMono(Void.class)
+				.block();
+	}
+
+	public List<Generation> getGenerations(String slug) {
+		return this.webClient.get()
+				.uri("/projects/{slug}/generations", slug)
+				.retrieve()
+				.bodyToMono(EmbeddedGenerationsWrapper.class)
+				.mapNotNull(EmbeddedGenerationsWrapper::_embedded)
+				.map(EmbeddedGenerations::generations)
+				.defaultIfEmpty(Collections.emptyList())
+				.block();
+	}
+
+	public Generation getGeneration(String slug, String name) {
+		return this.webClient.get()
+				.uri("/projects/{slug}/generations/{name}", slug, name)
+				.retrieve()
+				.bodyToMono(Generation.class)
+				.block();
+	}
+
+	private record EmbeddedProjectsWrapper(EmbeddedProjects _embedded) {}
+	private record EmbeddedProjects(List<Project> projects) {}
 	private record EmbeddedReleasesWrapper(EmbeddedReleases _embedded) {}
 	private record EmbeddedReleases(List<Release> releases) {}
+	private record EmbeddedGenerationsWrapper(EmbeddedGenerations _embedded) {}
+	private record EmbeddedGenerations(List<Generation> generations) {}
 }

@@ -1,0 +1,14 @@
+{
+  "name": "6.1.x",
+  "initialReleaseDate": "2023-05-15",
+  "ossSupportEndDate": "2024-05-15",
+  "commercialSupportEndDate": "2025-09-15",
+  "_links": {
+    "self": {
+      "href": "https://api.spring.io/projects/spring-security/generations/6.1.x"
+    },
+    "project": {
+      "href": "https://api.spring.io/projects/spring-security"
+    }
+  }
+}

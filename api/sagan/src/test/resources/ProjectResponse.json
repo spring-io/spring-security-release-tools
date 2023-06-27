@@ -1,0 +1,17 @@
+{
+  "name": "Spring Security",
+  "slug": "spring-security",
+  "repositoryUrl": "https://github.com/spring-projects/spring-security",
+  "status": "ACTIVE",
+  "_links": {
+    "releases": {
+      "href": "https://api.spring.io/projects/spring-security/releases"
+    },
+    "generations": {
+      "href": "https://api.spring.io/projects/spring-security/generations"
+    },
+    "self": {
+      "href": "https://api.spring.io/projects/spring-security"
+    }
+  }
+}
