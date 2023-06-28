@@ -26,6 +26,7 @@ import com.github.api.GitHubApi;
 import com.github.api.Milestone;
 import com.github.api.Repository;
 import io.spring.api.Release;
+import io.spring.api.Release.ReleaseStatus;
 import io.spring.api.SaganApi;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -61,14 +62,14 @@ public class SpringReleasesTests {
 	);
 
 	private static final List<Release> RELEASES = List.of(
-			new Release("6.1.1", null, null, Release.ReleaseStatus.GENERAL_AVAILABILITY, true),
-			new Release("6.1.2-SNAPSHOT", null, null, Release.ReleaseStatus.SNAPSHOT, true),
-			new Release("6.0.5-SNAPSHOT", null, null, Release.ReleaseStatus.SNAPSHOT, false),
-			new Release("6.0.4", null, null, Release.ReleaseStatus.GENERAL_AVAILABILITY, false),
-			new Release("5.8.5-SNAPSHOT", null, null, Release.ReleaseStatus.SNAPSHOT, false),
-			new Release("5.8.4", null, null, Release.ReleaseStatus.GENERAL_AVAILABILITY, false),
-			new Release("5.7.10-SNAPSHOT", null, null, Release.ReleaseStatus.SNAPSHOT, false),
-			new Release("5.7.9", null, null, Release.ReleaseStatus.GENERAL_AVAILABILITY, false)
+			new Release("6.1.1", null, null, ReleaseStatus.GENERAL_AVAILABILITY, true),
+			new Release("6.1.2-SNAPSHOT", null, null, ReleaseStatus.SNAPSHOT, true),
+			new Release("6.0.5-SNAPSHOT", null, null, ReleaseStatus.SNAPSHOT, false),
+			new Release("6.0.4", null, null, ReleaseStatus.GENERAL_AVAILABILITY, false),
+			new Release("5.8.5-SNAPSHOT", null, null, ReleaseStatus.SNAPSHOT, false),
+			new Release("5.8.4", null, null, ReleaseStatus.GENERAL_AVAILABILITY, false),
+			new Release("5.7.10-SNAPSHOT", null, null, ReleaseStatus.SNAPSHOT, false),
+			new Release("5.7.9", null, null, ReleaseStatus.GENERAL_AVAILABILITY, false)
 	);
 
 	private GitHubApi gitHubApi;
@@ -112,8 +113,8 @@ public class SpringReleasesTests {
 
 	@Test
 	public void getNextReleaseMilestoneWhenMilestoneDoesNotExistThenBaseVersion() {
-		when(this.gitHubApi.getMilestones(any(Repository.class)))
-				.thenReturn(List.of(new Milestone("6.0.4", 6L, toInstant("2023-06-19"))));
+		var milestone = new Milestone("6.0.4", 6L, toInstant("2023-06-19"));
+		when(this.gitHubApi.getMilestones(any(Repository.class))).thenReturn(List.of(milestone));
 
 		var version = "6.1.0-SNAPSHOT";
 		var nextReleaseMilestone = this.springReleases.getNextReleaseMilestone(OWNER, REPO, version);
@@ -166,6 +167,20 @@ public class SpringReleasesTests {
 		when(this.saganApi.getReleases(REPO)).thenReturn(new ArrayList<>(RELEASES));
 
 		var version = "6.2.0";
+		var nextReleaseMilestone = this.springReleases.getPreviousReleaseMilestone(REPO, version);
+		assertThat(nextReleaseMilestone).isNull();
+
+		verify(this.saganApi).getReleases(REPO);
+		verifyNoMoreInteractions(this.saganApi);
+	}
+
+	@Test
+	public void getPreviousReleaseMilestoneWhenMultiplePreviousReleasesExistsThenNull() {
+		var releases = new ArrayList<>(RELEASES);
+		releases.add(new Release("6.1.0", null, null, ReleaseStatus.GENERAL_AVAILABILITY, false));
+		when(this.saganApi.getReleases(REPO)).thenReturn(releases);
+
+		var version = "6.1.2";
 		var nextReleaseMilestone = this.springReleases.getPreviousReleaseMilestone(REPO, version);
 		assertThat(nextReleaseMilestone).isNull();
 
