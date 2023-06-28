@@ -44,9 +44,9 @@ public class SpringReleases {
 		this.saganApi = new SaganApi(this.gitHubApi.getUser().login(), accessToken);
 	}
 
-	public SpringReleases(String username, String accessToken) {
-		this.gitHubApi = new GitHubApi(accessToken);
-		this.saganApi = new SaganApi(username, accessToken);
+	public SpringReleases(GitHubApi gitHubApi, SaganApi saganApi) {
+		this.gitHubApi = gitHubApi;
+		this.saganApi = saganApi;
 	}
 
 	public String getNextReleaseMilestone(String owner, String repo, String version) {
@@ -140,15 +140,14 @@ public class SpringReleases {
 		return "%s.%s.%s-SNAPSHOT".formatted(major, minor, patch);
 	}
 
-	public void scheduleNextReleaseIfNotExists(String owner, String repo, String version, int weekOfMonth, int dayOfWeek) {
-		scheduleReleaseIfNotExists(owner, repo, getNextReleaseMilestone(owner, repo, version), weekOfMonth, dayOfWeek);
-	}
-
 	public void scheduleReleaseIfNotExists(String owner, String repo, String version, int weekOfMonth, int dayOfWeek) {
+		var versionMatcher = versionMatcher(version);
+		if (versionMatcher.group(4) != null) {
+			return;
+		}
+
 		var repository = new Repository(owner, repo);
-		var hasExistingMilestone = this.gitHubApi.getMilestones(repository).stream()
-				.anyMatch((milestone) -> version.equals(milestone.title()));
-		if (hasExistingMilestone) {
+		if (this.gitHubApi.getMilestone(repository, version) != null) {
 			return;
 		}
 
