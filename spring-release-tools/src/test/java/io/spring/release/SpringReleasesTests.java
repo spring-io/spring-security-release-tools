@@ -291,29 +291,6 @@ public class SpringReleasesTests {
 	}
 
 	@Test
-	public void deletePreviousReleaseWhenExistsThenDeleted() {
-		when(this.saganApi.getReleases(REPO)).thenReturn(new ArrayList<>(RELEASES));
-
-		var version = "6.1.2";
-		this.springReleases.deletePreviousReleaseIfExists(REPO, version);
-
-		verify(this.saganApi).getReleases(REPO);
-		verify(this.saganApi).deleteRelease(REPO, "6.1.1");
-		verifyNoMoreInteractions(this.saganApi);
-	}
-
-	@Test
-	public void deletePreviousReleaseWhenNoPreviousReleaseExistsThenNotDeleted() {
-		when(this.saganApi.getReleases(REPO)).thenReturn(new ArrayList<>(RELEASES));
-
-		var version = "6.2.0";
-		this.springReleases.deletePreviousReleaseIfExists(REPO, version);
-
-		verify(this.saganApi).getReleases(REPO);
-		verifyNoMoreInteractions(this.saganApi);
-	}
-
-	@Test
 	public void getNextSnapshotVersionWhenReleaseVersionThenNextPatchVersion() {
 		assertThat(this.springReleases.getNextSnapshotVersion("6.1.0")).isEqualTo("6.1.1-SNAPSHOT");
 		assertThat(this.springReleases.getNextSnapshotVersion("6.1.1")).isEqualTo("6.1.2-SNAPSHOT");

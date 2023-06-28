@@ -112,13 +112,6 @@ public class SpringReleases {
 		this.saganApi.createRelease(repo, saganRelease(version, referenceDocUrl, apiDocUrl));
 	}
 
-	public void deletePreviousReleaseIfExists(String repo, String version) {
-		var previousVersion = getPreviousReleaseMilestone(repo, version);
-		if (previousVersion != null) {
-			deleteRelease(repo, previousVersion);
-		}
-	}
-
 	public void deleteRelease(String repo, String version) {
 		this.saganApi.deleteRelease(repo, version);
 	}
