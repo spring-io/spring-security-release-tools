@@ -75,9 +75,10 @@ public abstract class ScheduleNextReleaseTask extends DefaultTask {
 		// Next milestone is either a patch version or minor version
 		// Note: Major versions will be handled like minor and get a release
 		// train which can be manually updated to match the desired schedule.
+		var releaseTrain = getReleaseTrain(version);
 		if (version.endsWith(".0")) {
 			// Create M1, M2, M3, RC1 and GA milestones for release train
-			getReleaseTrain(version).getTrainDates().forEach((milestoneTitle, dueOn) -> {
+			releaseTrain.getTrainDates().forEach((milestoneTitle, dueOn) -> {
 				// Note: GitHub seems to store full date/time as UTC then displays
 				// as a date (no time) in your timezone, which means the date will
 				// not always be the same date as we intend.
@@ -89,7 +90,7 @@ public abstract class ScheduleNextReleaseTask extends DefaultTask {
 		} else {
 			// Create GA milestone for patch release on the next even month
 			var startDate = LocalDate.now();
-			var dueOn = getReleaseTrain(version).getNextReleaseDate(startDate);
+			var dueOn = releaseTrain.getNextReleaseDate(startDate);
 			var milestone = new Milestone(version, null, dueOn.atTime(LocalTime.NOON).toInstant(ZoneOffset.UTC));
 			gitHubApi.createMilestone(repository, milestone);
 		}

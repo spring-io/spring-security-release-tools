@@ -51,7 +51,7 @@ public abstract class CheckMilestoneIsDueTodayTask extends DefaultTask {
 	public abstract Property<String> getVersion();
 
 	@TaskAction
-	public void checkMilestoneHasNoOpenIssues() {
+	public void checkMilestoneIsDueToday() {
 		var gitHubAccessToken = getGitHubAccessToken().getOrNull();
 		var repository = getRepository().get();
 		var version = getVersion().get();

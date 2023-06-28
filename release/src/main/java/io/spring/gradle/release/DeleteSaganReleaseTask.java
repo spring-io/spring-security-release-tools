@@ -45,7 +45,7 @@ public abstract class DeleteSaganReleaseTask extends DefaultTask {
 	public abstract Property<String> getProjectName();
 
 	@TaskAction
-	public void createRelease() {
+	public void deleteRelease() {
 		var version = getVersion().getOrNull();
 		if (version == null) {
 			System.out.println("No version provided");

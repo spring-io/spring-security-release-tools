@@ -56,7 +56,7 @@ public abstract class GetNextSnapshotVersionTask extends DefaultTask {
 	private static String calculateNextSnapshotVersion(String version) {
 		Matcher releaseVersion = RELEASE_VERSION_PATTERN.matcher(version);
 		if (!releaseVersion.find()) {
-			if (version.contains("-SNAPSHOT")) {
+			if (version.endsWith("-SNAPSHOT")) {
 				throw new IllegalStateException(
 						"Cannot calculate next snapshot version because given version is already a SNAPSHOT");
 			} else {
