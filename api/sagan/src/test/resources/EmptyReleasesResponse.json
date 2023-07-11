@@ -1,7 +1,7 @@
 {
   "name": "Spring Social",
   "slug": "spring-social",
-  "repositoryUrl": "http://github.com/spring-projects/spring-social",
+  "repositoryUrl": "https://github.com/spring-projects/spring-social",
   "status": "END_OF_LIFE",
   "_links": {
     "releases": {

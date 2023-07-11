@@ -32,6 +32,7 @@ import static io.spring.gradle.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_P
  * @author Steve Riesenberg
  */
 public abstract class GetGitHubUserNameTask extends DefaultTask {
+
 	public static final String TASK_NAME = "getGitHubUserName";
 
 	@Input
@@ -63,4 +64,5 @@ public abstract class GetGitHubUserNameTask extends DefaultTask {
 			task.getUsernameFile().set(project.getLayout().getBuildDirectory().file("github-username.txt"));
 		});
 	}
+
 }

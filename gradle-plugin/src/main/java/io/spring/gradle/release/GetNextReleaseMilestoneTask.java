@@ -37,6 +37,7 @@ import static io.spring.gradle.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_P
  * @author Steve Riesenberg
  */
 public abstract class GetNextReleaseMilestoneTask extends DefaultTask {
+
 	public static final String TASK_NAME = "getNextReleaseMilestone";
 
 	private static final String OUTPUT_VERSION_PATH = "next-release-milestone-version.txt";
@@ -60,7 +61,8 @@ public abstract class GetNextReleaseMilestoneTask extends DefaultTask {
 		var repository = getRepository().get();
 		var version = getVersion().get();
 		var springReleases = new SpringReleases(gitHubAccessToken);
-		var nextReleaseMilestone = springReleases.getNextReleaseMilestone(repository.owner(), repository.name(), version);
+		var nextReleaseMilestone = springReleases.getNextReleaseMilestone(repository.owner(), repository.name(),
+				version);
 
 		var outputFile = getNextReleaseMilestoneFile().get();
 		RegularFileUtils.writeString(outputFile, nextReleaseMilestone);
@@ -73,7 +75,8 @@ public abstract class GetNextReleaseMilestoneTask extends DefaultTask {
 
 		project.getTasks().register(TASK_NAME, GetNextReleaseMilestoneTask.class, (task) -> {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
-			task.setDescription("Calculates the next release version based on the current version and outputs the version number");
+			task.setDescription(
+					"Calculates the next release version based on the current version and outputs the version number");
 			task.doNotTrackState("API call to GitHub needs to check for new milestones every time");
 
 			var versionProvider = getProperty(project, CURRENT_VERSION_PROPERTY)
@@ -87,4 +90,5 @@ public abstract class GetNextReleaseMilestoneTask extends DefaultTask {
 			task.getNextReleaseMilestoneFile().set(project.getLayout().getBuildDirectory().file(OUTPUT_VERSION_PATH));
 		});
 	}
+
 }

@@ -48,18 +48,19 @@ import static org.mockito.Mockito.when;
  * @author Steve Riesenberg
  */
 public class SpringReleasesTests {
+
 	private static final String OWNER = "spring-projects";
+
 	private static final String REPO = "spring-security";
 
-	private static final List<Milestone> MILESTONES = List.of(
-			new Milestone("6.0.4", 6L, toInstant("2023-06-19")),
+	// @formatter:off
+	private static final List<Milestone> MILESTONES = List.of(new Milestone("6.0.4", 6L, toInstant("2023-06-19")),
 			new Milestone("6.1.x", 100L, null),
 			new Milestone("6.1.0-RC1", 4L, toInstant("2023-04-17")),
 			new Milestone("6.1.0-M3", 3L, toInstant("2023-03-20")),
 			new Milestone("6.1.0", 5L, toInstant("2023-05-22")),
 			new Milestone("6.1.0-M1", 1L, toInstant("2023-01-16")),
-			new Milestone("6.1.0-M2", 2L, toInstant("2023-02-20"))
-	);
+			new Milestone("6.1.0-M2", 2L, toInstant("2023-02-20")));
 
 	private static final List<Release> RELEASES = List.of(
 			new Release("6.1.1", null, null, ReleaseStatus.GENERAL_AVAILABILITY, true),
@@ -69,8 +70,8 @@ public class SpringReleasesTests {
 			new Release("5.8.5-SNAPSHOT", null, null, ReleaseStatus.SNAPSHOT, false),
 			new Release("5.8.4", null, null, ReleaseStatus.GENERAL_AVAILABILITY, false),
 			new Release("5.7.10-SNAPSHOT", null, null, ReleaseStatus.SNAPSHOT, false),
-			new Release("5.7.9", null, null, ReleaseStatus.GENERAL_AVAILABILITY, false)
-	);
+			new Release("5.7.9", null, null, ReleaseStatus.GENERAL_AVAILABILITY, false));
+	// @formatter:on
 
 	private GitHubApi gitHubApi;
 
@@ -339,8 +340,8 @@ public class SpringReleasesTests {
 		assertThat(repository.name()).isEqualTo(REPO);
 
 		var milestones = milestoneCaptor.getAllValues();
-		assertThat(milestones.stream().map(Milestone::title).toList())
-				.containsExactly("6.2.0-M1", "6.2.0-M2", "6.2.0-M3", "6.2.0-RC1", "6.2.0");
+		assertThat(milestones.stream().map(Milestone::title).toList()).containsExactly("6.2.0-M1", "6.2.0-M2",
+				"6.2.0-M3", "6.2.0-RC1", "6.2.0");
 	}
 
 	@Test
@@ -390,4 +391,5 @@ public class SpringReleasesTests {
 	private static Instant toInstant(String date) {
 		return LocalDate.parse(date).atStartOfDay().toInstant(ZoneOffset.UTC);
 	}
+
 }

@@ -39,6 +39,7 @@ import static io.spring.gradle.release.SpringReleasePlugin.NEXT_VERSION_PROPERTY
  * @author Steve Riesenberg
  */
 public abstract class CreateReleaseTask extends DefaultTask {
+
 	public static final String TASK_NAME = "createRelease";
 
 	@Input
@@ -80,17 +81,14 @@ public abstract class CreateReleaseTask extends DefaultTask {
 			throw new MissingPropertyException("Please provide an access token with -PgitHubAccessToken=...");
 		}
 
-		System.out.printf("%sCreating GitHub release for %s/%s@%s%n",
-				createRelease ? "" : "[DRY RUN] ",
-				repository.owner(),
-				repository.name(),
-				version
-		);
+		System.out.printf("%sCreating GitHub release for %s/%s@%s%n", createRelease ? "" : "[DRY RUN] ",
+				repository.owner(), repository.name(), version);
 		System.out.printf("%nRelease Notes:%n%n----%n%s%n----%n%n", body.trim());
 
 		if (createRelease) {
 			var springReleases = new SpringReleases(gitHubAccessToken);
-			springReleases.createRelease(repository.owner(), repository.name(), version, branch, body, referenceDocUrl, apiDocUrl);
+			springReleases.createRelease(repository.owner(), repository.name(), version, branch, body, referenceDocUrl,
+					apiDocUrl);
 		}
 	}
 
@@ -103,17 +101,17 @@ public abstract class CreateReleaseTask extends DefaultTask {
 			task.setDescription("Create a GitHub release with release notes");
 			task.doNotTrackState("API call to GitHub needs to check for new issues and create a release every time");
 
+			// @formatter:off
 			var versionProvider = getProperty(project, NEXT_VERSION_PROPERTY)
 					.orElse(findTaskByType(project, GetNextReleaseMilestoneTask.class)
 							.getNextReleaseMilestoneFile()
 							.map(RegularFileUtils::readString));
-
 			var releaseNotesProvider = findTaskByType(project, GenerateChangelogTask.class)
 					.getReleaseNotesFile()
 					.map(RegularFileUtils::readString);
-
 			var createReleaseProvider = getProperty(project, CREATE_RELEASE_PROPERTY)
 					.map(Boolean::valueOf);
+			// @formatter:on
 
 			var owner = springRelease.getRepositoryOwner().get();
 			var name = project.getRootProject().getName();
@@ -127,4 +125,5 @@ public abstract class CreateReleaseTask extends DefaultTask {
 			task.getGitHubAccessToken().set(getProperty(project, GITHUB_ACCESS_TOKEN_PROPERTY));
 		});
 	}
+
 }

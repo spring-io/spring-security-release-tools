@@ -30,19 +30,20 @@ import java.util.Map;
  * <p>
  * The rules are:
  * <ol>
- *     <li>Train 1 (January-May) or 2 (July-November)</li>
- *     <li>Version number (e.g. 0.1.2, 1.0.0, etc.)</li>
- *     <li>Week of month (1st, 2nd, 3rd, 4th)</li>
- *     <li>Day of week (Monday-Friday)</li>
- *     <li>Year (e.g. 2020, 2021, etc.)</li>
+ * <li>Train 1 (January-May) or 2 (July-November)</li>
+ * <li>Version number (e.g. 0.1.2, 1.0.0, etc.)</li>
+ * <li>Week of month (1st, 2nd, 3rd, 4th)</li>
+ * <li>Day of week (Monday-Friday)</li>
+ * <li>Year (e.g. 2020, 2021, etc.)</li>
  * </ol>
  *
- * The release train generated will contain M1, M2, M3, RC1 and GA versions
- * mapped to their respective dates in the train.
+ * The release train generated will contain M1, M2, M3, RC1 and GA versions mapped to
+ * their respective dates in the train.
  *
  * @author Steve Riesenberg
  */
 public final class SpringReleaseTrain {
+
 	private final SpringReleaseTrainSpec releaseTrainSpec;
 
 	public SpringReleaseTrain(SpringReleaseTrainSpec releaseTrainSpec) {
@@ -51,26 +52,25 @@ public final class SpringReleaseTrain {
 
 	/**
 	 * Calculate release train dates based on the release train specification.
-	 *
 	 * @return A mapping of release milestones to scheduled release dates
 	 */
 	public Map<String, LocalDate> getTrainDates() {
 		Map<String, LocalDate> releaseDates = new LinkedHashMap<>();
 		switch (this.releaseTrainSpec.getTrain()) {
-			case ONE:
-				addTrainDate(releaseDates, "M1", Month.JANUARY);
-				addTrainDate(releaseDates, "M2", Month.FEBRUARY);
-				addTrainDate(releaseDates, "M3", Month.MARCH);
-				addTrainDate(releaseDates, "RC1", Month.APRIL);
-				addTrainDate(releaseDates, null, Month.MAY);
-				break;
-			case TWO:
-				addTrainDate(releaseDates, "M1", Month.JULY);
-				addTrainDate(releaseDates, "M2", Month.AUGUST);
-				addTrainDate(releaseDates, "M3", Month.SEPTEMBER);
-				addTrainDate(releaseDates, "RC1", Month.OCTOBER);
-				addTrainDate(releaseDates, null, Month.NOVEMBER);
-				break;
+		case ONE:
+			addTrainDate(releaseDates, "M1", Month.JANUARY);
+			addTrainDate(releaseDates, "M2", Month.FEBRUARY);
+			addTrainDate(releaseDates, "M3", Month.MARCH);
+			addTrainDate(releaseDates, "RC1", Month.APRIL);
+			addTrainDate(releaseDates, null, Month.MAY);
+			break;
+		case TWO:
+			addTrainDate(releaseDates, "M1", Month.JULY);
+			addTrainDate(releaseDates, "M2", Month.AUGUST);
+			addTrainDate(releaseDates, "M3", Month.SEPTEMBER);
+			addTrainDate(releaseDates, "RC1", Month.OCTOBER);
+			addTrainDate(releaseDates, null, Month.NOVEMBER);
+			break;
 		}
 
 		return releaseDates;
@@ -78,10 +78,10 @@ public final class SpringReleaseTrain {
 
 	/**
 	 * Determine if a given date matches the due date of given version.
-	 *
 	 * @param version The version number (e.g. 5.6.0-M1, 5.6.0, etc.)
 	 * @param expectedDate The expected date
-	 * @return true if the given date matches the due date of the given version, false otherwise
+	 * @return true if the given date matches the due date of the given version, false
+	 * otherwise
 	 */
 	public boolean isTrainDate(String version, LocalDate expectedDate) {
 		return expectedDate.isEqual(getTrainDates().get(version));
@@ -90,10 +90,9 @@ public final class SpringReleaseTrain {
 	/**
 	 * Calculate the next release date following the given date.
 	 * <p>
-	 * The next release date is always on an even month so that a patch release
-	 * is the month after the GA version of a release train. This method does
-	 * not consider the year of the release train, only the given start date.
-	 *
+	 * The next release date is always on an even month so that a patch release is the
+	 * month after the GA version of a release train. This method does not consider the
+	 * year of the release train, only the given start date.
 	 * @param startDate The start date
 	 * @return The next release date following the given date
 	 */
@@ -101,25 +100,20 @@ public final class SpringReleaseTrain {
 		LocalDate trainDate;
 		LocalDate currentDate = startDate;
 		do {
-			trainDate = calculateReleaseDate(
-					Year.of(currentDate.getYear()),
-					currentDate.getMonth(),
+			trainDate = calculateReleaseDate(Year.of(currentDate.getYear()), currentDate.getMonth(),
 					this.releaseTrainSpec.getDayOfWeek().getDayOfWeek(),
-					this.releaseTrainSpec.getWeekOfMonth().getDayOffset()
-			);
+					this.releaseTrainSpec.getWeekOfMonth().getDayOffset());
 			currentDate = currentDate.plusMonths(1);
-		} while (!trainDate.isAfter(startDate) || trainDate.getMonthValue() % 2 != 0);
+		}
+		while (!trainDate.isAfter(startDate) || trainDate.getMonthValue() % 2 != 0);
 
 		return trainDate;
 	}
 
 	private void addTrainDate(Map<String, LocalDate> releaseDates, String milestone, Month month) {
-		LocalDate releaseDate = calculateReleaseDate(
-				this.releaseTrainSpec.getYear(),
-				month,
+		LocalDate releaseDate = calculateReleaseDate(this.releaseTrainSpec.getYear(), month,
 				this.releaseTrainSpec.getDayOfWeek().getDayOfWeek(),
-				this.releaseTrainSpec.getWeekOfMonth().getDayOffset()
-		);
+				this.releaseTrainSpec.getWeekOfMonth().getDayOffset());
 		String suffix = (milestone == null) ? "" : "-" + milestone;
 		releaseDates.put(this.releaseTrainSpec.getVersion() + suffix, releaseDate);
 	}
@@ -133,4 +127,5 @@ public final class SpringReleaseTrain {
 
 		return firstMondayOfMonth.with(nextDayOfWeek).plusDays(dayOffset);
 	}
+
 }

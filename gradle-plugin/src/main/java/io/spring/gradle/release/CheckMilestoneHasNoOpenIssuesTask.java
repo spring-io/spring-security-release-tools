@@ -37,6 +37,7 @@ import static io.spring.gradle.release.SpringReleasePlugin.NEXT_VERSION_PROPERTY
  * @author Steve Riesenberg
  */
 public abstract class CheckMilestoneHasNoOpenIssuesTask extends DefaultTask {
+
 	public static final String TASK_NAME = "checkMilestoneHasNoOpenIssues";
 
 	@Input
@@ -66,13 +67,16 @@ public abstract class CheckMilestoneHasNoOpenIssuesTask extends DefaultTask {
 
 		project.getTasks().register(TASK_NAME, CheckMilestoneHasNoOpenIssuesTask.class, (task) -> {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
-			task.setDescription("Checks if there are any open issues for the specified repository and milestone and outputs true or false");
+			task.setDescription(
+					"Checks if there are any open issues for the specified repository and milestone and outputs true or false");
 			task.doNotTrackState("API call to GitHub needs to check for open issues every time");
 
+			// @formatter:off
 			var versionProvider = getProperty(project, NEXT_VERSION_PROPERTY)
 					.orElse(findTaskByType(project, GetNextReleaseMilestoneTask.class)
 							.getNextReleaseMilestoneFile()
 							.map(RegularFileUtils::readString));
+			// @formatter:on
 
 			var owner = springRelease.getRepositoryOwner().get();
 			var name = project.getRootProject().getName();
@@ -81,4 +85,5 @@ public abstract class CheckMilestoneHasNoOpenIssuesTask extends DefaultTask {
 			task.getGitHubAccessToken().set(getProperty(project, GITHUB_ACCESS_TOKEN_PROPERTY));
 		});
 	}
+
 }

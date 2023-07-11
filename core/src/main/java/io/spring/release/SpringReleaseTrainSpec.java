@@ -29,13 +29,19 @@ import org.springframework.util.Assert;
  * @see SpringReleaseTrain
  */
 public final class SpringReleaseTrainSpec {
+
 	private final Train train;
+
 	private final String version;
+
 	private final WeekOfMonth weekOfMonth;
+
 	private final DayOfWeek dayOfWeek;
+
 	private final Year year;
 
-	public SpringReleaseTrainSpec(Train train, String version, WeekOfMonth weekOfMonth, DayOfWeek dayOfWeek, Year year) {
+	public SpringReleaseTrainSpec(Train train, String version, WeekOfMonth weekOfMonth, DayOfWeek dayOfWeek,
+			Year year) {
 		this.train = train;
 		this.version = version;
 		this.weekOfMonth = weekOfMonth;
@@ -68,6 +74,7 @@ public final class SpringReleaseTrainSpec {
 	}
 
 	public enum WeekOfMonth {
+
 		FIRST(0), SECOND(7), THIRD(14), FOURTH(21);
 
 		private final int dayOffset;
@@ -79,14 +86,18 @@ public final class SpringReleaseTrainSpec {
 		public int getDayOffset() {
 			return this.dayOffset;
 		}
+
 	}
 
 	public enum DayOfWeek {
+
+		// @formatter:off
 		MONDAY(java.time.DayOfWeek.MONDAY),
 		TUESDAY(java.time.DayOfWeek.TUESDAY),
 		WEDNESDAY(java.time.DayOfWeek.WEDNESDAY),
 		THURSDAY(java.time.DayOfWeek.THURSDAY),
 		FRIDAY(java.time.DayOfWeek.FRIDAY);
+		// @formatter:on
 
 		private final java.time.DayOfWeek dayOfWeek;
 
@@ -97,17 +108,25 @@ public final class SpringReleaseTrainSpec {
 		public java.time.DayOfWeek getDayOfWeek() {
 			return this.dayOfWeek;
 		}
+
 	}
 
 	public enum Train {
+
 		ONE, TWO
+
 	}
 
 	public static class Builder {
+
 		private Train train;
+
 		private String version;
+
 		private WeekOfMonth weekOfMonth;
+
 		private DayOfWeek dayOfWeek;
+
 		private Year year;
 
 		private Builder() {
@@ -115,9 +134,14 @@ public final class SpringReleaseTrainSpec {
 
 		public Builder train(int train) {
 			switch (train) {
-				case 1: this.train = Train.ONE; break;
-				case 2: this.train = Train.TWO; break;
-				default: throw new IllegalArgumentException("Invalid train: " + train);
+			case 1:
+				this.train = Train.ONE;
+				break;
+			case 2:
+				this.train = Train.TWO;
+				break;
+			default:
+				throw new IllegalArgumentException("Invalid train: " + train);
 			}
 			return this;
 		}
@@ -140,7 +164,8 @@ public final class SpringReleaseTrainSpec {
 			while (nextTrain == null) {
 				if (currentDate.getMonth() == Month.JANUARY) {
 					nextTrain = Train.ONE;
-				} else if (currentDate.getMonth() == Month.JULY) {
+				}
+				else if (currentDate.getMonth() == Month.JULY) {
 					nextTrain = Train.TWO;
 				}
 
@@ -157,11 +182,20 @@ public final class SpringReleaseTrainSpec {
 
 		public Builder weekOfMonth(int weekOfMonth) {
 			switch (weekOfMonth) {
-				case 1: this.weekOfMonth = WeekOfMonth.FIRST; break;
-				case 2: this.weekOfMonth = WeekOfMonth.SECOND; break;
-				case 3: this.weekOfMonth = WeekOfMonth.THIRD; break;
-				case 4: this.weekOfMonth = WeekOfMonth.FOURTH; break;
-				default: throw new IllegalArgumentException("Invalid weekOfMonth: " + weekOfMonth);
+			case 1:
+				this.weekOfMonth = WeekOfMonth.FIRST;
+				break;
+			case 2:
+				this.weekOfMonth = WeekOfMonth.SECOND;
+				break;
+			case 3:
+				this.weekOfMonth = WeekOfMonth.THIRD;
+				break;
+			case 4:
+				this.weekOfMonth = WeekOfMonth.FOURTH;
+				break;
+			default:
+				throw new IllegalArgumentException("Invalid weekOfMonth: " + weekOfMonth);
 			}
 			return this;
 		}
@@ -173,12 +207,23 @@ public final class SpringReleaseTrainSpec {
 
 		public Builder dayOfWeek(int dayOfWeek) {
 			switch (dayOfWeek) {
-				case 1: this.dayOfWeek = DayOfWeek.MONDAY; break;
-				case 2: this.dayOfWeek = DayOfWeek.TUESDAY; break;
-				case 3: this.dayOfWeek = DayOfWeek.WEDNESDAY; break;
-				case 4: this.dayOfWeek = DayOfWeek.THURSDAY; break;
-				case 5: this.dayOfWeek = DayOfWeek.FRIDAY; break;
-				default: throw new IllegalArgumentException("Invalid dayOfWeek: " + dayOfWeek);
+			case 1:
+				this.dayOfWeek = DayOfWeek.MONDAY;
+				break;
+			case 2:
+				this.dayOfWeek = DayOfWeek.TUESDAY;
+				break;
+			case 3:
+				this.dayOfWeek = DayOfWeek.WEDNESDAY;
+				break;
+			case 4:
+				this.dayOfWeek = DayOfWeek.THURSDAY;
+				break;
+			case 5:
+				this.dayOfWeek = DayOfWeek.FRIDAY;
+				break;
+			default:
+				throw new IllegalArgumentException("Invalid dayOfWeek: " + dayOfWeek);
 			}
 			return this;
 		}
@@ -201,5 +246,7 @@ public final class SpringReleaseTrainSpec {
 			Assert.notNull(this.year, "year cannot be null");
 			return new SpringReleaseTrainSpec(this.train, this.version, this.weekOfMonth, this.dayOfWeek, this.year);
 		}
+
 	}
+
 }

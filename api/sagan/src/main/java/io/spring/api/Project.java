@@ -20,6 +20,8 @@ package io.spring.api;
  */
 public record Project(String name, String slug, ProjectStatus status, String repositoryUrl) {
 	public enum ProjectStatus {
+
 		INCUBATING, ACTIVE, COMMUNITY, END_OF_LIFE
+
 	}
 }

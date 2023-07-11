@@ -30,6 +30,7 @@ import static io.spring.gradle.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_P
 import static io.spring.gradle.release.SpringReleasePlugin.PREVIOUS_VERSION_PROPERTY;
 
 public abstract class DeleteSaganReleaseTask extends DefaultTask {
+
 	public static final String TASK_NAME = "deleteSaganRelease";
 
 	@Input
@@ -61,14 +62,17 @@ public abstract class DeleteSaganReleaseTask extends DefaultTask {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
 			task.setDescription("Delete a version for the specified project on spring.io.");
 
+			// @formatter:off
 			var versionProvider = getProperty(project, PREVIOUS_VERSION_PROPERTY)
 					.orElse(findTaskByType(project, GetPreviousReleaseMilestoneTask.class)
 							.getPreviousReleaseMilestoneFile()
 							.map(RegularFileUtils::readString));
+			// @formatter:on
 
 			task.getGitHubAccessToken().set(getProperty(project, GITHUB_ACCESS_TOKEN_PROPERTY));
 			task.getProjectName().set(project.getRootProject().getName());
 			task.getVersion().set(versionProvider);
 		});
 	}
+
 }

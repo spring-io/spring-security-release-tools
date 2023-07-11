@@ -20,5 +20,6 @@ import java.time.LocalDate;
 /**
  * @author Steve Riesenberg
  */
-public record Generation(String name, LocalDate initialReleaseDate, LocalDate ossSupportEndDate, LocalDate commercialSupportEndDate) {
+public record Generation(String name, LocalDate initialReleaseDate, LocalDate ossSupportEndDate,
+		LocalDate commercialSupportEndDate) {
 }

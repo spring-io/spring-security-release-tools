@@ -32,6 +32,7 @@ import static io.spring.gradle.release.SpringReleasePlugin.CURRENT_VERSION_PROPE
  * @author Steve Riesenberg
  */
 public abstract class GetNextSnapshotVersionTask extends DefaultTask {
+
 	public static final String TASK_NAME = "getNextSnapshotVersion";
 
 	private static final String OUTPUT_VERSION_PATH = "next-snapshot-version.txt";
@@ -53,7 +54,8 @@ public abstract class GetNextSnapshotVersionTask extends DefaultTask {
 	public static void register(Project project) {
 		project.getTasks().register(TASK_NAME, GetNextSnapshotVersionTask.class, (task) -> {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
-			task.setDescription("Calculates the next snapshot version based on the current version and outputs the version number");
+			task.setDescription(
+					"Calculates the next snapshot version based on the current version and outputs the version number");
 			task.doNotTrackState("API call to GitHub needs to check for new milestones every time");
 
 			var versionProvider = getProperty(project, CURRENT_VERSION_PROPERTY)
@@ -63,4 +65,5 @@ public abstract class GetNextSnapshotVersionTask extends DefaultTask {
 			task.getNextSnapshotVersionFile().set(project.getLayout().getBuildDirectory().file(OUTPUT_VERSION_PATH));
 		});
 	}
+
 }

@@ -26,6 +26,7 @@ import org.gradle.api.file.RegularFile;
  * @author Steve Riesenberg
  */
 public final class RegularFileUtils {
+
 	private RegularFileUtils() {
 	}
 
@@ -33,7 +34,8 @@ public final class RegularFileUtils {
 		Path path = regularFile.getAsFile().toPath();
 		try {
 			return Files.readString(path);
-		} catch (IOException ex) {
+		}
+		catch (IOException ex) {
 			throw new RuntimeException(ex);
 		}
 	}
@@ -42,7 +44,8 @@ public final class RegularFileUtils {
 		Path path = file.getAsFile().toPath();
 		try {
 			return Files.writeString(path, value);
-		} catch (IOException ex) {
+		}
+		catch (IOException ex) {
 			throw new RuntimeException(ex);
 		}
 	}
@@ -50,4 +53,5 @@ public final class RegularFileUtils {
 	public static Transformer<Path, RegularFile> writeString(String value) {
 		return (regularFile) -> writeString(regularFile, value);
 	}
+
 }

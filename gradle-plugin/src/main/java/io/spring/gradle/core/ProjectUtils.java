@@ -28,6 +28,7 @@ import org.gradle.api.provider.Provider;
  * @author Steve Riesenberg
  */
 public final class ProjectUtils {
+
 	private ProjectUtils() {
 	}
 
@@ -40,16 +41,15 @@ public final class ProjectUtils {
 		return stringProperty;
 	}
 
-	public static <T extends Task> Provider<String> getProperty(Project project, Class<T> taskType, Function<T, RegularFileProperty> function) {
+	public static <T extends Task> Provider<String> getProperty(Project project, Class<T> taskType,
+			Function<T, RegularFileProperty> function) {
 		var task = findTaskByType(project, taskType);
 		return function.apply(task).map(RegularFileUtils::readString);
 	}
 
 	public static <T extends Task> T findTaskByType(Project project, Class<T> taskType) {
-		return project.getTasks().withType(taskType).stream()
-				.findFirst()
-				.map(taskType::cast)
-				.orElseThrow(() -> new UnknownTaskException(
-						"Unable to find task of type [%s]".formatted(taskType)));
+		return project.getTasks().withType(taskType).stream().findFirst().map(taskType::cast)
+				.orElseThrow(() -> new UnknownTaskException("Unable to find task of type [%s]".formatted(taskType)));
 	}
+
 }

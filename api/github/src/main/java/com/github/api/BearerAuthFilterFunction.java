@@ -26,10 +26,12 @@ import org.springframework.web.reactive.function.client.ExchangeFunction;
  * @author Steve Riesenberg
  */
 final class BearerAuthFilterFunction implements ExchangeFilterFunction {
+
 	private final String accessToken;
 
 	/**
-	 * @param accessToken Optional access token used to add an Authorization header to requests (if not-null)
+	 * @param accessToken Optional access token used to add an Authorization header to
+	 * requests (if not-null)
 	 */
 	public BearerAuthFilterFunction(String accessToken) {
 		this.accessToken = accessToken;
@@ -42,8 +44,8 @@ final class BearerAuthFilterFunction implements ExchangeFilterFunction {
 		}
 
 		ClientRequest newRequest = ClientRequest.from(request)
-				.headers((headers) -> headers.setBearerAuth(this.accessToken))
-				.build();
+				.headers((headers) -> headers.setBearerAuth(this.accessToken)).build();
 		return next.exchange(newRequest);
 	}
+
 }

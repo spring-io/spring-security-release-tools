@@ -36,13 +36,19 @@ import static io.spring.gradle.release.SpringReleasePlugin.NEXT_VERSION_PROPERTY
  * @author Steve Riesenberg
  */
 public abstract class GenerateChangelogTask extends JavaExec {
+
 	public static final String TASK_NAME = "generateChangelog";
 
 	private static final String GENERATE_CHANGELOG_CONFIGURATION = "changelogGenerator";
+
 	private static final String GENERATE_CHANGELOG_PATH = "changelog/release-notes.md";
+
 	private static final String GENERATE_CHANGELOG_DEPENDENCY = "spring-io:github-changelog-generator:0.0.8";
+
 	private static final String GENERATE_CHANGELOG_REPO_LAYOUT = "[organization]/[artifact]/releases/download/v[revision]/[artifact].[ext]";
+
 	private static final String GENERATE_CHANGELOG_REPO_URL = "https://github.com/";
+
 	private static final String GENERATE_CHANGELOG_GROUP = "spring-io";
 
 	@Input
@@ -88,18 +94,21 @@ public abstract class GenerateChangelogTask extends JavaExec {
 			task.setWorkingDir(project.getRootDir());
 			task.classpath(project.getConfigurations().getAt(GENERATE_CHANGELOG_CONFIGURATION));
 
+			// @formatter:off
 			var versionProvider = getProperty(project, NEXT_VERSION_PROPERTY)
 					.orElse(findTaskByType(project, GetNextReleaseMilestoneTask.class)
 							.getNextReleaseMilestoneFile()
 							.map(RegularFileUtils::readString));
+			// @formatter:on
 
 			task.getVersion().set(versionProvider);
 			if (project.hasProperty(GITHUB_ACCESS_TOKEN_PROPERTY)) {
+				// @formatter:off
 				var usernameProvider = getProperty(project, GITHUB_USER_NAME_PROPERTY)
 						.orElse(findTaskByType(project, GetGitHubUserNameTask.class)
 								.getUsernameFile()
 								.map(RegularFileUtils::readString));
-
+				// @formatter:on
 				task.getUsername().set(usernameProvider);
 				task.getPassword().set(getProperty(project, GITHUB_ACCESS_TOKEN_PROPERTY));
 			}
@@ -108,9 +117,11 @@ public abstract class GenerateChangelogTask extends JavaExec {
 	}
 
 	private static void createGenerateChangelogConfiguration(Project project) {
+		// @formatter:off
 		project.getConfigurations().create(GENERATE_CHANGELOG_CONFIGURATION, (configuration) ->
 				configuration.defaultDependencies((dependencies) ->
 						dependencies.add(project.getDependencies().create(GENERATE_CHANGELOG_DEPENDENCY))));
+		// @formatter:on
 	}
 
 	private static void createGenerateChangelogRepository(Project project) {
@@ -124,4 +135,5 @@ public abstract class GenerateChangelogTask extends JavaExec {
 			exclusiveContentRepository.filter((descriptor) -> descriptor.includeGroup(GENERATE_CHANGELOG_GROUP));
 		});
 	}
+
 }

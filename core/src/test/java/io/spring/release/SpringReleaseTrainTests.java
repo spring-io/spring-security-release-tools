@@ -31,7 +31,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Steve Riesenberg
  */
 public class SpringReleaseTrainTests {
+
 	@ParameterizedTest
+	// @formatter:off
 	@CsvSource({
 			"2019-12-31, ONE, 2020",
 			"2020-01-01, ONE, 2020",
@@ -40,7 +42,10 @@ public class SpringReleaseTrainTests {
 			"2020-07-31, TWO, 2020",
 			"2020-08-01, ONE, 2021"
 	})
-	public void nextTrainWhenBoundaryConditionsThenSuccess(LocalDate startDate, Train expectedTrain, Year expectedYear) {
+	// @formatter:on
+	public void nextTrainWhenBoundaryConditionsThenSuccess(LocalDate startDate, Train expectedTrain,
+			Year expectedYear) {
+		// @formatter:off
 		SpringReleaseTrainSpec releaseTrainSpec =
 				SpringReleaseTrainSpec.builder()
 						.nextTrain(startDate)
@@ -48,12 +53,14 @@ public class SpringReleaseTrainTests {
 						.weekOfMonth(2)
 						.dayOfWeek(2)
 						.build();
+		// @formatter:on
 		assertThat(releaseTrainSpec.getTrain()).isEqualTo(expectedTrain);
 		assertThat(releaseTrainSpec.getYear()).isEqualTo(expectedYear);
 	}
 
 	@Test
 	public void getTrainDatesWhenTrainOneIsSecondTuesdayOf2020ThenSuccess() {
+		// @formatter:off
 		SpringReleaseTrainSpec releaseTrainSpec =
 				SpringReleaseTrainSpec.builder()
 						.train(1)
@@ -62,6 +69,7 @@ public class SpringReleaseTrainTests {
 						.dayOfWeek(2)
 						.year(2020)
 						.build();
+		// @formatter:on
 
 		SpringReleaseTrain releaseTrain = new SpringReleaseTrain(releaseTrainSpec);
 		Map<String, LocalDate> trainDates = releaseTrain.getTrainDates();
@@ -75,6 +83,7 @@ public class SpringReleaseTrainTests {
 
 	@Test
 	public void getTrainDatesWhenTrainTwoIsSecondTuesdayOf2020ThenSuccess() {
+		// @formatter:off
 		SpringReleaseTrainSpec releaseTrainSpec =
 				SpringReleaseTrainSpec.builder()
 						.train(2)
@@ -83,6 +92,7 @@ public class SpringReleaseTrainTests {
 						.dayOfWeek(2)
 						.year(2020)
 						.build();
+		// @formatter:on
 
 		SpringReleaseTrain releaseTrain = new SpringReleaseTrain(releaseTrainSpec);
 		Map<String, LocalDate> trainDates = releaseTrain.getTrainDates();
@@ -96,6 +106,7 @@ public class SpringReleaseTrainTests {
 
 	@Test
 	public void getTrainDatesWhenTrainOneIsSecondTuesdayOf2022ThenSuccess() {
+		// @formatter:off
 		SpringReleaseTrainSpec releaseTrainSpec =
 				SpringReleaseTrainSpec.builder()
 						.train(1)
@@ -104,6 +115,7 @@ public class SpringReleaseTrainTests {
 						.dayOfWeek(2)
 						.year(2022)
 						.build();
+		// @formatter:on
 
 		SpringReleaseTrain releaseTrain = new SpringReleaseTrain(releaseTrainSpec);
 		Map<String, LocalDate> trainDates = releaseTrain.getTrainDates();
@@ -117,6 +129,7 @@ public class SpringReleaseTrainTests {
 
 	@Test
 	public void getTrainDatesWhenTrainTwoIsSecondTuesdayOf2022ThenSuccess() {
+		// @formatter:off
 		SpringReleaseTrainSpec releaseTrainSpec =
 				SpringReleaseTrainSpec.builder()
 						.train(2)
@@ -125,6 +138,7 @@ public class SpringReleaseTrainTests {
 						.dayOfWeek(2)
 						.year(2022)
 						.build();
+		// @formatter:on
 
 		SpringReleaseTrain releaseTrain = new SpringReleaseTrain(releaseTrainSpec);
 		Map<String, LocalDate> trainDates = releaseTrain.getTrainDates();
@@ -138,6 +152,7 @@ public class SpringReleaseTrainTests {
 
 	@Test
 	public void getTrainDatesWhenTrainOneIsThirdMondayOf2022ThenSuccess() {
+		// @formatter:off
 		SpringReleaseTrainSpec releaseTrainSpec =
 				SpringReleaseTrainSpec.builder()
 						.train(1)
@@ -146,6 +161,7 @@ public class SpringReleaseTrainTests {
 						.dayOfWeek(1)
 						.year(2022)
 						.build();
+		// @formatter:on
 
 		SpringReleaseTrain releaseTrain = new SpringReleaseTrain(releaseTrainSpec);
 		Map<String, LocalDate> trainDates = releaseTrain.getTrainDates();
@@ -159,6 +175,7 @@ public class SpringReleaseTrainTests {
 
 	@Test
 	public void getTrainDatesWhenTrainTwoIsThirdMondayOf2022ThenSuccess() {
+		// @formatter:off
 		SpringReleaseTrainSpec releaseTrainSpec =
 				SpringReleaseTrainSpec.builder()
 						.train(2)
@@ -167,6 +184,7 @@ public class SpringReleaseTrainTests {
 						.dayOfWeek(1)
 						.year(2022)
 						.build();
+		// @formatter:on
 
 		SpringReleaseTrain releaseTrain = new SpringReleaseTrain(releaseTrainSpec);
 		Map<String, LocalDate> trainDates = releaseTrain.getTrainDates();
@@ -180,6 +198,7 @@ public class SpringReleaseTrainTests {
 
 	@Test
 	public void isTrainDateWhenTrainOneIsThirdMondayOf2022ThenSuccess() {
+		// @formatter:off
 		SpringReleaseTrainSpec releaseTrainSpec =
 				SpringReleaseTrainSpec.builder()
 						.train(1)
@@ -188,26 +207,33 @@ public class SpringReleaseTrainTests {
 						.dayOfWeek(1)
 						.year(2022)
 						.build();
+		// @formatter:on
 
 		SpringReleaseTrain releaseTrain = new SpringReleaseTrain(releaseTrainSpec);
 		for (int dayOfMonth = 1; dayOfMonth <= 31; dayOfMonth++) {
-			assertThat(releaseTrain.isTrainDate("1.0.0-M1", LocalDate.of(2022, 1, dayOfMonth))).isEqualTo(dayOfMonth == 17);
+			assertThat(releaseTrain.isTrainDate("1.0.0-M1", LocalDate.of(2022, 1, dayOfMonth)))
+					.isEqualTo(dayOfMonth == 17);
 		}
 		for (int dayOfMonth = 1; dayOfMonth <= 28; dayOfMonth++) {
-			assertThat(releaseTrain.isTrainDate("1.0.0-M2", LocalDate.of(2022, 2, dayOfMonth))).isEqualTo(dayOfMonth == 21);
+			assertThat(releaseTrain.isTrainDate("1.0.0-M2", LocalDate.of(2022, 2, dayOfMonth)))
+					.isEqualTo(dayOfMonth == 21);
 		}
 		for (int dayOfMonth = 1; dayOfMonth <= 31; dayOfMonth++) {
-			assertThat(releaseTrain.isTrainDate("1.0.0-M3", LocalDate.of(2022, 3, dayOfMonth))).isEqualTo(dayOfMonth == 21);
+			assertThat(releaseTrain.isTrainDate("1.0.0-M3", LocalDate.of(2022, 3, dayOfMonth)))
+					.isEqualTo(dayOfMonth == 21);
 		}
 		for (int dayOfMonth = 1; dayOfMonth <= 30; dayOfMonth++) {
-			assertThat(releaseTrain.isTrainDate("1.0.0-RC1", LocalDate.of(2022, 4, dayOfMonth))).isEqualTo(dayOfMonth == 18);
+			assertThat(releaseTrain.isTrainDate("1.0.0-RC1", LocalDate.of(2022, 4, dayOfMonth)))
+					.isEqualTo(dayOfMonth == 18);
 		}
 		for (int dayOfMonth = 1; dayOfMonth <= 31; dayOfMonth++) {
-			assertThat(releaseTrain.isTrainDate("1.0.0", LocalDate.of(2022, 5, dayOfMonth))).isEqualTo(dayOfMonth == 16);
+			assertThat(releaseTrain.isTrainDate("1.0.0", LocalDate.of(2022, 5, dayOfMonth)))
+					.isEqualTo(dayOfMonth == 16);
 		}
 	}
 
 	@ParameterizedTest
+	// @formatter:off
 	@CsvSource({
 			"2022-01-01, 2022-02-21",
 			"2022-02-01, 2022-02-21",
@@ -228,7 +254,9 @@ public class SpringReleaseTrainTests {
 			"2022-12-01, 2022-12-19",
 			"2022-12-19, 2023-02-20"
 	})
+	// @formatter:on
 	public void getNextReleaseDateWhenBoundaryConditionsThenSuccess(LocalDate startDate, LocalDate expectedDate) {
+		// @formatter:off
 		SpringReleaseTrainSpec releaseTrainSpec =
 				SpringReleaseTrainSpec.builder()
 						.train(1)
@@ -237,8 +265,10 @@ public class SpringReleaseTrainTests {
 						.dayOfWeek(1)
 						.year(2022)
 						.build();
+		// @formatter:on
 
 		SpringReleaseTrain releaseTrain = new SpringReleaseTrain(releaseTrainSpec);
 		assertThat(releaseTrain.getNextReleaseDate(startDate)).isEqualTo(expectedDate);
 	}
+
 }

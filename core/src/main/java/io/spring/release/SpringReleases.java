@@ -33,6 +33,7 @@ import io.spring.api.SaganApi;
  * @author Steve Riesenberg
  */
 public class SpringReleases {
+
 	private static final Pattern VERSION_PATTERN = Pattern.compile("^([0-9]+)\\.([0-9]+)\\.([0-9]+)(-.+)?$");
 
 	private final GitHubApi gitHubApi;
@@ -43,7 +44,8 @@ public class SpringReleases {
 		this.gitHubApi = new GitHubApi(accessToken);
 		if (accessToken != null) {
 			this.saganApi = new SaganApi(this.gitHubApi.getUser().login(), accessToken);
-		} else {
+		}
+		else {
 			this.saganApi = new SaganApi("anonymous", "invalid");
 		}
 	}
@@ -86,9 +88,8 @@ public class SpringReleases {
 			var candidateMajor = matcher.group(1);
 			var candidateMinor = matcher.group(2);
 			var candidateIsSnapshot = Objects.equals(matcher.group(4), "-SNAPSHOT");
-			return versionIsSnapshot != candidateIsSnapshot
-				   || !candidateMajor.equals(major)
-				   || !candidateMinor.equals(minor);
+			return versionIsSnapshot != candidateIsSnapshot || !candidateMajor.equals(major)
+					|| !candidateMinor.equals(minor);
 		});
 
 		return (releases.size() == 1) ? releases.get(0).version() : null;
@@ -104,13 +105,12 @@ public class SpringReleases {
 		var repository = new Repository(owner, repo);
 		var milestone = this.gitHubApi.getMilestone(repository, version);
 		var today = LocalDate.now();
-		var dueOn = milestone.dueOn() != null
-				? milestone.dueOn().atZone(ZoneOffset.UTC).toLocalDate()
-				: null;
+		var dueOn = milestone.dueOn() != null ? milestone.dueOn().atZone(ZoneOffset.UTC).toLocalDate() : null;
 		return (dueOn != null && today.compareTo(dueOn) >= 0);
 	}
 
-	public void createRelease(String owner, String repo, String version, String branch, String body, String referenceDocUrl, String apiDocUrl) {
+	public void createRelease(String owner, String repo, String version, String branch, String body,
+			String referenceDocUrl, String apiDocUrl) {
 		var repository = new Repository(owner, repo);
 		this.gitHubApi.createRelease(repository, gitHubRelease(version, branch, body));
 		this.saganApi.createRelease(repo, saganRelease(version, referenceDocUrl, apiDocUrl));
@@ -131,12 +131,14 @@ public class SpringReleases {
 			return;
 		}
 
+		// @formatter:off
 		var releaseTrainSpec = SpringReleaseTrainSpec.builder()
 				.nextTrain()
 				.version(version)
 				.weekOfMonth(dayOfWeek)
 				.dayOfWeek(weekOfMonth)
 				.build();
+		// @formatter:on
 
 		var releaseTrain = new SpringReleaseTrain(releaseTrainSpec);
 
@@ -151,10 +153,12 @@ public class SpringReleases {
 				// not always be the same date as we intend.
 				// For example, midnight UTC is actually 8pm CDT (the previous day).
 				// We use 12pm/noon UTC to be as far from anybody's midnight as we can.
-				var milestone = new Milestone(milestoneTitle, null, dueOn.atTime(LocalTime.NOON).toInstant(ZoneOffset.UTC));
+				var milestone = new Milestone(milestoneTitle, null,
+						dueOn.atTime(LocalTime.NOON).toInstant(ZoneOffset.UTC));
 				this.gitHubApi.createMilestone(repository, milestone);
 			});
-		} else {
+		}
+		else {
 			// Create GA milestone for patch release on the next even month
 			var startDate = LocalDate.now();
 			var dueOn = releaseTrain.getNextReleaseDate(startDate);
@@ -182,20 +186,24 @@ public class SpringReleases {
 
 	private static String getNextPreRelease(String baseVersion, List<Milestone> milestones) {
 		var versionPrefix = baseVersion + "-";
+		// @formatter:off
 		return milestones.stream()
 				.filter((milestone) -> milestone.title().startsWith(versionPrefix))
 				.sorted(Comparator.comparing(Milestone::dueOn))
 				.map(Milestone::title)
 				.findFirst()
 				.orElse(null);
+		// @formatter:on
 	}
 
 	private static com.github.api.Release gitHubRelease(String version, String branch, String body) {
+		// @formatter:off
 		return com.github.api.Release.tag(version)
 				.commit(branch)
 				.body(body)
 				.preRelease(version.contains("-"))
 				.build();
+		// @formatter:on
 	}
 
 	private static io.spring.api.Release saganRelease(String version, String referenceDocUrl, String apiDocUrl) {

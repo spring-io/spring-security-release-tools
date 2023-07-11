@@ -26,7 +26,9 @@ import org.springframework.web.reactive.function.client.ExchangeFunction;
  * @author Steve Riesenberg
  */
 final class BasicAuthFilterFunction implements ExchangeFilterFunction {
+
 	private final String username;
+
 	private final String password;
 
 	/**
@@ -40,9 +42,12 @@ final class BasicAuthFilterFunction implements ExchangeFilterFunction {
 
 	@Override
 	public Mono<ClientResponse> filter(ClientRequest request, ExchangeFunction next) {
+		// @formatter:off
 		ClientRequest newRequest = ClientRequest.from(request)
 				.headers((headers) -> headers.setBasicAuth(this.username, this.password))
 				.build();
+		// @formatter:on
 		return next.exchange(newRequest);
 	}
+
 }

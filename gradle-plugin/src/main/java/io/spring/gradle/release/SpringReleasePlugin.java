@@ -22,6 +22,7 @@ import org.gradle.api.Project;
  * @author Steve Riesenberg
  */
 public class SpringReleasePlugin implements Plugin<Project> {
+
 	static final String TASK_GROUP = "Release";
 	static final String EXTENSION_NAME = "springRelease";
 
@@ -36,8 +37,7 @@ public class SpringReleasePlugin implements Plugin<Project> {
 	@Override
 	public void apply(Project project) {
 		// Register springRelease extension for DSL usage
-		var springRelease = project.getExtensions()
-				.create(EXTENSION_NAME, SpringReleasePluginExtension.class);
+		var springRelease = project.getExtensions().create(EXTENSION_NAME, SpringReleasePluginExtension.class);
 		springRelease.getRepositoryOwner().convention("spring-projects");
 		springRelease.getReplaceSnapshotVersionInReferenceDocUrl().convention(false);
 

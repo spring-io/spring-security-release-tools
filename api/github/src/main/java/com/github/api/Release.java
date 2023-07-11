@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * @author Steve Riesenberg
  */
+// @formatter:off
 public record Release(
 		@JsonProperty("tag_name") String tag,
 		@JsonProperty("target_commitish") String commit,
@@ -13,6 +14,7 @@ public record Release(
 		@JsonProperty("draft") boolean draft,
 		@JsonProperty("prerelease") boolean preRelease,
 		@JsonProperty("generate_release_notes") boolean generateReleaseNotes) {
+// @formatter:on
 
 	public static Builder tag(String tag) {
 		return new Builder().tag(tag);
@@ -23,12 +25,19 @@ public record Release(
 	}
 
 	public static final class Builder {
+
 		private String tag;
+
 		private String commit;
+
 		private String name;
+
 		private String body;
+
 		private boolean draft;
+
 		private boolean preRelease;
+
 		private boolean generateReleaseNotes;
 
 		private Builder() {
@@ -70,7 +79,9 @@ public record Release(
 		}
 
 		public Release build() {
-			return new Release(this.tag, this.commit, this.name, this.body, this.draft, this.preRelease, this.generateReleaseNotes);
+			return new Release(this.tag, this.commit, this.name, this.body, this.draft, this.preRelease,
+					this.generateReleaseNotes);
 		}
+
 	}
 }

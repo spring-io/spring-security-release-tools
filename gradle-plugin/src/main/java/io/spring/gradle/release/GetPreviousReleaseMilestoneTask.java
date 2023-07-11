@@ -33,6 +33,7 @@ import static io.spring.gradle.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_P
  * @author Steve Riesenberg
  */
 public abstract class GetPreviousReleaseMilestoneTask extends DefaultTask {
+
 	public static final String TASK_NAME = "getPreviousReleaseMilestone";
 
 	private static final String OUTPUT_VERSION_PATH = "previous-release-milestone-version.txt";
@@ -61,8 +62,10 @@ public abstract class GetPreviousReleaseMilestoneTask extends DefaultTask {
 			var outputFile = getPreviousReleaseMilestoneFile().get();
 			RegularFileUtils.writeString(outputFile, previousReleaseMilestone);
 			System.out.println(previousReleaseMilestone);
-		} else {
-			System.out.println("Unable to determine previous release milestone, either because multiple matches were found or none exists");
+		}
+		else {
+			System.out.println(
+					"Unable to determine previous release milestone, either because multiple matches were found or none exists");
 		}
 	}
 
@@ -77,7 +80,9 @@ public abstract class GetPreviousReleaseMilestoneTask extends DefaultTask {
 			task.getGitHubAccessToken().set(getProperty(project, GITHUB_ACCESS_TOKEN_PROPERTY));
 			task.getProjectName().set(project.getRootProject().getName());
 			task.getVersion().set(versionProvider);
-			task.getPreviousReleaseMilestoneFile().set(project.getLayout().getBuildDirectory().file(OUTPUT_VERSION_PATH));
+			task.getPreviousReleaseMilestoneFile()
+					.set(project.getLayout().getBuildDirectory().file(OUTPUT_VERSION_PATH));
 		});
 	}
+
 }

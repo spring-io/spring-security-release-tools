@@ -29,6 +29,7 @@ public record Release(String version, String referenceDocUrl, String apiDocUrl, 
 	 * The status of a release.
 	 */
 	public enum ReleaseStatus {
+
 		/**
 		 * Unstable version with limited support
 		 */
@@ -38,7 +39,8 @@ public record Release(String version, String referenceDocUrl, String apiDocUrl, 
 		 */
 		PRERELEASE,
 		/**
-		 * Release Generally Available on public artifact repositories and enjoying full support from maintainers
+		 * Release Generally Available on public artifact repositories and enjoying full
+		 * support from maintainers
 		 */
 		GENERAL_AVAILABILITY;
 
@@ -63,6 +65,7 @@ public record Release(String version, String referenceDocUrl, String apiDocUrl, 
 			}
 			return GENERAL_AVAILABILITY;
 		}
+
 	}
 
 }

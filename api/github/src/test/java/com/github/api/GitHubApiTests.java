@@ -20,6 +20,7 @@ import org.springframework.util.StreamUtils;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class GitHubApiTests {
+
 	private GitHubApi githubApi;
 
 	private Repository repository;
@@ -62,8 +63,7 @@ public class GitHubApiTests {
 
 		var recordedRequest = this.server.takeRequest();
 		assertThat(recordedRequest.getMethod()).isEqualTo(HttpMethod.POST.name());
-		assertThat(recordedRequest.getPath())
-				.isEqualTo("/repos/spring-projects/spring-security/releases");
+		assertThat(recordedRequest.getPath()).isEqualTo("/repos/spring-projects/spring-security/releases");
 		assertThat(recordedRequest.getBody().readString(Charset.defaultCharset()))
 				.isEqualTo(string("CreateReleaseRequest.json"));
 	}
@@ -78,8 +78,7 @@ public class GitHubApiTests {
 
 		var recordedRequest = this.server.takeRequest();
 		assertThat(recordedRequest.getMethod()).isEqualTo(HttpMethod.POST.name());
-		assertThat(recordedRequest.getPath())
-				.isEqualTo("/repos/spring-projects/spring-security/milestones");
+		assertThat(recordedRequest.getPath()).isEqualTo("/repos/spring-projects/spring-security/milestones");
 		assertThat(recordedRequest.getBody().readString(Charset.defaultCharset()))
 				.isEqualTo(string("CreateMilestoneRequest.json"));
 	}
@@ -152,8 +151,7 @@ public class GitHubApiTests {
 	}
 
 	private static MockResponse json(String path) throws IOException {
-		return new MockResponse()
-				.addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+		return new MockResponse().addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
 				.setBody(string(path));
 	}
 
@@ -162,4 +160,5 @@ public class GitHubApiTests {
 			return StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8);
 		}
 	}
+
 }

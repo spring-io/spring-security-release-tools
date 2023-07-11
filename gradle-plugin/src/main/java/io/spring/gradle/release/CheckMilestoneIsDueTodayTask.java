@@ -37,6 +37,7 @@ import static io.spring.gradle.release.SpringReleasePlugin.NEXT_VERSION_PROPERTY
  * @author Steve Riesenberg
  */
 public abstract class CheckMilestoneIsDueTodayTask extends DefaultTask {
+
 	public static final String TASK_NAME = "checkMilestoneIsDueToday";
 
 	@Input
@@ -69,10 +70,12 @@ public abstract class CheckMilestoneIsDueTodayTask extends DefaultTask {
 			task.setDescription("Checks if the given version is due today or past due and outputs true or false");
 			task.doNotTrackState("API call to GitHub needs to check milestone due date every time");
 
+			// @formatter:off
 			var versionProvider = getProperty(project, NEXT_VERSION_PROPERTY)
 					.orElse(findTaskByType(project, GetNextReleaseMilestoneTask.class)
 							.getNextReleaseMilestoneFile()
 							.map(RegularFileUtils::readString));
+			// @formatter:on
 
 			var owner = springRelease.getRepositoryOwner().get();
 			var name = project.getRootProject().getName();
@@ -81,4 +84,5 @@ public abstract class CheckMilestoneIsDueTodayTask extends DefaultTask {
 			task.getGitHubAccessToken().set(getProperty(project, GITHUB_ACCESS_TOKEN_PROPERTY));
 		});
 	}
+
 }

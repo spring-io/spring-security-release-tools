@@ -21,10 +21,17 @@ import org.gradle.api.provider.Property;
  * @author Steve Riesenberg
  */
 public interface SpringReleasePluginExtension {
+
 	Property<String> getRepositoryOwner();
+
 	Property<Integer> getWeekOfMonth();
+
 	Property<Integer> getDayOfWeek();
+
 	Property<String> getReferenceDocUrl();
+
 	Property<String> getApiDocUrl();
+
 	Property<Boolean> getReplaceSnapshotVersionInReferenceDocUrl();
+
 }

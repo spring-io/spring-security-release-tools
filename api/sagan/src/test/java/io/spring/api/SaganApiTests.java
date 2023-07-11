@@ -52,10 +52,12 @@ public class SaganApiTests {
 		this.server = new MockWebServer();
 		this.server.start();
 		this.saganApi = new SaganApi(this.server.url("/").toString(), "user", "personal-access-token");
+		// @formatter:off
 		this.release = new Release("6.1.0",
 				"https://docs.spring.io/spring-security/reference/{version}/index.html",
 				"https://docs.spring.io/spring-security/site/docs/{version}/api/",
 				ReleaseStatus.GENERAL_AVAILABILITY, true);
+		// @formatter:on
 	}
 
 	@AfterEach
@@ -159,9 +161,11 @@ public class SaganApiTests {
 		var generations = this.saganApi.getGenerations("spring-security");
 		assertThat(generations).hasSize(6);
 
+		// @formatter:off
 		var currentGeneration = generations.stream()
 				.max(Comparator.comparing(Generation::initialReleaseDate))
 				.orElse(null);
+		// @formatter:on
 		assertThat(currentGeneration).isNotNull();
 		assertThat(currentGeneration.name()).isEqualTo("6.1.x");
 		assertThat(currentGeneration.initialReleaseDate()).isEqualTo(LocalDate.parse("2023-05-15"));
@@ -202,9 +206,11 @@ public class SaganApiTests {
 	}
 
 	private static MockResponse json(String path) throws IOException {
+		// @formatter:off
 		return new MockResponse()
 				.addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
 				.setBody(string(path));
+		// @formatter:on
 	}
 
 	private static String string(String path) throws IOException {
@@ -212,4 +218,5 @@ public class SaganApiTests {
 			return StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8);
 		}
 	}
+
 }
