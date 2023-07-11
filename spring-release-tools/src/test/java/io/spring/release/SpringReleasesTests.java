@@ -307,20 +307,20 @@ public class SpringReleasesTests {
 
 	@Test
 	public void getNextSnapshotVersionWhenReleaseVersionThenNextPatchVersion() {
-		assertThat(this.springReleases.getNextSnapshotVersion("6.1.0")).isEqualTo("6.1.1-SNAPSHOT");
-		assertThat(this.springReleases.getNextSnapshotVersion("6.1.1")).isEqualTo("6.1.2-SNAPSHOT");
+		assertThat(SpringReleases.getNextSnapshotVersion("6.1.0")).isEqualTo("6.1.1-SNAPSHOT");
+		assertThat(SpringReleases.getNextSnapshotVersion("6.1.1")).isEqualTo("6.1.2-SNAPSHOT");
 	}
 
 	@Test
 	public void getNextSnapshotVersionWhenSnapshotVersionThenSnapshotVersion() {
-		assertThat(this.springReleases.getNextSnapshotVersion("6.1.0-SNAPSHOT")).isEqualTo("6.1.0-SNAPSHOT");
-		assertThat(this.springReleases.getNextSnapshotVersion("6.1.1-SNAPSHOT")).isEqualTo("6.1.1-SNAPSHOT");
+		assertThat(SpringReleases.getNextSnapshotVersion("6.1.0-SNAPSHOT")).isEqualTo("6.1.0-SNAPSHOT");
+		assertThat(SpringReleases.getNextSnapshotVersion("6.1.1-SNAPSHOT")).isEqualTo("6.1.1-SNAPSHOT");
 	}
 
 	@Test
 	public void getNextSnapshotVersionWhenPreReleaseVersionThenSnapshotVersion() {
-		assertThat(this.springReleases.getNextSnapshotVersion("6.1.0-M1")).isEqualTo("6.1.0-SNAPSHOT");
-		assertThat(this.springReleases.getNextSnapshotVersion("6.1.0-RC1")).isEqualTo("6.1.0-SNAPSHOT");
+		assertThat(SpringReleases.getNextSnapshotVersion("6.1.0-M1")).isEqualTo("6.1.0-SNAPSHOT");
+		assertThat(SpringReleases.getNextSnapshotVersion("6.1.0-RC1")).isEqualTo("6.1.0-SNAPSHOT");
 	}
 
 	@Test

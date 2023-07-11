@@ -116,23 +116,6 @@ public class SpringReleases {
 		this.saganApi.deleteRelease(repo, version);
 	}
 
-	public String getNextSnapshotVersion(String version) {
-		var versionMatcher = versionMatcher(version);
-		if (Objects.equals(versionMatcher.group(4), "-SNAPSHOT")) {
-			return version;
-		}
-
-		var major = versionMatcher.group(1);
-		var minor = versionMatcher.group(2);
-		var patch = versionMatcher.group(3);
-		var modifier = versionMatcher.group(4);
-		if (modifier == null) {
-			patch = String.valueOf(Integer.parseInt(patch) + 1);
-		}
-
-		return "%s.%s.%s-SNAPSHOT".formatted(major, minor, patch);
-	}
-
 	public void scheduleReleaseIfNotExists(String owner, String repo, String version, int weekOfMonth, int dayOfWeek) {
 		var versionMatcher = versionMatcher(version);
 		if (versionMatcher.group(4) != null) {
@@ -174,6 +157,23 @@ public class SpringReleases {
 			var milestone = new Milestone(version, null, dueOn.atTime(LocalTime.NOON).toInstant(ZoneOffset.UTC));
 			this.gitHubApi.createMilestone(repository, milestone);
 		}
+	}
+
+	public static String getNextSnapshotVersion(String version) {
+		var versionMatcher = versionMatcher(version);
+		if (Objects.equals(versionMatcher.group(4), "-SNAPSHOT")) {
+			return version;
+		}
+
+		var major = versionMatcher.group(1);
+		var minor = versionMatcher.group(2);
+		var patch = versionMatcher.group(3);
+		var modifier = versionMatcher.group(4);
+		if (modifier == null) {
+			patch = String.valueOf(Integer.parseInt(patch) + 1);
+		}
+
+		return "%s.%s.%s-SNAPSHOT".formatted(major, minor, patch);
 	}
 
 	private static String getNextPreRelease(String baseVersion, List<Milestone> milestones) {
