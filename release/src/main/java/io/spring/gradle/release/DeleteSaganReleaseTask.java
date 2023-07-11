@@ -15,34 +15,32 @@
  */
 package io.spring.gradle.release;
 
-import io.spring.api.SaganApi;
 import io.spring.gradle.core.RegularFileUtils;
+import io.spring.release.SpringReleases;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.TaskAction;
 
 import static io.spring.gradle.core.ProjectUtils.findTaskByType;
 import static io.spring.gradle.core.ProjectUtils.getProperty;
 import static io.spring.gradle.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY;
-import static io.spring.gradle.release.SpringReleasePlugin.GITHUB_USER_NAME_PROPERTY;
 import static io.spring.gradle.release.SpringReleasePlugin.PREVIOUS_VERSION_PROPERTY;
 
 public abstract class DeleteSaganReleaseTask extends DefaultTask {
 	public static final String TASK_NAME = "deleteSaganRelease";
 
 	@Input
-	public abstract Property<String> getUsername();
-
-	@Input
 	public abstract Property<String> getGitHubAccessToken();
 
 	@Input
-	public abstract Property<String> getVersion();
+	public abstract Property<String> getProjectName();
 
 	@Input
-	public abstract Property<String> getProjectName();
+	@Optional
+	public abstract Property<String> getVersion();
 
 	@TaskAction
 	public void deleteRelease() {
@@ -52,11 +50,10 @@ public abstract class DeleteSaganReleaseTask extends DefaultTask {
 			return;
 		}
 
-		String username = getUsername().get();
 		var gitHubAccessToken = getGitHubAccessToken().get();
 		var projectName = getProjectName().get();
-		SaganApi sagan = new SaganApi(username, gitHubAccessToken);
-		sagan.deleteRelease(projectName, version);
+		var springReleases = new SpringReleases(gitHubAccessToken);
+		springReleases.deleteRelease(projectName, version);
 	}
 
 	public static void register(Project project) {
@@ -64,17 +61,11 @@ public abstract class DeleteSaganReleaseTask extends DefaultTask {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
 			task.setDescription("Delete a version for the specified project on spring.io.");
 
-			var usernameProvider = getProperty(project, GITHUB_USER_NAME_PROPERTY)
-					.orElse(findTaskByType(project, GetGitHubUserNameTask.class)
-							.getUsernameFile()
-							.map(RegularFileUtils::readString));
-
 			var versionProvider = getProperty(project, PREVIOUS_VERSION_PROPERTY)
 					.orElse(findTaskByType(project, GetPreviousReleaseMilestoneTask.class)
 							.getPreviousReleaseMilestoneFile()
 							.map(RegularFileUtils::readString));
 
-			task.getUsername().set(usernameProvider);
 			task.getGitHubAccessToken().set(getProperty(project, GITHUB_ACCESS_TOKEN_PROPERTY));
 			task.getProjectName().set(project.getRootProject().getName());
 			task.getVersion().set(versionProvider);

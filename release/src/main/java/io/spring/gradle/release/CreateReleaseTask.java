@@ -15,11 +15,10 @@
  */
 package io.spring.gradle.release;
 
-import com.github.api.GitHubApi;
-import com.github.api.Release;
 import com.github.api.Repository;
 import groovy.lang.MissingPropertyException;
 import io.spring.gradle.core.RegularFileUtils;
+import io.spring.release.SpringReleases;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
 import org.gradle.api.provider.Property;
@@ -39,8 +38,8 @@ import static io.spring.gradle.release.SpringReleasePlugin.NEXT_VERSION_PROPERTY
 /**
  * @author Steve Riesenberg
  */
-public abstract class CreateGitHubReleaseTask extends DefaultTask {
-	public static final String TASK_NAME = "createGitHubRelease";
+public abstract class CreateReleaseTask extends DefaultTask {
+	public static final String TASK_NAME = "createRelease";
 
 	@Input
 	public abstract Property<Repository> getRepository();
@@ -55,6 +54,12 @@ public abstract class CreateGitHubReleaseTask extends DefaultTask {
 	public abstract Property<String> getBranch();
 
 	@Input
+	public abstract Property<String> getReferenceDocUrl();
+
+	@Input
+	public abstract Property<String> getApiDocUrl();
+
+	@Input
 	public abstract Property<Boolean> getCreateRelease();
 
 	@Input
@@ -62,19 +67,15 @@ public abstract class CreateGitHubReleaseTask extends DefaultTask {
 	public abstract Property<String> getGitHubAccessToken();
 
 	@TaskAction
-	public void createGitHubRelease() {
+	public void createRelease() {
+		var gitHubAccessToken = getGitHubAccessToken().getOrNull();
 		var repository = getRepository().get();
-		var body = getReleaseNotes().get();
 		var version = getVersion().get();
 		var branch = getBranch().get();
-		var release = Release.tag(version)
-				.commit(branch)
-				.body(body)
-				.preRelease(version.contains("-"))
-				.build();
-
+		var body = getReleaseNotes().get();
+		var referenceDocUrl = getReferenceDocUrl().get();
+		var apiDocUrl = getApiDocUrl().get();
 		var createRelease = getCreateRelease().get();
-		var gitHubAccessToken = getGitHubAccessToken().getOrNull();
 		if (createRelease && gitHubAccessToken == null) {
 			throw new MissingPropertyException("Please provide an access token with -PgitHubAccessToken=...");
 		}
@@ -88,8 +89,8 @@ public abstract class CreateGitHubReleaseTask extends DefaultTask {
 		System.out.printf("%nRelease Notes:%n%n----%n%s%n----%n%n", body.trim());
 
 		if (createRelease) {
-			var gitHubApi = new GitHubApi(gitHubAccessToken);
-			gitHubApi.createRelease(repository, release);
+			var springReleases = new SpringReleases(gitHubAccessToken);
+			springReleases.createRelease(repository.owner(), repository.name(), version, branch, body, referenceDocUrl, apiDocUrl);
 		}
 	}
 
@@ -97,7 +98,7 @@ public abstract class CreateGitHubReleaseTask extends DefaultTask {
 		var springRelease = project.getExtensions().findByType(SpringReleasePluginExtension.class);
 		Assert.notNull(springRelease, "Cannot find " + SpringReleasePluginExtension.class);
 
-		project.getTasks().register(TASK_NAME, CreateGitHubReleaseTask.class, (task) -> {
+		project.getTasks().register(TASK_NAME, CreateReleaseTask.class, (task) -> {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
 			task.setDescription("Create a GitHub release with release notes");
 			task.doNotTrackState("API call to GitHub needs to check for new issues and create a release every time");
@@ -120,6 +121,8 @@ public abstract class CreateGitHubReleaseTask extends DefaultTask {
 			task.getVersion().set(versionProvider);
 			task.getReleaseNotes().set(releaseNotesProvider);
 			task.getBranch().set(getProperty(project, BRANCH_PROPERTY).orElse("main"));
+			task.getReferenceDocUrl().set(springRelease.getReferenceDocUrl());
+			task.getApiDocUrl().set(springRelease.getApiDocUrl());
 			task.getCreateRelease().set(createReleaseProvider.orElse(false));
 			task.getGitHubAccessToken().set(getProperty(project, GITHUB_ACCESS_TOKEN_PROPERTY));
 		});

@@ -15,16 +15,9 @@
  */
 package io.spring.gradle.release;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.ZoneOffset;
-
-import com.github.api.GitHubApi;
-import com.github.api.Milestone;
 import com.github.api.Repository;
 import io.spring.gradle.core.RegularFileUtils;
-import io.spring.gradle.core.SpringReleaseTrain;
-import io.spring.gradle.core.SpringReleaseTrainSpec;
+import io.spring.release.SpringReleases;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
 import org.gradle.api.provider.Property;
@@ -64,51 +57,11 @@ public abstract class ScheduleNextReleaseTask extends DefaultTask {
 		var repository = getRepository().get();
 		var gitHubAccessToken = getGitHubAccessToken().get();
 		var version = getVersion().get();
-
-		var gitHubApi = new GitHubApi(gitHubAccessToken);
-		var hasExistingMilestone = gitHubApi.getMilestones(repository).stream()
-				.anyMatch((milestone) -> version.equals(milestone.title()));
-		if (hasExistingMilestone) {
-			return;
-		}
-
-		// Next milestone is either a patch version or minor version
-		// Note: Major versions will be handled like minor and get a release
-		// train which can be manually updated to match the desired schedule.
-		var releaseTrain = getReleaseTrain(version);
-		if (version.endsWith(".0")) {
-			// Create M1, M2, M3, RC1 and GA milestones for release train
-			releaseTrain.getTrainDates().forEach((milestoneTitle, dueOn) -> {
-				// Note: GitHub seems to store full date/time as UTC then displays
-				// as a date (no time) in your timezone, which means the date will
-				// not always be the same date as we intend.
-				// For example, midnight UTC is actually 8pm CDT (the previous day).
-				// We use 12pm/noon UTC to be as far from anybody's midnight as we can.
-				var milestone = new Milestone(milestoneTitle, null, dueOn.atTime(LocalTime.NOON).toInstant(ZoneOffset.UTC));
-				gitHubApi.createMilestone(repository, milestone);
-			});
-		} else {
-			// Create GA milestone for patch release on the next even month
-			var startDate = LocalDate.now();
-			var dueOn = releaseTrain.getNextReleaseDate(startDate);
-			var milestone = new Milestone(version, null, dueOn.atTime(LocalTime.NOON).toInstant(ZoneOffset.UTC));
-			gitHubApi.createMilestone(repository, milestone);
-		}
-	}
-
-	private SpringReleaseTrain getReleaseTrain(String nextReleaseMilestone) {
 		var weekOfMonth = getWeekOfMonth().get();
 		var dayOfWeek = getDayOfWeek().get();
 
-		SpringReleaseTrainSpec releaseTrainSpec =
-				SpringReleaseTrainSpec.builder()
-						.nextTrain()
-						.version(nextReleaseMilestone)
-						.weekOfMonth(weekOfMonth)
-						.dayOfWeek(dayOfWeek)
-						.build();
-
-		return new SpringReleaseTrain(releaseTrainSpec);
+		var springReleases = new SpringReleases(gitHubAccessToken);
+		springReleases.scheduleReleaseIfNotExists(repository.owner(), repository.name(), version, weekOfMonth, dayOfWeek);
 	}
 
 	public static void register(Project project) {

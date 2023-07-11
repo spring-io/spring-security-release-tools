@@ -15,11 +15,8 @@
  */
 package io.spring.gradle.release;
 
-import java.io.File;
-
 import io.spring.gradle.core.RegularFileUtils;
 import org.gradle.api.Project;
-import org.gradle.api.artifacts.repositories.IvyArtifactRepository;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
@@ -64,11 +61,11 @@ public abstract class GenerateChangelogTask extends JavaExec {
 
 	@Override
 	public void exec() {
-		String version = getVersion().get();
-		String username = getUsername().getOrNull();
-		String password = getPassword().getOrNull();
-		File outputFile = getReleaseNotesFile().getAsFile().get();
-		File parent = outputFile.getParentFile();
+		var version = getVersion().get();
+		var username = getUsername().getOrNull();
+		var password = getPassword().getOrNull();
+		var outputFile = getReleaseNotesFile().getAsFile().get();
+		var parent = outputFile.getParentFile();
 		if (!parent.exists()) {
 			Assert.isTrue(parent.mkdirs(), "Unable to create " + outputFile);
 		}
@@ -117,7 +114,7 @@ public abstract class GenerateChangelogTask extends JavaExec {
 	}
 
 	private static void createGenerateChangelogRepository(Project project) {
-		IvyArtifactRepository repository = project.getRepositories().ivy((repo) -> {
+		var repository = project.getRepositories().ivy((repo) -> {
 			repo.setUrl(GENERATE_CHANGELOG_REPO_URL);
 			repo.patternLayout((layout) -> layout.artifact(GENERATE_CHANGELOG_REPO_LAYOUT));
 			repo.getMetadataSources().artifact();

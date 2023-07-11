@@ -16,7 +16,6 @@
 package io.spring.gradle.release;
 
 import com.github.api.GitHubApi;
-import com.github.api.User;
 import io.spring.gradle.core.RegularFileUtils;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
@@ -43,10 +42,10 @@ public abstract class GetGitHubUserNameTask extends DefaultTask {
 
 	@TaskAction
 	public void getGitHubUsername() {
-		String gitHubAccessToken = getGitHubAccessToken().get();
+		var gitHubAccessToken = getGitHubAccessToken().get();
 
-		GitHubApi github = new GitHubApi(gitHubAccessToken);
-		User user = github.getUser();
+		var github = new GitHubApi(gitHubAccessToken);
+		var user = github.getUser();
 		if (user == null) {
 			throw new IllegalStateException(
 					"Unable to retrieve GitHub username. Please check the personal access token and try again.");

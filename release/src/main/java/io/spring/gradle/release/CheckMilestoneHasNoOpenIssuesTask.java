@@ -16,9 +16,9 @@
 
 package io.spring.gradle.release;
 
-import com.github.api.GitHubApi;
 import com.github.api.Repository;
 import io.spring.gradle.core.RegularFileUtils;
+import io.spring.release.SpringReleases;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
 import org.gradle.api.provider.Property;
@@ -55,9 +55,8 @@ public abstract class CheckMilestoneHasNoOpenIssuesTask extends DefaultTask {
 		var repository = getRepository().get();
 		var version = getVersion().get();
 
-		GitHubApi gitHubApi = new GitHubApi(gitHubAccessToken);
-		var milestone = gitHubApi.getMilestone(repository, version);
-		var hasOpenIssues = gitHubApi.hasOpenIssues(repository, milestone.number());
+		var springReleases = new SpringReleases(gitHubAccessToken);
+		var hasOpenIssues = springReleases.hasNoOpenIssues(repository.owner(), repository.name(), version);
 		System.out.println(!hasOpenIssues);
 	}
 

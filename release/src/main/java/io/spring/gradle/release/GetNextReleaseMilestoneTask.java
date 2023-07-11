@@ -15,14 +15,9 @@
  */
 package io.spring.gradle.release;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.regex.Pattern;
-
-import com.github.api.GitHubApi;
-import com.github.api.Milestone;
 import com.github.api.Repository;
 import io.spring.gradle.core.RegularFileUtils;
+import io.spring.release.SpringReleases;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
 import org.gradle.api.file.RegularFileProperty;
@@ -44,7 +39,6 @@ import static io.spring.gradle.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_P
 public abstract class GetNextReleaseMilestoneTask extends DefaultTask {
 	public static final String TASK_NAME = "getNextReleaseMilestone";
 
-	private static final Pattern SNAPSHOT_PATTERN = Pattern.compile("^([0-9]+)\\.([0-9]+)\\.([0-9]+)-SNAPSHOT$");
 	private static final String OUTPUT_VERSION_PATH = "next-release-milestone-version.txt";
 
 	@Input
@@ -62,48 +56,15 @@ public abstract class GetNextReleaseMilestoneTask extends DefaultTask {
 
 	@TaskAction
 	public void getNextReleaseMilestone() {
+		var gitHubAccessToken = getGitHubAccessToken().getOrNull();
+		var repository = getRepository().get();
 		var version = getVersion().get();
-		var nextReleaseMilestone = findNextReleaseMilestone(version);
+		var springReleases = new SpringReleases(gitHubAccessToken);
+		var nextReleaseMilestone = springReleases.getNextReleaseMilestone(repository.owner(), repository.name(), version);
+
 		var outputFile = getNextReleaseMilestoneFile().get();
 		RegularFileUtils.writeString(outputFile, nextReleaseMilestone);
 		System.out.println(nextReleaseMilestone);
-	}
-
-	private String findNextReleaseMilestone(String version) {
-		if (!version.endsWith("-SNAPSHOT")) {
-			return version;
-		}
-
-		var snapshotVersion = SNAPSHOT_PATTERN.matcher(version);
-		if (!snapshotVersion.find()) {
-			throw new IllegalArgumentException(
-					"Cannot calculate next release version because given version is not a valid SNAPSHOT version");
-		}
-
-		var patchSegment = snapshotVersion.group(3);
-		var baseVersion = version.replace("-SNAPSHOT", "");
-		if (patchSegment.equals("0")) {
-			var repository = getRepository().get();
-			var gitHubAccessToken = getGitHubAccessToken().getOrNull();
-			var gitHubApi = new GitHubApi(gitHubAccessToken);
-			var milestones = gitHubApi.getMilestones(repository);
-			var nextPreRelease = getNextPreRelease(baseVersion, milestones);
-			if (nextPreRelease != null) {
-				return nextPreRelease;
-			}
-		}
-
-		return baseVersion;
-	}
-
-	private static String getNextPreRelease(String baseVersion, List<Milestone> milestones) {
-		var versionPrefix = baseVersion + "-";
-		return milestones.stream()
-				.filter((milestone) -> milestone.title().startsWith(versionPrefix))
-				.sorted(Comparator.comparing(Milestone::dueOn))
-				.map(Milestone::title)
-				.findFirst()
-				.orElse(null);
 	}
 
 	public static void register(Project project) {

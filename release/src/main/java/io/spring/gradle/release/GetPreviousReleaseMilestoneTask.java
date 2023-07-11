@@ -15,11 +15,8 @@
  */
 package io.spring.gradle.release;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import io.spring.api.SaganApi;
 import io.spring.gradle.core.RegularFileUtils;
+import io.spring.release.SpringReleases;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
 import org.gradle.api.file.RegularFileProperty;
@@ -28,11 +25,9 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 
-import static io.spring.gradle.core.ProjectUtils.findTaskByType;
 import static io.spring.gradle.core.ProjectUtils.getProperty;
 import static io.spring.gradle.release.SpringReleasePlugin.CURRENT_VERSION_PROPERTY;
 import static io.spring.gradle.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY;
-import static io.spring.gradle.release.SpringReleasePlugin.GITHUB_USER_NAME_PROPERTY;
 
 /**
  * @author Steve Riesenberg
@@ -40,11 +35,7 @@ import static io.spring.gradle.release.SpringReleasePlugin.GITHUB_USER_NAME_PROP
 public abstract class GetPreviousReleaseMilestoneTask extends DefaultTask {
 	public static final String TASK_NAME = "getPreviousReleaseMilestone";
 
-	private static final Pattern VERSION_PATTERN = Pattern.compile("^([0-9]+)\\.([0-9]+)\\.([0-9]+)(-.+)?$");
 	private static final String OUTPUT_VERSION_PATH = "previous-release-milestone-version.txt";
-
-	@Input
-	public abstract Property<String> getUsername();
 
 	@Input
 	public abstract Property<String> getGitHubAccessToken();
@@ -60,44 +51,19 @@ public abstract class GetPreviousReleaseMilestoneTask extends DefaultTask {
 
 	@TaskAction
 	public void getPreviousReleaseMilestone() {
-		var username = getUsername().get();
 		var gitHubAccessToken = getGitHubAccessToken().get();
 		var projectName = getProjectName().get();
 		var version = getVersion().get();
-		var saganApi = new SaganApi(username, gitHubAccessToken);
 
-		var versionMatcher = versionMatcher(version);
-		var major = versionMatcher.group(1);
-		var minor = versionMatcher.group(2);
-
-		var releases = saganApi.getReleases(projectName);
-		releases.removeIf((release) -> {
-			if (version.endsWith("-SNAPSHOT") != release.version().endsWith("-SNAPSHOT")) {
-				return true;
-			}
-			var matcher = versionMatcher(release.version());
-			return !matcher.group(1).equals(major) || !matcher.group(2).equals(minor);
-		});
-
-		if (releases.size() == 1) {
-			var release = releases.get(0);
+		var springReleases = new SpringReleases(gitHubAccessToken);
+		var previousReleaseMilestone = springReleases.getPreviousReleaseMilestone(projectName, version);
+		if (previousReleaseMilestone != null) {
 			var outputFile = getPreviousReleaseMilestoneFile().get();
-			RegularFileUtils.writeString(outputFile, release.version());
-			System.out.println(release.version());
-		} else if (releases.isEmpty()) {
-			System.out.println("No previous release milestone found");
+			RegularFileUtils.writeString(outputFile, previousReleaseMilestone);
+			System.out.println(previousReleaseMilestone);
 		} else {
-			System.out.println("Unable to determine previous release milestone because multiple matches were found");
+			System.out.println("Unable to determine previous release milestone, either because multiple matches were found or none exists");
 		}
-	}
-
-	private static Matcher versionMatcher(String version) {
-		var versionMatcher = VERSION_PATTERN.matcher(version);
-		if (!versionMatcher.find()) {
-			throw new IllegalArgumentException(
-					"Given version is not a valid version: " + version);
-		}
-		return versionMatcher;
 	}
 
 	public static void register(Project project) {
@@ -105,15 +71,9 @@ public abstract class GetPreviousReleaseMilestoneTask extends DefaultTask {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
 			task.setDescription("Finds the previous release version based on the current version.");
 
-			var usernameProvider = getProperty(project, GITHUB_USER_NAME_PROPERTY)
-					.orElse(findTaskByType(project, GetGitHubUserNameTask.class)
-							.getUsernameFile()
-							.map(RegularFileUtils::readString));
-
 			var versionProvider = getProperty(project, CURRENT_VERSION_PROPERTY)
 					.orElse(project.getRootProject().getVersion().toString());
 
-			task.getUsername().set(usernameProvider);
 			task.getGitHubAccessToken().set(getProperty(project, GITHUB_ACCESS_TOKEN_PROPERTY));
 			task.getProjectName().set(project.getRootProject().getName());
 			task.getVersion().set(versionProvider);

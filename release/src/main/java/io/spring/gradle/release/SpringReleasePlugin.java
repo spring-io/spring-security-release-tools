@@ -41,12 +41,6 @@ public class SpringReleasePlugin implements Plugin<Project> {
 		springRelease.getRepositoryOwner().convention("spring-projects");
 		springRelease.getReplaceSnapshotVersionInReferenceDocUrl().convention(false);
 
-		// Calculate the GitHub username for the provided access token
-		GetGitHubUserNameTask.register(project);
-
-		// Create release version using Sagan API
-		CreateSaganReleaseTask.register(project);
-
 		// Delete release version using Sagan API
 		DeleteSaganReleaseTask.register(project);
 
@@ -62,8 +56,8 @@ public class SpringReleasePlugin implements Plugin<Project> {
 		// Generate release notes for the next GitHub milestone
 		GenerateChangelogTask.register(project);
 
-		// Create release with release notes using GitHub API
-		CreateGitHubReleaseTask.register(project);
+		// Create release with release notes using GitHub and Sagan APIs
+		CreateReleaseTask.register(project);
 
 		// Check if the next milestone has no open issues (prints true or false)
 		CheckMilestoneHasNoOpenIssuesTask.register(project);

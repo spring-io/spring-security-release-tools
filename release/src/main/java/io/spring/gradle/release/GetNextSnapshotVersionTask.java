@@ -15,10 +15,8 @@
  */
 package io.spring.gradle.release;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import io.spring.gradle.core.RegularFileUtils;
+import io.spring.release.SpringReleases;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
 import org.gradle.api.file.RegularFileProperty;
@@ -36,7 +34,6 @@ import static io.spring.gradle.release.SpringReleasePlugin.CURRENT_VERSION_PROPE
 public abstract class GetNextSnapshotVersionTask extends DefaultTask {
 	public static final String TASK_NAME = "getNextSnapshotVersion";
 
-	private static final Pattern RELEASE_VERSION_PATTERN = Pattern.compile("^([0-9]+)\\.([0-9]+)\\.([0-9]+)(-M\\d+|-RC\\d+)?$");
 	private static final String OUTPUT_VERSION_PATH = "next-snapshot-version.txt";
 
 	@Input
@@ -48,32 +45,9 @@ public abstract class GetNextSnapshotVersionTask extends DefaultTask {
 	@TaskAction
 	public void getNextSnapshotVersion() {
 		var version = getVersion().get();
-		var nextVersion = calculateNextSnapshotVersion(version);
+		var nextVersion = SpringReleases.getNextSnapshotVersion(version);
 		RegularFileUtils.writeString(getNextSnapshotVersionFile().get(), nextVersion);
 		System.out.println(nextVersion);
-	}
-
-	private static String calculateNextSnapshotVersion(String version) {
-		Matcher releaseVersion = RELEASE_VERSION_PATTERN.matcher(version);
-		if (!releaseVersion.find()) {
-			if (version.endsWith("-SNAPSHOT")) {
-				throw new IllegalStateException(
-						"Cannot calculate next snapshot version because given version is already a SNAPSHOT");
-			} else {
-				throw new IllegalStateException(
-						"Cannot calculate next snapshot version because the given project version is not a valid semver version");
-			}
-		}
-
-		String majorSegment = releaseVersion.group(1);
-		String minorSegment = releaseVersion.group(2);
-		String patchSegment = releaseVersion.group(3);
-		String modifier = releaseVersion.group(4);
-		if (modifier == null) {
-			patchSegment = String.valueOf(Integer.parseInt(patchSegment) + 1);
-		}
-
-		return "%s.%s.%s-SNAPSHOT".formatted(majorSegment, minorSegment, patchSegment);
 	}
 
 	public static void register(Project project) {
