@@ -23,6 +23,7 @@ import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.TaskAction;
 
 import org.springframework.util.Assert;
@@ -42,10 +43,11 @@ public abstract class CheckMilestoneIsDueTodayTask extends DefaultTask {
 	public abstract Property<Repository> getRepository();
 
 	@Input
-	public abstract Property<String> getGitHubAccessToken();
+	public abstract Property<String> getVersion();
 
 	@Input
-	public abstract Property<String> getVersion();
+	@Optional
+	public abstract Property<String> getGitHubAccessToken();
 
 	@TaskAction
 	public void checkMilestoneIsDueToday() {

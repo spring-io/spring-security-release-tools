@@ -41,7 +41,11 @@ public class SpringReleases {
 
 	public SpringReleases(String accessToken) {
 		this.gitHubApi = new GitHubApi(accessToken);
-		this.saganApi = new SaganApi(this.gitHubApi.getUser().login(), accessToken);
+		if (accessToken != null) {
+			this.saganApi = new SaganApi(this.gitHubApi.getUser().login(), accessToken);
+		} else {
+			this.saganApi = new SaganApi("anonymous", "invalid");
+		}
 	}
 
 	public SpringReleases(GitHubApi gitHubApi, SaganApi saganApi) {
