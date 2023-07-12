@@ -116,6 +116,15 @@ public class SpringReleases {
 		this.saganApi.createRelease(repo, saganRelease(version, referenceDocUrl, apiDocUrl));
 	}
 
+	public void createGitHubRelease(String owner, String repo, String version, String branch, String body) {
+		var repository = new Repository(owner, repo);
+		this.gitHubApi.createRelease(repository, gitHubRelease(version, branch, body));
+	}
+
+	public void createSaganRelease(String repo, String version, String referenceDocUrl, String apiDocUrl) {
+		this.saganApi.createRelease(repo, saganRelease(version, referenceDocUrl, apiDocUrl));
+	}
+
 	public void deleteRelease(String repo, String version) {
 		this.saganApi.deleteRelease(repo, version);
 	}
@@ -210,7 +219,7 @@ public class SpringReleases {
 		return new io.spring.api.Release(version, referenceDocUrl, apiDocUrl, null, false);
 	}
 
-	private static Matcher versionMatcher(String version) {
+	public static Matcher versionMatcher(String version) {
 		var versionMatcher = VERSION_PATTERN.matcher(version);
 		if (!versionMatcher.find()) {
 			throw new IllegalArgumentException("Given version is not a valid version: %s".formatted(version));

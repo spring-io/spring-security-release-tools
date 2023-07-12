@@ -38,9 +38,9 @@ import static io.spring.gradle.release.SpringReleasePlugin.NEXT_VERSION_PROPERTY
 /**
  * @author Steve Riesenberg
  */
-public abstract class CreateReleaseTask extends DefaultTask {
+public abstract class CreateGitHubReleaseTask extends DefaultTask {
 
-	public static final String TASK_NAME = "createRelease";
+	public static final String TASK_NAME = "createGitHubRelease";
 
 	@Input
 	public abstract Property<Repository> getRepository();
@@ -55,53 +55,31 @@ public abstract class CreateReleaseTask extends DefaultTask {
 	public abstract Property<String> getBranch();
 
 	@Input
-	public abstract Property<String> getReferenceDocUrl();
-
-	@Input
-	public abstract Property<String> getApiDocUrl();
-
-	@Input
 	public abstract Property<Boolean> getCreateRelease();
-
-	@Input
-	public abstract Property<Boolean> getReplaceSnapshotVersionInReferenceDocUrl();
 
 	@Input
 	@Optional
 	public abstract Property<String> getGitHubAccessToken();
 
 	@TaskAction
-	public void createRelease() {
+	public void createGitHubRelease() {
 		var gitHubAccessToken = getGitHubAccessToken().getOrNull();
 		var repository = getRepository().get();
 		var version = getVersion().get();
 		var branch = getBranch().get();
 		var body = getReleaseNotes().get();
-		var referenceDocUrl = getReferenceDocUrl().get();
-		var apiDocUrl = getApiDocUrl().get();
 		var createRelease = getCreateRelease().get();
 		if (createRelease && gitHubAccessToken == null) {
 			throw new MissingPropertyException("Please provide an access token with -PgitHubAccessToken=...");
 		}
 
-		// replace "-SNAPSHOT" in version numbers in referenceDocUrl for Antora
-		var replaceSnapshotVersion = getReplaceSnapshotVersionInReferenceDocUrl().get();
-		if (replaceSnapshotVersion && version.endsWith("-SNAPSHOT")) {
-			var versionMatcher = SpringReleases.versionMatcher(version);
-			var majorVersion = versionMatcher.group(1);
-			var minorVersion = versionMatcher.group(2);
-			var majorMinorVersion = "%s.%s-SNAPSHOT".formatted(majorVersion, minorVersion);
-			referenceDocUrl = referenceDocUrl.replace("{version}", majorMinorVersion);
-		}
-
-		System.out.printf("%sCreating release for %s/%s@%s%n", createRelease ? "" : "[DRY RUN] ",
+		System.out.printf("%sCreating GitHub release for %s/%s@%s%n", createRelease ? "" : "[DRY RUN] ",
 				repository.owner(), repository.name(), version);
 		System.out.printf("%nRelease Notes:%n%n----%n%s%n----%n%n", body.trim());
 
 		if (createRelease) {
 			var springReleases = new SpringReleases(gitHubAccessToken);
-			springReleases.createRelease(repository.owner(), repository.name(), version, branch, body, referenceDocUrl,
-					apiDocUrl);
+			springReleases.createGitHubRelease(repository.owner(), repository.name(), version, branch, body);
 		}
 	}
 
@@ -109,7 +87,7 @@ public abstract class CreateReleaseTask extends DefaultTask {
 		var springRelease = project.getExtensions().findByType(SpringReleasePluginExtension.class);
 		Assert.notNull(springRelease, "Cannot find " + SpringReleasePluginExtension.class);
 
-		project.getTasks().register(TASK_NAME, CreateReleaseTask.class, (task) -> {
+		project.getTasks().register(TASK_NAME, CreateGitHubReleaseTask.class, (task) -> {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
 			task.setDescription("Create a GitHub release with release notes");
 			task.doNotTrackState("API call to GitHub needs to check for new issues and create a release every time");
@@ -132,9 +110,6 @@ public abstract class CreateReleaseTask extends DefaultTask {
 			task.getVersion().set(versionProvider);
 			task.getReleaseNotes().set(releaseNotesProvider);
 			task.getBranch().set(getProperty(project, BRANCH_PROPERTY).orElse("main"));
-			task.getReferenceDocUrl().set(springRelease.getReferenceDocUrl());
-			task.getApiDocUrl().set(springRelease.getApiDocUrl());
-			task.getReplaceSnapshotVersionInReferenceDocUrl().set(springRelease.getReplaceSnapshotVersionInReferenceDocUrl());
 			task.getCreateRelease().set(createReleaseProvider.orElse(false));
 			task.getGitHubAccessToken().set(getProperty(project, GITHUB_ACCESS_TOKEN_PROPERTY));
 		});
