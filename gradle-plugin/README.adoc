@@ -24,7 +24,7 @@ springRelease {
 * `dayOfWeek`: The day of the week when releases for this project are scheduled; valid values are 1 - 5 where 1 is Monday and 5 is Friday (required)
 * `referenceDocUrl`: The template URL for a version of the reference documentation; can contain the variable `{version}` which is automatically substituted based on the current version (required)
 * `apiDocUrl`: The template URL for a version of the API documentation; can contain the variable `{version}` which is automatically substituted based on the current version (required)
-* `replaceSnapshotVersionInReferenceDocUrl`: Flag controlling whether `{version}` should be replaced with the current base version (without -SNAPSHOT) (`true`) or left as-is (`false`) in the `referenceDocUrl`; Useful for working with Antora which does not include `-SNAPSHOT` in the URL (optional, defaults to `false`)
+* `replaceSnapshotVersionInReferenceDocUrl`: Flag controlling whether `{version}` should be replaced (`true`) or left as-is (`false`) in the `referenceDocUrl`; Useful for working with Antora (optional, defaults to `false`)
 
 == Tasks
 
@@ -40,6 +40,8 @@ Top-level tasks:
 * <<checkMilestoneIsDueToday>>
 * <<checkMilestoneHasNoOpenIssues>>
 * <<createRelease>>
+* <<createGitHubRelease>>
+* <<createSaganRelease>>
 * <<deleteSaganRelease>>
 * <<getNextReleaseMilestone>>
 * <<getNextSnapshotVersion>>
@@ -104,8 +106,10 @@ The following command will determine if there are no open issues (based on the c
 [[createRelease]]
 === `createRelease`
 
-Create a GitHub release with release notes using the GitHub API and a new release version for the current project on spring.io.
-This task uses <<generateChangelog>> to generate the release notes and the configured `referenceDocUrl` and `apiDocUrl` values from the DSL.
+Create a GitHub release with release notes using the GitHub API and a new release version for the current project on spring.io using the Sagan API.
+This task uses <<generateChangelog>> to generate the release notes and the configured `referenceDocUrl`, `apiDocUrl` and `replaceSnapshotVersionInReferenceDocUrl` values from the DSL.
+
+NOTE: This task is a combination of <<createGitHubRelease>> and <<createSaganRelease>>, with the added benefit that the `createRelease` parameter (see *Task properties* below) determines whether both APIs are actually called.
 
 The following command will perform a dry-run and provide output of what creating the next release would look like:
 
@@ -126,6 +130,58 @@ The following command will perform a dry-run and provide output of what creating
 [source,bash]
 ----
 ./gradlew createRelease -PnextVersion=1.0.0 -Pbranch=1.0.x -PcreateRelease=true -PgitHubAccessToken=$GITHUB_ACCESS_TOKEN
+----
+
+[[createGitHubRelease]]
+=== `createGitHubRelease`
+
+Create a GitHub release with release notes using the GitHub API.
+This task uses <<generateChangelog>> to generate the release notes.
+
+The following command will perform a dry-run and provide output of what creating the next release would look like:
+
+[source,bash]
+----
+./gradlew createGitHubRelease
+----
+
+*Task properties:*
+
+* `nextVersion`: Specify the version used to create the release (optional, uses <<getNextReleaseMilestone>> if not specified)
+* `branch`: Specify the branch used to tag the release (optional, defaults to `main`)
+* `createRelease`: Flag controlling whether the release is created (`true`) or a dry-run is performed (`false`) (optional, defaults to `false`)
+* `gitHubAccessToken`: A personal access token used to avoid hitting rate limits on the GitHub API and/or create the release (optional, required if `createRelease` is `true`)
+
+*Full example:*
+
+[source,bash]
+----
+./gradlew createGitHubRelease -PnextVersion=1.0.0 -Pbranch=1.0.x -PcreateRelease=true -PgitHubAccessToken=$GITHUB_ACCESS_TOKEN
+----
+
+[[createSaganRelease]]
+=== `createSaganRelease`
+
+Create a new release version for the current project on spring.io using the Sagan API.
+This task uses the configured `referenceDocUrl` and `apiDocUrl` values from the DSL.
+
+The following command will create a new release version:
+
+[source,bash]
+----
+./gradlew createSaganRelease -PgitHubAccessToken=$GITHUB_ACCESS_TOKEN
+----
+
+*Task properties:*
+
+* `nextVersion`: Specify the version used to create the release (optional, uses <<getNextReleaseMilestone>> if not specified)
+* `gitHubAccessToken`: A personal access token used to access the Sagan API (required)
+
+*Full example:*
+
+[source,bash]
+----
+./gradlew createSaganRelease -PnextVersion=1.0.0 -PgitHubAccessToken=$GITHUB_ACCESS_TOKEN
 ----
 
 [[deleteSaganRelease]]
