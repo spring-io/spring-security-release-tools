@@ -82,7 +82,7 @@ The following command will determine if there are no open issues (based on the c
 [[checkMilestoneHasNoOpenIssues]]
 === `checkMilestoneHasNoOpenIssues`
 
-Checks if there are any open issues for the next release milestone and outputs `true` or `false`.
+Checks if there are no open issues for the next release milestone and outputs `true` or `false`.
 
 The following command will determine if there are no open issues (based on the current version):
 
@@ -187,7 +187,7 @@ The following command will create a new release version:
 [[deleteSaganRelease]]
 === `deleteSaganRelease`
 
-Delete a release version for the current project on spring.io.
+Delete a release version for the current project on spring.io using the Sagan API.
 
 The following command will delete the previous release version:
 

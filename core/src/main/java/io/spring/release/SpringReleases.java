@@ -30,6 +30,8 @@ import com.github.api.Repository;
 import io.spring.api.SaganApi;
 
 /**
+ * Perform automated releases of Spring projects using the GitHub and Sagan APIs.
+ *
  * @author Steve Riesenberg
  */
 public class SpringReleases {
@@ -40,6 +42,16 @@ public class SpringReleases {
 
 	private final SaganApi saganApi;
 
+	/**
+	 * Create a new instance using a GitHub personal access token.
+	 * <p>
+	 * This constructor will immediately use the provided access token to look up the
+	 * GitHub username of the user, which is required for the Sagan API.
+	 * @param accessToken A GitHub personal access token, or null for anonymous access
+	 * @see <a href=
+	 * "https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens">
+	 * Managing your personal access tokens</a>
+	 */
 	public SpringReleases(String accessToken) {
 		this.gitHubApi = new GitHubApi(accessToken);
 		if (accessToken != null) {
@@ -50,11 +62,28 @@ public class SpringReleases {
 		}
 	}
 
+	/**
+	 * Create a new instance.
+	 * @param gitHubApi The pre-configured GitHubApi instance
+	 * @param saganApi The pre-configured SaganApi instance
+	 */
 	public SpringReleases(GitHubApi gitHubApi, SaganApi saganApi) {
 		this.gitHubApi = gitHubApi;
 		this.saganApi = saganApi;
 	}
 
+	/**
+	 * Finds or calculates the next release version based on the current version.
+	 * <p>
+	 * If the current version is a "SNAPSHOT" with a patch version of "0", the GitHub API
+	 * is used to find the next milestone (sorted by due date) that matches the base
+	 * version number. If no milestone exists, the base version is used instead. In all
+	 * other cases, the base version is chosen automatically.
+	 * @param owner The GitHub user or organization name
+	 * @param repo The GitHub repository name
+	 * @param version The current version used to find the next release version
+	 * @return The version number of the next release milestone
+	 */
 	public String getNextReleaseMilestone(String owner, String repo, String version) {
 		var versionMatcher = versionMatcher(version);
 		if (!Objects.equals(versionMatcher.group(4), "-SNAPSHOT")) {
@@ -76,6 +105,20 @@ public class SpringReleases {
 		return baseVersion;
 	}
 
+	/**
+	 * Finds the previous release version based on the current version using the Sagan API
+	 * (now backed by Contentful).
+	 * <p>
+	 * If the current version is a "SNAPSHOT", this method finds an existing "SNAPSHOT"
+	 * version with the same major/minor version. If the current version is a GA version,
+	 * this method finds an existing GA version with the same major/minor version. If
+	 * multiple (ambiguous) options or no options exist (not found), this method returns
+	 * null.
+	 * @param repo The GitHub repository name
+	 * @param version The current version used to find the next release version
+	 * @return The version number of the previous release milestone, or null if not found
+	 * @see <a href="https://api.spring.io/restdocs/index.html">Sagan API Docs</a>
+	 */
 	public String getPreviousReleaseMilestone(String repo, String version) {
 		var versionMatcher = versionMatcher(version);
 		var major = versionMatcher.group(1);
@@ -95,12 +138,26 @@ public class SpringReleases {
 		return (releases.size() == 1) ? releases.get(0).version() : null;
 	}
 
+	/**
+	 * Checks if there are no open issues for the next release milestone.
+	 * @param owner The GitHub user or organization name
+	 * @param repo The GitHub repository name
+	 * @param version The version used to check for open issues
+	 * @return true if there are no open issues, or false otherwise
+	 */
 	public boolean hasNoOpenIssues(String owner, String repo, String version) {
 		var repository = new Repository(owner, repo);
 		var milestone = this.gitHubApi.getMilestone(repository, version);
 		return !this.gitHubApi.hasOpenIssues(repository, milestone.number());
 	}
 
+	/**
+	 * Checks if the given version is due today (or past due).
+	 * @param owner The GitHub user or organization name
+	 * @param repo The GitHub repository name
+	 * @param version The version used to check the due date
+	 * @return true if the release is due today (or past due), or false otherwise
+	 */
 	public boolean isDueToday(String owner, String repo, String version) {
 		var repository = new Repository(owner, repo);
 		var milestone = this.gitHubApi.getMilestone(repository, version);
@@ -109,6 +166,22 @@ public class SpringReleases {
 		return (dueOn != null && today.compareTo(dueOn) >= 0);
 	}
 
+	/**
+	 * Create a GitHub release with release notes using the GitHub API and a new release
+	 * version for the current project on spring.io using the Sagan API.
+	 * @param owner The GitHub user or organization name
+	 * @param repo The GitHub repository name
+	 * @param version The version used to create the release
+	 * @param branch The branch used to tag the release
+	 * @param body The body of the release notes (GitHub flavored markdown, can use the
+	 * output of spring-io/github-release-notes-generator)
+	 * @param referenceDocUrl The template URL for a version of the reference
+	 * documentation (can contain the variable `{version}` which is automatically
+	 * substituted based on the current version)
+	 * @param apiDocUrl The template URL for a version of the API documentation (can
+	 * contain the variable `{version}` which is automatically substituted based on the
+	 * current version)
+	 */
 	public void createRelease(String owner, String repo, String version, String branch, String body,
 			String referenceDocUrl, String apiDocUrl) {
 		var repository = new Repository(owner, repo);
@@ -116,19 +189,76 @@ public class SpringReleases {
 		this.saganApi.createRelease(repo, saganRelease(version, referenceDocUrl, apiDocUrl));
 	}
 
+	/**
+	 * Create a GitHub release with release notes using the GitHub API.
+	 * @param owner The GitHub user or organization name
+	 * @param repo The GitHub repository name
+	 * @param version The version used to create the release
+	 * @param branch The branch used to tag the release
+	 * @param body The body of the release notes (GitHub flavored markdown, can use the
+	 * output of spring-io/github-release-notes-generator)
+	 */
 	public void createGitHubRelease(String owner, String repo, String version, String branch, String body) {
 		var repository = new Repository(owner, repo);
 		this.gitHubApi.createRelease(repository, gitHubRelease(version, branch, body));
 	}
 
+	/**
+	 * Create a new release version for the current project on spring.io using the Sagan
+	 * API.
+	 * @param repo The GitHub repository name
+	 * @param version The version used to create the release
+	 * @param referenceDocUrl The template URL for a version of the reference
+	 * documentation (can contain the variable `{version}` which is automatically
+	 * substituted based on the current version)
+	 * @param apiDocUrl The template URL for a version of the API documentation (can
+	 * contain the variable `{version}` which is automatically substituted based on the
+	 * current version)
+	 */
 	public void createSaganRelease(String repo, String version, String referenceDocUrl, String apiDocUrl) {
 		this.saganApi.createRelease(repo, saganRelease(version, referenceDocUrl, apiDocUrl));
 	}
 
+	/**
+	 * Delete a release version for the current project on spring.io using the Sagan API.
+	 * @param repo The GitHub repository name
+	 * @param version The version used to delete the release
+	 */
 	public void deleteRelease(String repo, String version) {
 		this.saganApi.deleteRelease(repo, version);
 	}
 
+	/**
+	 * Schedule the next release (even months only) or release train (series of milestones
+	 * starting in January or July) based on the current version.
+	 * <p>
+	 * This method works with the concept of a Spring release train to automate scheduling
+	 * one or more milestones using the given {@code weekOfMonth} and {@code dayOfWeek}
+	 * values. All dates are calculated based on the first Monday of the month.
+	 * <p>
+	 * For example, if the current date is June 1, 2023, the current version is
+	 * "1.0.0-SNAPSHOT", {@code weekOfMonth} is 2 and {@code dayOfWeek} is 4 (i.e. Spring
+	 * Framework's release day), then this method can schedule a release train for July
+	 * 13, 2023 ("1.0.0-M1"), August 17, 2023 ("1.0.0-M2"), September 14, 2023
+	 * ("1.0.0-M3"), October 12, 2023 ("1.0.0-RC1") and November 16, 2023 ("1.0.0").
+	 * <p>
+	 * However with all other values being the same, if the current version is
+	 * "1.0.1-SNAPSHOT", this method will simply schedule a patch release on the next even
+	 * month (which is the current month in this example) of June 15, 2023 ("1.0.1"). The
+	 * logic to determine whether to schedule a release train or a single patch release is
+	 * based on the value of the patch version, where "x.x.0" attempts to schedule a
+	 * release train, and "x.x.1" or higher schedules a patch release.
+	 * <p>
+	 * This method does nothing if the next release milestone already exists.
+	 * @param owner The GitHub user or organization name
+	 * @param repo The GitHub repository name
+	 * @param version The version used to schedule the next release milestone (or release
+	 * train)
+	 * @param weekOfMonth The week of the month when releases for this project are
+	 * scheduled (1-3) where 1 is the first week with a Monday
+	 * @param dayOfWeek The day of the week when releases for this project are scheduled
+	 * (1-5) where 1 is Monday and 5 is Friday
+	 */
 	public void scheduleReleaseIfNotExists(String owner, String repo, String version, int weekOfMonth, int dayOfWeek) {
 		var versionMatcher = versionMatcher(version);
 		if (versionMatcher.group(4) != null) {
@@ -176,6 +306,16 @@ public class SpringReleases {
 		}
 	}
 
+	/**
+	 * Calculates the next snapshot version based on the current version.
+	 * <p>
+	 * For example, if the current version is a milestone such as "1.0.0-M2", then this
+	 * method returns "1.0.0-SNAPSHOT". If the current version is a GA version such as
+	 * "1.0.0", then this method increments the patch version and returns
+	 * "1.0.1-SNAPSHOT".
+	 * @param version The version used to calculate the next snapshot version
+	 * @return The next snapshot version
+	 */
 	public static String getNextSnapshotVersion(String version) {
 		var versionMatcher = versionMatcher(version);
 		if (Objects.equals(versionMatcher.group(4), "-SNAPSHOT")) {
@@ -219,6 +359,18 @@ public class SpringReleases {
 		return new io.spring.api.Release(version, referenceDocUrl, apiDocUrl, null, false);
 	}
 
+	/**
+	 * Check a version number (e.g. "1.0.0-SNAPSHOT") against a pattern with the following
+	 * groups captured:
+	 * <ol>
+	 * <li>major version</li>
+	 * <li>minor version</li>
+	 * <li>patch version</li>
+	 * <li>optional suffix (e.g. "-SNAPSHOT" or "-RC1")</li>
+	 * </ol>
+	 * @param version The version number
+	 * @return The Matcher instance
+	 */
 	public static Matcher versionMatcher(String version) {
 		var versionMatcher = VERSION_PATTERN.matcher(version);
 		if (!versionMatcher.find()) {
