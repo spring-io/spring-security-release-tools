@@ -94,8 +94,8 @@ public abstract class CreateReleaseTask extends DefaultTask {
 			referenceDocUrl = referenceDocUrl.replace("{version}", majorMinorVersion);
 		}
 
-		System.out.printf("%sCreating release for %s/%s@%s%n", createRelease ? "" : "[DRY RUN] ",
-				repository.owner(), repository.name(), version);
+		System.out.printf("%sCreating release for %s/%s@%s%n", createRelease ? "" : "[DRY RUN] ", repository.owner(),
+				repository.name(), version);
 		System.out.printf("%nRelease Notes:%n%n----%n%s%n----%n%n", body.trim());
 
 		if (createRelease) {
@@ -134,7 +134,8 @@ public abstract class CreateReleaseTask extends DefaultTask {
 			task.getBranch().set(getProperty(project, BRANCH_PROPERTY).orElse("main"));
 			task.getReferenceDocUrl().set(springRelease.getReferenceDocUrl());
 			task.getApiDocUrl().set(springRelease.getApiDocUrl());
-			task.getReplaceSnapshotVersionInReferenceDocUrl().set(springRelease.getReplaceSnapshotVersionInReferenceDocUrl());
+			task.getReplaceSnapshotVersionInReferenceDocUrl()
+					.set(springRelease.getReplaceSnapshotVersionInReferenceDocUrl());
 			task.getCreateRelease().set(createReleaseProvider.orElse(false));
 			task.getGitHubAccessToken().set(getProperty(project, GITHUB_ACCESS_TOKEN_PROPERTY));
 		});

@@ -101,7 +101,8 @@ public abstract class CreateSaganReleaseTask extends DefaultTask {
 			task.getVersion().set(versionProvider);
 			task.getReferenceDocUrl().set(springRelease.getReferenceDocUrl());
 			task.getApiDocUrl().set(springRelease.getApiDocUrl());
-			task.getReplaceSnapshotVersionInReferenceDocUrl().set(springRelease.getReplaceSnapshotVersionInReferenceDocUrl());
+			task.getReplaceSnapshotVersionInReferenceDocUrl()
+					.set(springRelease.getReplaceSnapshotVersionInReferenceDocUrl());
 		});
 	}
 
