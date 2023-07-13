@@ -55,17 +55,18 @@ public abstract class GetPreviousReleaseMilestoneTask extends DefaultTask {
 		var gitHubAccessToken = getGitHubAccessToken().get();
 		var projectName = getProjectName().get();
 		var version = getVersion().get();
+		var outputFile = getPreviousReleaseMilestoneFile().get();
 
 		var springReleases = new SpringReleases(gitHubAccessToken);
 		var previousReleaseMilestone = springReleases.getPreviousReleaseMilestone(projectName, version);
 		if (previousReleaseMilestone != null) {
-			var outputFile = getPreviousReleaseMilestoneFile().get();
 			RegularFileUtils.writeString(outputFile, previousReleaseMilestone);
 			System.out.println(previousReleaseMilestone);
 		}
 		else {
 			System.out.println(
 					"Unable to determine previous release milestone, either because multiple matches were found or none exists");
+			RegularFileUtils.writeString(outputFile, "");
 		}
 	}
 

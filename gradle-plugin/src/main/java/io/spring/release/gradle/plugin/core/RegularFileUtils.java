@@ -22,6 +22,8 @@ import java.nio.file.Path;
 import org.gradle.api.Transformer;
 import org.gradle.api.file.RegularFile;
 
+import org.springframework.util.StringUtils;
+
 /**
  * @author Steve Riesenberg
  */
@@ -33,7 +35,8 @@ public final class RegularFileUtils {
 	public static String readString(RegularFile regularFile) {
 		Path path = regularFile.getAsFile().toPath();
 		try {
-			return Files.readString(path);
+			var string = Files.readString(path);
+			return StringUtils.hasLength(string) ? string : null;
 		}
 		catch (IOException ex) {
 			throw new RuntimeException(ex);

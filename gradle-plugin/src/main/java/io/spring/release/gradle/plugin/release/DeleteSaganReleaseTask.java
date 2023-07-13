@@ -61,6 +61,7 @@ public abstract class DeleteSaganReleaseTask extends DefaultTask {
 		project.getTasks().register(TASK_NAME, DeleteSaganReleaseTask.class, (task) -> {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
 			task.setDescription("Delete a version for the specified project on spring.io.");
+			task.doNotTrackState("API call to api.spring.io needs to check for releases every time");
 
 			// @formatter:off
 			var versionProvider = getProperty(project, PREVIOUS_VERSION_PROPERTY)
