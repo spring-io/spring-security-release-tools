@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.spring.gradle.release;
+package io.spring.release.gradle.plugin.release;
 
-import io.spring.gradle.core.RegularFileUtils;
 import io.spring.release.SpringReleases;
+import io.spring.release.gradle.plugin.core.RegularFileUtils;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
 import org.gradle.api.file.RegularFileProperty;
@@ -25,8 +25,8 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 
-import static io.spring.gradle.core.ProjectUtils.getProperty;
-import static io.spring.gradle.release.SpringReleasePlugin.CURRENT_VERSION_PROPERTY;
+import static io.spring.release.gradle.plugin.core.ProjectUtils.getProperty;
+import static io.spring.release.gradle.plugin.release.SpringReleasePlugin.CURRENT_VERSION_PROPERTY;
 
 /**
  * @author Steve Riesenberg

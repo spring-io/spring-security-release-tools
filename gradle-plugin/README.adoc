@@ -1,8 +1,28 @@
 = Spring Release Plugin
 
 Spring Release Plugin is a Gradle plugin that provides common tasks for automating releases.
-Simply apply the plugin in your project's root build file and define your project's configuration via the `springRelease` DSL.
 
+To use the plugin, add the following repository to `settings.gradle`:
+
+[source,gradle]
+----
+pluginManagement {
+	repositories {
+		maven { url "https://repo.spring.io/release" }
+	}
+}
+----
+
+Then apply the plugin in your project's root `build.gradle`:
+
+[source,gradle]
+----
+plugins {
+	id "io.spring.release" version "1.0.0
+}
+----
+
+Finally, define your project's configuration via the `springRelease` DSL.
 Here is an example configuration that releases on Thursdays following the 2nd Monday of the month (i.e. Spring Framework's release day):
 
 [source,gradle]

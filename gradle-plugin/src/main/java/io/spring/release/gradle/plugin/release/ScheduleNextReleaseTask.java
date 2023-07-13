@@ -13,81 +13,83 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.spring.gradle.release;
+package io.spring.release.gradle.plugin.release;
 
 import com.github.api.Repository;
-import io.spring.gradle.core.RegularFileUtils;
 import io.spring.release.SpringReleases;
+import io.spring.release.gradle.plugin.core.RegularFileUtils;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
-import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.Optional;
-import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 
 import org.springframework.util.Assert;
 
-import static io.spring.gradle.core.ProjectUtils.getProperty;
-import static io.spring.gradle.release.SpringReleasePlugin.CURRENT_VERSION_PROPERTY;
-import static io.spring.gradle.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY;
+import static io.spring.release.gradle.plugin.core.ProjectUtils.findTaskByType;
+import static io.spring.release.gradle.plugin.core.ProjectUtils.getProperty;
+import static io.spring.release.gradle.plugin.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY;
+import static io.spring.release.gradle.plugin.release.SpringReleasePlugin.NEXT_VERSION_PROPERTY;
 
 /**
  * @author Steve Riesenberg
  */
-public abstract class GetNextReleaseMilestoneTask extends DefaultTask {
+public abstract class ScheduleNextReleaseTask extends DefaultTask {
 
-	public static final String TASK_NAME = "getNextReleaseMilestone";
-
-	private static final String OUTPUT_VERSION_PATH = "next-release-milestone-version.txt";
+	public static final String TASK_NAME = "scheduleNextRelease";
 
 	@Input
 	public abstract Property<Repository> getRepository();
 
 	@Input
+	public abstract Property<String> getGitHubAccessToken();
+
+	@Input
 	public abstract Property<String> getVersion();
 
 	@Input
-	@Optional
-	public abstract Property<String> getGitHubAccessToken();
+	public abstract Property<Integer> getWeekOfMonth();
 
-	@OutputFile
-	public abstract RegularFileProperty getNextReleaseMilestoneFile();
+	@Input
+	public abstract Property<Integer> getDayOfWeek();
 
 	@TaskAction
-	public void getNextReleaseMilestone() {
-		var gitHubAccessToken = getGitHubAccessToken().getOrNull();
+	public void scheduleNextRelease() {
 		var repository = getRepository().get();
+		var gitHubAccessToken = getGitHubAccessToken().get();
 		var version = getVersion().get();
-		var springReleases = new SpringReleases(gitHubAccessToken);
-		var nextReleaseMilestone = springReleases.getNextReleaseMilestone(repository.owner(), repository.name(),
-				version);
+		var weekOfMonth = getWeekOfMonth().get();
+		var dayOfWeek = getDayOfWeek().get();
 
-		var outputFile = getNextReleaseMilestoneFile().get();
-		RegularFileUtils.writeString(outputFile, nextReleaseMilestone);
-		System.out.println(nextReleaseMilestone);
+		var springReleases = new SpringReleases(gitHubAccessToken);
+		springReleases.scheduleReleaseIfNotExists(repository.owner(), repository.name(), version, weekOfMonth,
+				dayOfWeek);
 	}
 
 	public static void register(Project project) {
 		var springRelease = project.getExtensions().findByType(SpringReleasePluginExtension.class);
 		Assert.notNull(springRelease, "Cannot find " + SpringReleasePluginExtension.class);
 
-		project.getTasks().register(TASK_NAME, GetNextReleaseMilestoneTask.class, (task) -> {
+		project.getTasks().register(TASK_NAME, ScheduleNextReleaseTask.class, (task) -> {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
 			task.setDescription(
-					"Calculates the next release version based on the current version and outputs the version number");
+					"Schedule the next release (even months only) or release train (series of milestones starting in January or July) based on the current version");
 			task.doNotTrackState("API call to GitHub needs to check for new milestones every time");
 
-			var versionProvider = getProperty(project, CURRENT_VERSION_PROPERTY)
-					.orElse(project.getRootProject().getVersion().toString());
+			// @formatter:off
+			var versionProvider = getProperty(project, NEXT_VERSION_PROPERTY)
+					.orElse(findTaskByType(project, GetNextReleaseMilestoneTask.class)
+							.getNextReleaseMilestoneFile()
+							.map(RegularFileUtils::readString));
+			// @formatter:on
 
 			var owner = springRelease.getRepositoryOwner().get();
 			var name = project.getRootProject().getName();
 			task.getRepository().set(new Repository(owner, name));
-			task.getVersion().set(versionProvider);
 			task.getGitHubAccessToken().set(getProperty(project, GITHUB_ACCESS_TOKEN_PROPERTY));
-			task.getNextReleaseMilestoneFile().set(project.getLayout().getBuildDirectory().file(OUTPUT_VERSION_PATH));
+			task.getVersion().set(versionProvider);
+			task.getWeekOfMonth().set(springRelease.getWeekOfMonth());
+			task.getDayOfWeek().set(springRelease.getDayOfWeek());
 		});
 	}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,68 +13,63 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.spring.gradle.release;
+
+package io.spring.release.gradle.plugin.release;
 
 import com.github.api.Repository;
-import io.spring.gradle.core.RegularFileUtils;
 import io.spring.release.SpringReleases;
+import io.spring.release.gradle.plugin.core.RegularFileUtils;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.TaskAction;
 
 import org.springframework.util.Assert;
 
-import static io.spring.gradle.core.ProjectUtils.findTaskByType;
-import static io.spring.gradle.core.ProjectUtils.getProperty;
-import static io.spring.gradle.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY;
-import static io.spring.gradle.release.SpringReleasePlugin.NEXT_VERSION_PROPERTY;
+import static io.spring.release.gradle.plugin.core.ProjectUtils.findTaskByType;
+import static io.spring.release.gradle.plugin.core.ProjectUtils.getProperty;
+import static io.spring.release.gradle.plugin.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY;
+import static io.spring.release.gradle.plugin.release.SpringReleasePlugin.NEXT_VERSION_PROPERTY;
 
 /**
  * @author Steve Riesenberg
  */
-public abstract class ScheduleNextReleaseTask extends DefaultTask {
+public abstract class CheckMilestoneHasNoOpenIssuesTask extends DefaultTask {
 
-	public static final String TASK_NAME = "scheduleNextRelease";
+	public static final String TASK_NAME = "checkMilestoneHasNoOpenIssues";
 
 	@Input
 	public abstract Property<Repository> getRepository();
 
 	@Input
-	public abstract Property<String> getGitHubAccessToken();
-
-	@Input
 	public abstract Property<String> getVersion();
 
 	@Input
-	public abstract Property<Integer> getWeekOfMonth();
-
-	@Input
-	public abstract Property<Integer> getDayOfWeek();
+	@Optional
+	public abstract Property<String> getGitHubAccessToken();
 
 	@TaskAction
-	public void scheduleNextRelease() {
+	public void checkMilestoneHasNoOpenIssues() {
+		var gitHubAccessToken = getGitHubAccessToken().getOrNull();
 		var repository = getRepository().get();
-		var gitHubAccessToken = getGitHubAccessToken().get();
 		var version = getVersion().get();
-		var weekOfMonth = getWeekOfMonth().get();
-		var dayOfWeek = getDayOfWeek().get();
 
 		var springReleases = new SpringReleases(gitHubAccessToken);
-		springReleases.scheduleReleaseIfNotExists(repository.owner(), repository.name(), version, weekOfMonth,
-				dayOfWeek);
+		var hasOpenIssues = springReleases.hasNoOpenIssues(repository.owner(), repository.name(), version);
+		System.out.println(!hasOpenIssues);
 	}
 
 	public static void register(Project project) {
 		var springRelease = project.getExtensions().findByType(SpringReleasePluginExtension.class);
 		Assert.notNull(springRelease, "Cannot find " + SpringReleasePluginExtension.class);
 
-		project.getTasks().register(TASK_NAME, ScheduleNextReleaseTask.class, (task) -> {
+		project.getTasks().register(TASK_NAME, CheckMilestoneHasNoOpenIssuesTask.class, (task) -> {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
 			task.setDescription(
-					"Schedule the next release (even months only) or release train (series of milestones starting in January or July) based on the current version");
-			task.doNotTrackState("API call to GitHub needs to check for new milestones every time");
+					"Checks if there are any open issues for the specified repository and milestone and outputs true or false");
+			task.doNotTrackState("API call to GitHub needs to check for open issues every time");
 
 			// @formatter:off
 			var versionProvider = getProperty(project, NEXT_VERSION_PROPERTY)
@@ -86,10 +81,8 @@ public abstract class ScheduleNextReleaseTask extends DefaultTask {
 			var owner = springRelease.getRepositoryOwner().get();
 			var name = project.getRootProject().getName();
 			task.getRepository().set(new Repository(owner, name));
-			task.getGitHubAccessToken().set(getProperty(project, GITHUB_ACCESS_TOKEN_PROPERTY));
 			task.getVersion().set(versionProvider);
-			task.getWeekOfMonth().set(springRelease.getWeekOfMonth());
-			task.getDayOfWeek().set(springRelease.getDayOfWeek());
+			task.getGitHubAccessToken().set(getProperty(project, GITHUB_ACCESS_TOKEN_PROPERTY));
 		});
 	}
 

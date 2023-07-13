@@ -2,6 +2,15 @@ plugins {
 	id "io.spring.convention.spring-gradle-plugin"
 }
 
+gradlePlugin {
+	plugins {
+		springReleasePlugin {
+			id = "io.spring.release"
+			implementationClass = "io.spring.release.gradle.plugin.release.SpringReleasePlugin"
+		}
+	}
+}
+
 dependencies {
 	management platform(project(":dependencies"))
 	implementation project(":github-api")
