@@ -2,8 +2,8 @@ plugins {
 	id "io.spring.convention.root"
 }
 
-group = "io.spring"
-description = "Spring Gradle Plugins"
+group = "io.spring.release"
+description = "Spring Release Tools"
 
 if (hasProperty("buildScan")) {
 	buildScan {

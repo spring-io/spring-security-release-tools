@@ -45,7 +45,7 @@ public class SpringMavenPublishingConventionsPlugin implements Plugin<Project> {
 	}
 
 	private void customizePom(MavenPom pom, Project project) {
-		pom.getUrl().set("https://github.com/spring-io/spring-gradle-plugins");
+		pom.getUrl().set("https://github.com/spring-io/spring-release-tools");
 		pom.getName().set(project.provider(project::getName));
 		pom.getDescription().set(project.provider(project::getDescription));
 		pom.organization(this::customizeOrganization);
@@ -77,14 +77,14 @@ public class SpringMavenPublishingConventionsPlugin implements Plugin<Project> {
 	}
 
 	private void customizeScm(MavenPomScm scm) {
-		scm.getConnection().set("scm:git:git://github.com/spring-io/spring-gradle-plugins.git");
-		scm.getDeveloperConnection().set("scm:git:ssh://git@github.com/spring-io/spring-gradle-plugins.git");
-		scm.getUrl().set("https://github.com/spring-io/spring-gradle-plugins");
+		scm.getConnection().set("scm:git:git://github.com/spring-io/spring-release-tools.git");
+		scm.getDeveloperConnection().set("scm:git:ssh://git@github.com/spring-io/spring-release-tools.git");
+		scm.getUrl().set("https://github.com/spring-io/spring-release-tools");
 	}
 
 	private void customizeIssueManagement(MavenPomIssueManagement issueManagement) {
 		issueManagement.getSystem().set("GitHub");
-		issueManagement.getUrl().set("https://github.com/spring-io/spring-gradle-plugins/issues");
+		issueManagement.getUrl().set("https://github.com/spring-io/spring-release-tools/issues");
 	}
 
 	private void customizeJavaPlugin(Project project) {
