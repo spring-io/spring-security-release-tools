@@ -12,7 +12,7 @@ dependencyResolutionManagement {
 	}
 }
 
-rootProject.name = "spring-release-tools"
+rootProject.name = "spring-security-release-tools"
 
 def buildFiles = fileTree(rootDir) {
 	def excludes = gradle.startParameter.projectProperties.get("excludeProjects")?.split(",")

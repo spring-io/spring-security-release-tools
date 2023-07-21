@@ -15,7 +15,7 @@ dependencies {
 	management platform(project(":dependencies"))
 	implementation project(":github-api")
 	implementation project(":sagan-api")
-	implementation project(":spring-release-tools-core")
+	implementation project(":spring-security-release-tools-core")
 
 	testImplementation "org.springframework:spring-test"
 	testImplementation "org.junit.jupiter:junit-jupiter-api"
