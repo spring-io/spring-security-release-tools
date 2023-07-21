@@ -73,6 +73,8 @@ Internal tasks (only used by other tasks):
 * <<getGitHubUserName>>
 * <<getPreviousReleaseMilestone>>
 
+TIP: By adding `gitHubAccessToken=...` to `~/.gradle/gradle.properties`, many of these tasks can be performed with no additional inputs and therefore can be run directly from your IDE while avoiding GitHub rate limits.
+
 == Task Reference
 
 [[checkMilestoneIsDueToday]]
