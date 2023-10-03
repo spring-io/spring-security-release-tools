@@ -6,7 +6,7 @@ gradlePlugin {
 	plugins {
 		springReleasePlugin {
 			id = "io.spring.release"
-			implementationClass = "io.spring.release.gradle.plugin.release.SpringReleasePlugin"
+			implementationClass = "io.spring.gradle.plugin.release.SpringReleasePlugin"
 		}
 	}
 }

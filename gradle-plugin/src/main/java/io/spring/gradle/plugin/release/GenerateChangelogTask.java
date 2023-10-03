@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.spring.release.gradle.plugin.release;
+package io.spring.gradle.plugin.release;
 
-import io.spring.release.gradle.plugin.core.RegularFileUtils;
+import io.spring.gradle.plugin.core.ProjectUtils;
+import io.spring.gradle.plugin.core.RegularFileUtils;
 import org.gradle.api.Project;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.provider.Property;
@@ -25,12 +26,6 @@ import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputFile;
 
 import org.springframework.util.Assert;
-
-import static io.spring.release.gradle.plugin.core.ProjectUtils.findTaskByType;
-import static io.spring.release.gradle.plugin.core.ProjectUtils.getProperty;
-import static io.spring.release.gradle.plugin.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY;
-import static io.spring.release.gradle.plugin.release.SpringReleasePlugin.GITHUB_USER_NAME_PROPERTY;
-import static io.spring.release.gradle.plugin.release.SpringReleasePlugin.NEXT_VERSION_PROPERTY;
 
 /**
  * @author Steve Riesenberg
@@ -95,22 +90,22 @@ public abstract class GenerateChangelogTask extends JavaExec {
 			task.classpath(project.getConfigurations().getAt(GENERATE_CHANGELOG_CONFIGURATION));
 
 			// @formatter:off
-			var versionProvider = getProperty(project, NEXT_VERSION_PROPERTY)
-					.orElse(findTaskByType(project, GetNextReleaseMilestoneTask.class)
+			var versionProvider = ProjectUtils.getProperty(project, SpringReleasePlugin.NEXT_VERSION_PROPERTY)
+					.orElse(ProjectUtils.findTaskByType(project, GetNextReleaseMilestoneTask.class)
 							.getNextReleaseMilestoneFile()
 							.map(RegularFileUtils::readString));
 			// @formatter:on
 
 			task.getVersion().set(versionProvider);
-			if (project.hasProperty(GITHUB_ACCESS_TOKEN_PROPERTY)) {
+			if (project.hasProperty(SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY)) {
 				// @formatter:off
-				var usernameProvider = getProperty(project, GITHUB_USER_NAME_PROPERTY)
-						.orElse(findTaskByType(project, GetGitHubUserNameTask.class)
+				var usernameProvider = ProjectUtils.getProperty(project, SpringReleasePlugin.GITHUB_USER_NAME_PROPERTY)
+						.orElse(ProjectUtils.findTaskByType(project, GetGitHubUserNameTask.class)
 								.getUsernameFile()
 								.map(RegularFileUtils::readString));
 				// @formatter:on
 				task.getUsername().set(usernameProvider);
-				task.getPassword().set(getProperty(project, GITHUB_ACCESS_TOKEN_PROPERTY));
+				task.getPassword().set(ProjectUtils.getProperty(project, SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY));
 			}
 			task.getReleaseNotesFile().set(project.getLayout().getBuildDirectory().file(GENERATE_CHANGELOG_PATH));
 		});

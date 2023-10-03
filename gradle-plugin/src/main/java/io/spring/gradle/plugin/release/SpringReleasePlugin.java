@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.spring.release.gradle.plugin.release;
+package io.spring.gradle.plugin.release;
 
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;

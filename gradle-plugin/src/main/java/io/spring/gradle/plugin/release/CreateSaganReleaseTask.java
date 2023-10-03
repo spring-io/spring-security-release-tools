@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.spring.release.gradle.plugin.release;
+package io.spring.gradle.plugin.release;
 
 import com.github.api.Repository;
+import io.spring.gradle.plugin.core.ProjectUtils;
+import io.spring.gradle.plugin.core.RegularFileUtils;
 import io.spring.release.SpringReleases;
-import io.spring.release.gradle.plugin.core.RegularFileUtils;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
 import org.gradle.api.provider.Property;
@@ -25,11 +26,6 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.TaskAction;
 
 import org.springframework.util.Assert;
-
-import static io.spring.release.gradle.plugin.core.ProjectUtils.findTaskByType;
-import static io.spring.release.gradle.plugin.core.ProjectUtils.getProperty;
-import static io.spring.release.gradle.plugin.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY;
-import static io.spring.release.gradle.plugin.release.SpringReleasePlugin.NEXT_VERSION_PROPERTY;
 
 /**
  * @author Steve Riesenberg
@@ -88,15 +84,15 @@ public abstract class CreateSaganReleaseTask extends DefaultTask {
 			task.doNotTrackState("API call to api.spring.io needs to check for releases every time");
 
 			// @formatter:off
-			var versionProvider = getProperty(project, NEXT_VERSION_PROPERTY)
-					.orElse(findTaskByType(project, GetNextReleaseMilestoneTask.class)
+			var versionProvider = ProjectUtils.getProperty(project, SpringReleasePlugin.NEXT_VERSION_PROPERTY)
+					.orElse(ProjectUtils.findTaskByType(project, GetNextReleaseMilestoneTask.class)
 							.getNextReleaseMilestoneFile()
 							.map(RegularFileUtils::readString));
 			// @formatter:on
 
 			var owner = springRelease.getRepositoryOwner().get();
 			var name = project.getRootProject().getName();
-			task.getGitHubAccessToken().set(getProperty(project, GITHUB_ACCESS_TOKEN_PROPERTY));
+			task.getGitHubAccessToken().set(ProjectUtils.getProperty(project, SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY));
 			task.getRepository().set(new Repository(owner, name));
 			task.getVersion().set(versionProvider);
 			task.getReferenceDocUrl().set(springRelease.getReferenceDocUrl());

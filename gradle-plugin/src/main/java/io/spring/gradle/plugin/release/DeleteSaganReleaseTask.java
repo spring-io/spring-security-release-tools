@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.spring.release.gradle.plugin.release;
+package io.spring.gradle.plugin.release;
 
+import io.spring.gradle.plugin.core.ProjectUtils;
+import io.spring.gradle.plugin.core.RegularFileUtils;
 import io.spring.release.SpringReleases;
-import io.spring.release.gradle.plugin.core.RegularFileUtils;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
 import org.gradle.api.provider.Property;
@@ -24,10 +25,8 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.TaskAction;
 
-import static io.spring.release.gradle.plugin.core.ProjectUtils.findTaskByType;
-import static io.spring.release.gradle.plugin.core.ProjectUtils.getProperty;
-import static io.spring.release.gradle.plugin.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY;
-import static io.spring.release.gradle.plugin.release.SpringReleasePlugin.PREVIOUS_VERSION_PROPERTY;
+import static io.spring.gradle.plugin.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY;
+import static io.spring.gradle.plugin.release.SpringReleasePlugin.PREVIOUS_VERSION_PROPERTY;
 
 public abstract class DeleteSaganReleaseTask extends DefaultTask {
 
@@ -64,13 +63,13 @@ public abstract class DeleteSaganReleaseTask extends DefaultTask {
 			task.doNotTrackState("API call to api.spring.io needs to check for releases every time");
 
 			// @formatter:off
-			var versionProvider = getProperty(project, PREVIOUS_VERSION_PROPERTY)
-					.orElse(findTaskByType(project, GetPreviousReleaseMilestoneTask.class)
+			var versionProvider = ProjectUtils.getProperty(project, PREVIOUS_VERSION_PROPERTY)
+					.orElse(ProjectUtils.findTaskByType(project, GetPreviousReleaseMilestoneTask.class)
 							.getPreviousReleaseMilestoneFile()
 							.map(RegularFileUtils::readString));
 			// @formatter:on
 
-			task.getGitHubAccessToken().set(getProperty(project, GITHUB_ACCESS_TOKEN_PROPERTY));
+			task.getGitHubAccessToken().set(ProjectUtils.getProperty(project, GITHUB_ACCESS_TOKEN_PROPERTY));
 			task.getProjectName().set(project.getRootProject().getName());
 			task.getVersion().set(versionProvider);
 		});

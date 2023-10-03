@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2022 the original author or authors.
+ * Copyright 2020-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,32 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package io.spring.release.gradle.plugin.release;
+package io.spring.gradle.plugin.release;
 
 import com.github.api.Repository;
+import io.spring.gradle.plugin.core.ProjectUtils;
+import io.spring.gradle.plugin.core.RegularFileUtils;
 import io.spring.release.SpringReleases;
-import io.spring.release.gradle.plugin.core.RegularFileUtils;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
+import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 
 import org.springframework.util.Assert;
 
-import static io.spring.release.gradle.plugin.core.ProjectUtils.findTaskByType;
-import static io.spring.release.gradle.plugin.core.ProjectUtils.getProperty;
-import static io.spring.release.gradle.plugin.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY;
-import static io.spring.release.gradle.plugin.release.SpringReleasePlugin.NEXT_VERSION_PROPERTY;
-
 /**
  * @author Steve Riesenberg
  */
-public abstract class CheckMilestoneHasNoOpenIssuesTask extends DefaultTask {
+public abstract class GetNextReleaseMilestoneTask extends DefaultTask {
 
-	public static final String TASK_NAME = "checkMilestoneHasNoOpenIssues";
+	public static final String TASK_NAME = "getNextReleaseMilestone";
+
+	private static final String OUTPUT_VERSION_PATH = "next-release-milestone-version.txt";
 
 	@Input
 	public abstract Property<Repository> getRepository();
@@ -50,39 +49,42 @@ public abstract class CheckMilestoneHasNoOpenIssuesTask extends DefaultTask {
 	@Optional
 	public abstract Property<String> getGitHubAccessToken();
 
+	@OutputFile
+	public abstract RegularFileProperty getNextReleaseMilestoneFile();
+
 	@TaskAction
-	public void checkMilestoneHasNoOpenIssues() {
+	public void getNextReleaseMilestone() {
 		var gitHubAccessToken = getGitHubAccessToken().getOrNull();
 		var repository = getRepository().get();
 		var version = getVersion().get();
-
 		var springReleases = new SpringReleases(gitHubAccessToken);
-		var hasOpenIssues = springReleases.hasNoOpenIssues(repository.owner(), repository.name(), version);
-		System.out.println(!hasOpenIssues);
+		var nextReleaseMilestone = springReleases.getNextReleaseMilestone(repository.owner(), repository.name(),
+				version);
+
+		var outputFile = getNextReleaseMilestoneFile().get();
+		RegularFileUtils.writeString(outputFile, nextReleaseMilestone);
+		System.out.println(nextReleaseMilestone);
 	}
 
 	public static void register(Project project) {
 		var springRelease = project.getExtensions().findByType(SpringReleasePluginExtension.class);
 		Assert.notNull(springRelease, "Cannot find " + SpringReleasePluginExtension.class);
 
-		project.getTasks().register(TASK_NAME, CheckMilestoneHasNoOpenIssuesTask.class, (task) -> {
+		project.getTasks().register(TASK_NAME, GetNextReleaseMilestoneTask.class, (task) -> {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
 			task.setDescription(
-					"Checks if there are any open issues for the specified repository and milestone and outputs true or false");
-			task.doNotTrackState("API call to GitHub needs to check for open issues every time");
+					"Calculates the next release version based on the current version and outputs the version number");
+			task.doNotTrackState("API call to GitHub needs to check for new milestones every time");
 
-			// @formatter:off
-			var versionProvider = getProperty(project, NEXT_VERSION_PROPERTY)
-					.orElse(findTaskByType(project, GetNextReleaseMilestoneTask.class)
-							.getNextReleaseMilestoneFile()
-							.map(RegularFileUtils::readString));
-			// @formatter:on
+			var versionProvider = ProjectUtils.getProperty(project, SpringReleasePlugin.CURRENT_VERSION_PROPERTY)
+					.orElse(project.getRootProject().getVersion().toString());
 
 			var owner = springRelease.getRepositoryOwner().get();
 			var name = project.getRootProject().getName();
 			task.getRepository().set(new Repository(owner, name));
 			task.getVersion().set(versionProvider);
-			task.getGitHubAccessToken().set(getProperty(project, GITHUB_ACCESS_TOKEN_PROPERTY));
+			task.getGitHubAccessToken().set(ProjectUtils.getProperty(project, SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY));
+			task.getNextReleaseMilestoneFile().set(project.getLayout().getBuildDirectory().file(OUTPUT_VERSION_PATH));
 		});
 	}
 

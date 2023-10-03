@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.spring.release.gradle.plugin.core;
+package io.spring.gradle.plugin.core;
 
 import java.util.Objects;
 import java.util.function.Function;

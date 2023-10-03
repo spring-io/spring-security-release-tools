@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.spring.release.gradle.plugin.release;
+package io.spring.gradle.plugin.release;
 
 import com.github.api.Repository;
 import groovy.lang.MissingPropertyException;
+import io.spring.gradle.plugin.core.ProjectUtils;
+import io.spring.gradle.plugin.core.RegularFileUtils;
 import io.spring.release.SpringReleases;
-import io.spring.release.gradle.plugin.core.RegularFileUtils;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
 import org.gradle.api.provider.Property;
@@ -27,13 +28,6 @@ import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.TaskAction;
 
 import org.springframework.util.Assert;
-
-import static io.spring.release.gradle.plugin.core.ProjectUtils.findTaskByType;
-import static io.spring.release.gradle.plugin.core.ProjectUtils.getProperty;
-import static io.spring.release.gradle.plugin.release.SpringReleasePlugin.BRANCH_PROPERTY;
-import static io.spring.release.gradle.plugin.release.SpringReleasePlugin.CREATE_RELEASE_PROPERTY;
-import static io.spring.release.gradle.plugin.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY;
-import static io.spring.release.gradle.plugin.release.SpringReleasePlugin.NEXT_VERSION_PROPERTY;
 
 /**
  * @author Steve Riesenberg
@@ -93,14 +87,14 @@ public abstract class CreateGitHubReleaseTask extends DefaultTask {
 			task.doNotTrackState("API call to GitHub needs to check for new issues and create a release every time");
 
 			// @formatter:off
-			var versionProvider = getProperty(project, NEXT_VERSION_PROPERTY)
-					.orElse(findTaskByType(project, GetNextReleaseMilestoneTask.class)
+			var versionProvider = ProjectUtils.getProperty(project, SpringReleasePlugin.NEXT_VERSION_PROPERTY)
+					.orElse(ProjectUtils.findTaskByType(project, GetNextReleaseMilestoneTask.class)
 							.getNextReleaseMilestoneFile()
 							.map(RegularFileUtils::readString));
-			var releaseNotesProvider = findTaskByType(project, GenerateChangelogTask.class)
+			var releaseNotesProvider = ProjectUtils.findTaskByType(project, GenerateChangelogTask.class)
 					.getReleaseNotesFile()
 					.map(RegularFileUtils::readString);
-			var createReleaseProvider = getProperty(project, CREATE_RELEASE_PROPERTY)
+			var createReleaseProvider = ProjectUtils.getProperty(project, SpringReleasePlugin.CREATE_RELEASE_PROPERTY)
 					.map(Boolean::valueOf);
 			// @formatter:on
 
@@ -109,9 +103,9 @@ public abstract class CreateGitHubReleaseTask extends DefaultTask {
 			task.getRepository().set(new Repository(owner, name));
 			task.getVersion().set(versionProvider);
 			task.getReleaseNotes().set(releaseNotesProvider);
-			task.getBranch().set(getProperty(project, BRANCH_PROPERTY).orElse("main"));
+			task.getBranch().set(ProjectUtils.getProperty(project, SpringReleasePlugin.BRANCH_PROPERTY).orElse("main"));
 			task.getCreateRelease().set(createReleaseProvider.orElse(false));
-			task.getGitHubAccessToken().set(getProperty(project, GITHUB_ACCESS_TOKEN_PROPERTY));
+			task.getGitHubAccessToken().set(ProjectUtils.getProperty(project, SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY));
 		});
 	}
 
