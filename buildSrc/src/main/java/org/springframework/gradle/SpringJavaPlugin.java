@@ -23,7 +23,6 @@ import io.spring.javaformat.gradle.SpringJavaFormatPlugin;
 import org.gradle.api.JavaVersion;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.plugins.GroovyPlugin;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.plugins.PluginManager;
@@ -31,15 +30,11 @@ import org.gradle.api.tasks.compile.CompileOptions;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.api.tasks.testing.Test;
 import org.gradle.jvm.tasks.Jar;
-import org.jetbrains.kotlin.gradle.plugin.KotlinPluginWrapper;
 
 import org.springframework.gradle.checkstyle.SpringJavaCheckstylePlugin;
 import org.springframework.gradle.docs.SpringJavadocOptionsPlugin;
-import org.springframework.gradle.jacoco.SpringJacocoPlugin;
 import org.springframework.gradle.management.SpringManagementConfigurationPlugin;
 import org.springframework.gradle.maven.SpringRepositoryPlugin;
-import org.springframework.gradle.propdeps.SpringPropDepsEclipsePlugin;
-import org.springframework.gradle.propdeps.SpringPropDepsIdeaPlugin;
 import org.springframework.gradle.properties.SpringCopyPropertiesPlugin;
 
 /**
@@ -52,25 +47,11 @@ public class SpringJavaPlugin implements Plugin<Project> {
 		PluginManager pluginManager = project.getPluginManager();
 		pluginManager.apply(JavaPlugin.class);
 		pluginManager.apply(SpringManagementConfigurationPlugin.class);
-		if (project.file("src/main/groovy").exists()
-				|| project.file("src/test/groovy").exists()
-				|| project.file("src/integration-test/groovy").exists()) {
-			pluginManager.apply(GroovyPlugin.class);
-		}
-		if (project.file("src/main/kotlin").exists()
-				|| project.file("src/test/kotlin").exists()
-				|| project.file("src/integration-test/kotlin").exists()
-				|| project.getBuildFile().getName().endsWith(".kts")) {
-			pluginManager.apply(KotlinPluginWrapper.class);
-		}
 		pluginManager.apply(SpringRepositoryPlugin.class);
-		pluginManager.apply(SpringPropDepsEclipsePlugin.class);
-		pluginManager.apply(SpringPropDepsIdeaPlugin.class);
 		pluginManager.apply(SpringJavadocOptionsPlugin.class);
 		pluginManager.apply(SpringJavaFormatPlugin.class);
 		pluginManager.apply(SpringJavaCheckstylePlugin.class);
 		pluginManager.apply(SpringCopyPropertiesPlugin.class);
-		pluginManager.apply(SpringJacocoPlugin.class);
 
 		// Apply Java source compatibility version
 		JavaPluginExtension java = project.getExtensions().getByType(JavaPluginExtension.class);
@@ -81,9 +62,7 @@ public class SpringJavaPlugin implements Plugin<Project> {
 			CompileOptions options = javaCompile.getOptions();
 			options.setEncoding("UTF-8");
 			options.getCompilerArgs().add("-parameters");
-			if (JavaVersion.current().isJava11Compatible()) {
-				options.getRelease().set(17);
-			}
+			options.getRelease().set(17);
 		});
 		project.getTasks().withType(Jar.class, (jar) -> jar.manifest((manifest) -> {
 			Map<String, String> attributes = new HashMap<>();
