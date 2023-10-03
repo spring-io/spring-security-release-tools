@@ -84,7 +84,7 @@ public abstract class CreateSaganReleaseTask extends DefaultTask {
 
 		project.getTasks().register(TASK_NAME, CreateSaganReleaseTask.class, (task) -> {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
-			task.setDescription("Create a GitHub release with release notes");
+			task.setDescription("Create a version for the specified project on spring.io.");
 			task.doNotTrackState("API call to api.spring.io needs to check for releases every time");
 
 			// @formatter:off
