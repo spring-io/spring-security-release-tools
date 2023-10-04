@@ -13,7 +13,6 @@ gradlePlugin {
 
 dependencies {
 	management platform(project(":dependencies"))
-	implementation platform("org.junit:junit-bom:5.9.3")
 	implementation project(":github-api")
 	implementation project(":sagan-api")
 	implementation project(":spring-security-release-tools-core")
