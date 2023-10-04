@@ -16,8 +16,6 @@
 
 package org.springframework.gradle.nohttp;
 
-import java.io.File;
-
 import io.spring.nohttp.gradle.NoHttpExtension;
 import io.spring.nohttp.gradle.NoHttpPlugin;
 import org.gradle.api.Plugin;
@@ -34,8 +32,6 @@ public class SpringNoHttpPlugin implements Plugin<Project> {
 
 		// Configure nohttp
 		NoHttpExtension nohttp = project.getExtensions().getByType(NoHttpExtension.class);
-		File allowlistFile = project.getRootProject().file("etc/nohttp/allowlist.lines");
-		nohttp.setAllowlistFile(allowlistFile);
 		nohttp.getSource().exclude("buildSrc/build/**");
 	}
 }

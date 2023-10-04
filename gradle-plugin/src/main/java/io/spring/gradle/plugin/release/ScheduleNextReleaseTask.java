@@ -27,9 +27,6 @@ import org.gradle.api.tasks.TaskAction;
 
 import org.springframework.util.Assert;
 
-import static io.spring.gradle.plugin.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY;
-import static io.spring.gradle.plugin.release.SpringReleasePlugin.NEXT_VERSION_PROPERTY;
-
 /**
  * @author Steve Riesenberg
  */
@@ -76,7 +73,7 @@ public abstract class ScheduleNextReleaseTask extends DefaultTask {
 			task.doNotTrackState("API call to GitHub needs to check for new milestones every time");
 
 			// @formatter:off
-			var versionProvider = ProjectUtils.getProperty(project, NEXT_VERSION_PROPERTY)
+			var versionProvider = ProjectUtils.getProperty(project, SpringReleasePlugin.NEXT_VERSION_PROPERTY)
 					.orElse(ProjectUtils.findTaskByType(project, GetNextReleaseMilestoneTask.class)
 							.getNextReleaseMilestoneFile()
 							.map(RegularFileUtils::readString));
@@ -85,7 +82,8 @@ public abstract class ScheduleNextReleaseTask extends DefaultTask {
 			var owner = springRelease.getRepositoryOwner().get();
 			var name = project.getRootProject().getName();
 			task.getRepository().set(new Repository(owner, name));
-			task.getGitHubAccessToken().set(ProjectUtils.getProperty(project, GITHUB_ACCESS_TOKEN_PROPERTY));
+			task.getGitHubAccessToken()
+				.set(ProjectUtils.getProperty(project, SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY));
 			task.getVersion().set(versionProvider);
 			task.getWeekOfMonth().set(springRelease.getWeekOfMonth());
 			task.getDayOfWeek().set(springRelease.getDayOfWeek());

@@ -114,7 +114,7 @@ public final class SpringReleaseTrain {
 		LocalDate releaseDate = calculateReleaseDate(this.releaseTrainSpec.getYear(), month,
 				this.releaseTrainSpec.getDayOfWeek().getDayOfWeek(),
 				this.releaseTrainSpec.getWeekOfMonth().getDayOffset());
-		String suffix = (milestone == null) ? "" : "-" + milestone;
+		String suffix = (milestone != null) ? "-" + milestone : "";
 		releaseDates.put(this.releaseTrainSpec.getVersion() + suffix, releaseDate);
 	}
 

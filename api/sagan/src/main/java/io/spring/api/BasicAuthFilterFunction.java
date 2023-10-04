@@ -35,7 +35,7 @@ final class BasicAuthFilterFunction implements ExchangeFilterFunction {
 	 * @param username The basic auth username
 	 * @param password The basic auth password
 	 */
-	public BasicAuthFilterFunction(String username, String password) {
+	BasicAuthFilterFunction(String username, String password) {
 		this.username = username;
 		this.password = password;
 	}

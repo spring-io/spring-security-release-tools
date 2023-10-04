@@ -33,7 +33,7 @@ final class BearerAuthFilterFunction implements ExchangeFilterFunction {
 	 * @param accessToken Optional access token used to add an Authorization header to
 	 * requests (if not-null)
 	 */
-	public BearerAuthFilterFunction(String accessToken) {
+	BearerAuthFilterFunction(String accessToken) {
 		this.accessToken = accessToken;
 	}
 

@@ -26,8 +26,6 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 
-import static io.spring.gradle.plugin.release.SpringReleasePlugin.CURRENT_VERSION_PROPERTY;
-
 /**
  * @author Steve Riesenberg
  */
@@ -58,7 +56,7 @@ public abstract class GetNextSnapshotVersionTask extends DefaultTask {
 					"Calculates the next snapshot version based on the current version and outputs the version number");
 			task.doNotTrackState("API call to GitHub needs to check for new milestones every time");
 
-			var versionProvider = ProjectUtils.getProperty(project, CURRENT_VERSION_PROPERTY)
+			var versionProvider = ProjectUtils.getProperty(project, SpringReleasePlugin.CURRENT_VERSION_PROPERTY)
 				.orElse(project.getRootProject().getVersion().toString());
 
 			task.getVersion().set(versionProvider);

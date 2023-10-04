@@ -26,9 +26,6 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 
-import static io.spring.gradle.plugin.release.SpringReleasePlugin.CURRENT_VERSION_PROPERTY;
-import static io.spring.gradle.plugin.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY;
-
 /**
  * @author Steve Riesenberg
  */
@@ -75,10 +72,11 @@ public abstract class GetPreviousReleaseMilestoneTask extends DefaultTask {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
 			task.setDescription("Finds the previous release version based on the current version.");
 
-			var versionProvider = ProjectUtils.getProperty(project, CURRENT_VERSION_PROPERTY)
+			var versionProvider = ProjectUtils.getProperty(project, SpringReleasePlugin.CURRENT_VERSION_PROPERTY)
 				.orElse(project.getRootProject().getVersion().toString());
 
-			task.getGitHubAccessToken().set(ProjectUtils.getProperty(project, GITHUB_ACCESS_TOKEN_PROPERTY));
+			task.getGitHubAccessToken()
+				.set(ProjectUtils.getProperty(project, SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY));
 			task.getProjectName().set(project.getRootProject().getName());
 			task.getVersion().set(versionProvider);
 			task.getPreviousReleaseMilestoneFile()

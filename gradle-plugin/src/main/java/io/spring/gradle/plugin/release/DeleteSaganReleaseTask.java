@@ -25,9 +25,6 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.TaskAction;
 
-import static io.spring.gradle.plugin.release.SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY;
-import static io.spring.gradle.plugin.release.SpringReleasePlugin.PREVIOUS_VERSION_PROPERTY;
-
 public abstract class DeleteSaganReleaseTask extends DefaultTask {
 
 	public static final String TASK_NAME = "deleteSaganRelease";
@@ -63,13 +60,14 @@ public abstract class DeleteSaganReleaseTask extends DefaultTask {
 			task.doNotTrackState("API call to api.spring.io needs to check for releases every time");
 
 			// @formatter:off
-			var versionProvider = ProjectUtils.getProperty(project, PREVIOUS_VERSION_PROPERTY)
+			var versionProvider = ProjectUtils.getProperty(project, SpringReleasePlugin.PREVIOUS_VERSION_PROPERTY)
 					.orElse(ProjectUtils.findTaskByType(project, GetPreviousReleaseMilestoneTask.class)
 							.getPreviousReleaseMilestoneFile()
 							.map(RegularFileUtils::readString));
 			// @formatter:on
 
-			task.getGitHubAccessToken().set(ProjectUtils.getProperty(project, GITHUB_ACCESS_TOKEN_PROPERTY));
+			task.getGitHubAccessToken()
+				.set(ProjectUtils.getProperty(project, SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY));
 			task.getProjectName().set(project.getRootProject().getName());
 			task.getVersion().set(versionProvider);
 		});

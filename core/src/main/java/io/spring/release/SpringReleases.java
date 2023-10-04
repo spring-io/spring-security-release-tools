@@ -162,7 +162,7 @@ public class SpringReleases {
 		var repository = new Repository(owner, repo);
 		var milestone = this.gitHubApi.getMilestone(repository, version);
 		var today = LocalDate.now();
-		var dueOn = milestone.dueOn() != null ? milestone.dueOn().atZone(ZoneOffset.UTC).toLocalDate() : null;
+		var dueOn = (milestone.dueOn() != null) ? milestone.dueOn().atZone(ZoneOffset.UTC).toLocalDate() : null;
 		return (dueOn != null && today.compareTo(dueOn) >= 0);
 	}
 
