@@ -19,10 +19,14 @@ artifactory {
 	}
 }
 
+configurations.testImplementation {
+	extendsFrom configurations.compileOnly
+}
+
 dependencies {
 	management platform(project(":dependencies"))
-	implementation project(":github-api")
-	implementation project(":sagan-api")
+	compileOnly project(":github-api")
+	compileOnly project(":sagan-api")
 	implementation project(":spring-security-release-tools-core")
 
 	testImplementation "org.junit.jupiter:junit-jupiter-api"
