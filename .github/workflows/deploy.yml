@@ -1,4 +1,4 @@
-name: Build
+name: Deploy
 
 on: workflow_dispatch
 
@@ -10,21 +10,15 @@ jobs:
       - uses: actions/checkout@v3
       - name: Set up JDK 17
         uses: spring-io/spring-gradle-build-action@v2
-        with:
-          java-version: '17'
-          distribution: 'temurin'
       - name: Build with Gradle
         run: ./gradlew build --continue
   deploy:
     name: Deploy
+    needs: [build]
     runs-on: ubuntu-latest
-    if: ${{ secrets.ARTIFACTORY_USERNAME != null && secrets.ARTIFACTORY_PASSWORD != null }}
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK 17
         uses: spring-io/spring-gradle-build-action@v2
-        with:
-          java-version: '17'
-          distribution: 'temurin'
       - name: Deploy artifacts
-        run: ./gradlew publishArtifacts finalizeDeployArtifacts --stacktrace -PartifactoryUsername="$ARTIFACTORY_USERNAME" -PartifactoryPassword="$ARTIFACTORY_PASSWORD"
+        run: ./gradlew :spring-security-release-plugin:publishArtifacts finalizeDeployArtifacts --stacktrace -PartifactoryUsername="$ARTIFACTORY_USERNAME" -PartifactoryPassword="$ARTIFACTORY_PASSWORD"
