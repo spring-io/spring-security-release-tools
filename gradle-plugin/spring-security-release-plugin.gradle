@@ -4,6 +4,7 @@ plugins {
 }
 
 gradlePlugin {
+	automatedPublishing = false
 	plugins {
 		springReleasePlugin {
 			id = "io.spring.release"
