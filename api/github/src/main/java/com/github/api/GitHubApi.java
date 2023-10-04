@@ -82,8 +82,12 @@ public class GitHubApi {
 	 * @param release The contents of the release
 	 */
 	public void createRelease(Repository repository, Release release) {
-		this.webClient.post().uri("/repos/{owner}/{name}/releases", repository.owner(), repository.name())
-				.bodyValue(release).retrieve().bodyToMono(Void.class).block();
+		this.webClient.post()
+			.uri("/repos/{owner}/{name}/releases", repository.owner(), repository.name())
+			.bodyValue(release)
+			.retrieve()
+			.bodyToMono(Void.class)
+			.block();
 	}
 
 	/**
@@ -92,8 +96,12 @@ public class GitHubApi {
 	 * @param milestone The milestone containing a title and due date
 	 */
 	public void createMilestone(Repository repository, Milestone milestone) {
-		this.webClient.post().uri("/repos/{owner}/{name}/milestones", repository.owner(), repository.name())
-				.bodyValue(milestone).retrieve().bodyToMono(Void.class).block();
+		this.webClient.post()
+			.uri("/repos/{owner}/{name}/milestones", repository.owner(), repository.name())
+			.bodyValue(milestone)
+			.retrieve()
+			.bodyToMono(Void.class)
+			.block();
 	}
 
 	/**
@@ -103,8 +111,11 @@ public class GitHubApi {
 	 */
 	public List<Milestone> getMilestones(Repository repository) {
 		return this.webClient.get()
-				.uri("/repos/{owner}/{name}/milestones?per_page=100", repository.owner(), repository.name()).retrieve()
-				.bodyToFlux(Milestone.class).collectList().block();
+			.uri("/repos/{owner}/{name}/milestones?per_page=100", repository.owner(), repository.name())
+			.retrieve()
+			.bodyToFlux(Milestone.class)
+			.collectList()
+			.block();
 	}
 
 	/**
@@ -115,8 +126,12 @@ public class GitHubApi {
 	 */
 	public Milestone getMilestone(Repository repository, String title) {
 		return this.webClient.get()
-				.uri("/repos/{owner}/{name}/milestones?per_page=100", repository.owner(), repository.name()).retrieve()
-				.bodyToFlux(Milestone.class).filter((milestone) -> milestone.title().equals(title)).next().block();
+			.uri("/repos/{owner}/{name}/milestones?per_page=100", repository.owner(), repository.name())
+			.retrieve()
+			.bodyToFlux(Milestone.class)
+			.filter((milestone) -> milestone.title().equals(title))
+			.next()
+			.block();
 	}
 
 	/**
@@ -127,9 +142,13 @@ public class GitHubApi {
 	 */
 	public boolean hasOpenIssues(Repository repository, Long milestone) {
 		Boolean result = this.webClient.get()
-				.uri("/repos/{owner}/{name}/issues?per_page=1&milestone={milestone}", repository.owner(),
-						repository.name(), milestone)
-				.retrieve().bodyToFlux(Issue.class).count().map((num) -> num > 0).block();
+			.uri("/repos/{owner}/{name}/issues?per_page=1&milestone={milestone}", repository.owner(), repository.name(),
+					milestone)
+			.retrieve()
+			.bodyToFlux(Issue.class)
+			.count()
+			.map((num) -> num > 0)
+			.block();
 		return (result != null && result);
 	}
 

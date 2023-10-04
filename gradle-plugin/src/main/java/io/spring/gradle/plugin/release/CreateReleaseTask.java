@@ -129,9 +129,10 @@ public abstract class CreateReleaseTask extends DefaultTask {
 			task.getReferenceDocUrl().set(springRelease.getReferenceDocUrl());
 			task.getApiDocUrl().set(springRelease.getApiDocUrl());
 			task.getReplaceSnapshotVersionInReferenceDocUrl()
-					.set(springRelease.getReplaceSnapshotVersionInReferenceDocUrl());
+				.set(springRelease.getReplaceSnapshotVersionInReferenceDocUrl());
 			task.getCreateRelease().set(createReleaseProvider.orElse(false));
-			task.getGitHubAccessToken().set(ProjectUtils.getProperty(project, SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY));
+			task.getGitHubAccessToken()
+				.set(ProjectUtils.getProperty(project, SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY));
 		});
 	}
 

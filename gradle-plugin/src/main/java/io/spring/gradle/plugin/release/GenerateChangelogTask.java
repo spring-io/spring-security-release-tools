@@ -105,7 +105,8 @@ public abstract class GenerateChangelogTask extends JavaExec {
 								.map(RegularFileUtils::readString));
 				// @formatter:on
 				task.getUsername().set(usernameProvider);
-				task.getPassword().set(ProjectUtils.getProperty(project, SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY));
+				task.getPassword()
+					.set(ProjectUtils.getProperty(project, SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY));
 			}
 			task.getReleaseNotesFile().set(project.getLayout().getBuildDirectory().file(GENERATE_CHANGELOG_PATH));
 		});

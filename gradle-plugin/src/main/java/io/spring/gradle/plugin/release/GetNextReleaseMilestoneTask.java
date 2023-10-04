@@ -77,13 +77,14 @@ public abstract class GetNextReleaseMilestoneTask extends DefaultTask {
 			task.doNotTrackState("API call to GitHub needs to check for new milestones every time");
 
 			var versionProvider = ProjectUtils.getProperty(project, SpringReleasePlugin.CURRENT_VERSION_PROPERTY)
-					.orElse(project.getRootProject().getVersion().toString());
+				.orElse(project.getRootProject().getVersion().toString());
 
 			var owner = springRelease.getRepositoryOwner().get();
 			var name = project.getRootProject().getName();
 			task.getRepository().set(new Repository(owner, name));
 			task.getVersion().set(versionProvider);
-			task.getGitHubAccessToken().set(ProjectUtils.getProperty(project, SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY));
+			task.getGitHubAccessToken()
+				.set(ProjectUtils.getProperty(project, SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY));
 			task.getNextReleaseMilestoneFile().set(project.getLayout().getBuildDirectory().file(OUTPUT_VERSION_PATH));
 		});
 	}

@@ -57,20 +57,20 @@ public final class SpringReleaseTrain {
 	public Map<String, LocalDate> getTrainDates() {
 		Map<String, LocalDate> releaseDates = new LinkedHashMap<>();
 		switch (this.releaseTrainSpec.getTrain()) {
-		case ONE:
-			addTrainDate(releaseDates, "M1", Month.JANUARY);
-			addTrainDate(releaseDates, "M2", Month.FEBRUARY);
-			addTrainDate(releaseDates, "M3", Month.MARCH);
-			addTrainDate(releaseDates, "RC1", Month.APRIL);
-			addTrainDate(releaseDates, null, Month.MAY);
-			break;
-		case TWO:
-			addTrainDate(releaseDates, "M1", Month.JULY);
-			addTrainDate(releaseDates, "M2", Month.AUGUST);
-			addTrainDate(releaseDates, "M3", Month.SEPTEMBER);
-			addTrainDate(releaseDates, "RC1", Month.OCTOBER);
-			addTrainDate(releaseDates, null, Month.NOVEMBER);
-			break;
+			case ONE:
+				addTrainDate(releaseDates, "M1", Month.JANUARY);
+				addTrainDate(releaseDates, "M2", Month.FEBRUARY);
+				addTrainDate(releaseDates, "M3", Month.MARCH);
+				addTrainDate(releaseDates, "RC1", Month.APRIL);
+				addTrainDate(releaseDates, null, Month.MAY);
+				break;
+			case TWO:
+				addTrainDate(releaseDates, "M1", Month.JULY);
+				addTrainDate(releaseDates, "M2", Month.AUGUST);
+				addTrainDate(releaseDates, "M3", Month.SEPTEMBER);
+				addTrainDate(releaseDates, "RC1", Month.OCTOBER);
+				addTrainDate(releaseDates, null, Month.NOVEMBER);
+				break;
 		}
 
 		return releaseDates;

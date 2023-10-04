@@ -105,7 +105,8 @@ public abstract class CreateGitHubReleaseTask extends DefaultTask {
 			task.getReleaseNotes().set(releaseNotesProvider);
 			task.getBranch().set(ProjectUtils.getProperty(project, SpringReleasePlugin.BRANCH_PROPERTY).orElse("main"));
 			task.getCreateRelease().set(createReleaseProvider.orElse(false));
-			task.getGitHubAccessToken().set(ProjectUtils.getProperty(project, SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY));
+			task.getGitHubAccessToken()
+				.set(ProjectUtils.getProperty(project, SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY));
 		});
 	}
 

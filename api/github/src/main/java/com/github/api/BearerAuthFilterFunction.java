@@ -44,7 +44,8 @@ final class BearerAuthFilterFunction implements ExchangeFilterFunction {
 		}
 
 		ClientRequest newRequest = ClientRequest.from(request)
-				.headers((headers) -> headers.setBearerAuth(this.accessToken)).build();
+			.headers((headers) -> headers.setBearerAuth(this.accessToken))
+			.build();
 		return next.exchange(newRequest);
 	}
 

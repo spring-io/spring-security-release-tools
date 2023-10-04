@@ -58,7 +58,8 @@ public abstract class GetGitHubUserNameTask extends DefaultTask {
 		project.getTasks().register(TASK_NAME, GetGitHubUserNameTask.class, (task) -> {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
 			task.setDescription("Use gitHubAccessToken to automatically set username property.");
-			task.getGitHubAccessToken().set(ProjectUtils.getProperty(project, SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY));
+			task.getGitHubAccessToken()
+				.set(ProjectUtils.getProperty(project, SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY));
 			task.getUsernameFile().set(project.getLayout().getBuildDirectory().file("github-username.txt"));
 		});
 	}

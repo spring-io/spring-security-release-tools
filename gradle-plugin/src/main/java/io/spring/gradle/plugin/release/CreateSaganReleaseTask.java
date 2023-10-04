@@ -92,13 +92,14 @@ public abstract class CreateSaganReleaseTask extends DefaultTask {
 
 			var owner = springRelease.getRepositoryOwner().get();
 			var name = project.getRootProject().getName();
-			task.getGitHubAccessToken().set(ProjectUtils.getProperty(project, SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY));
+			task.getGitHubAccessToken()
+				.set(ProjectUtils.getProperty(project, SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY));
 			task.getRepository().set(new Repository(owner, name));
 			task.getVersion().set(versionProvider);
 			task.getReferenceDocUrl().set(springRelease.getReferenceDocUrl());
 			task.getApiDocUrl().set(springRelease.getApiDocUrl());
 			task.getReplaceSnapshotVersionInReferenceDocUrl()
-					.set(springRelease.getReplaceSnapshotVersionInReferenceDocUrl());
+				.set(springRelease.getReplaceSnapshotVersionInReferenceDocUrl());
 		});
 	}
 

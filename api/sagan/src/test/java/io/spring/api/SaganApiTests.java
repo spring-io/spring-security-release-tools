@@ -127,7 +127,7 @@ public class SaganApiTests {
 		assertThat(recordedRequest.getMethod()).isEqualTo(HttpMethod.POST.name());
 		assertThat(recordedRequest.getPath()).isEqualTo("/projects/spring-security/releases");
 		assertThat(recordedRequest.getBody().readString(Charset.defaultCharset()))
-				.isEqualTo(string("CreateReleaseRequest.json"));
+			.isEqualTo(string("CreateReleaseRequest.json"));
 	}
 
 	@Test

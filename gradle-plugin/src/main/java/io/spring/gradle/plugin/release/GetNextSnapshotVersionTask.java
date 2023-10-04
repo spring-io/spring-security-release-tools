@@ -59,7 +59,7 @@ public abstract class GetNextSnapshotVersionTask extends DefaultTask {
 			task.doNotTrackState("API call to GitHub needs to check for new milestones every time");
 
 			var versionProvider = ProjectUtils.getProperty(project, CURRENT_VERSION_PROPERTY)
-					.orElse(project.getRootProject().getVersion().toString());
+				.orElse(project.getRootProject().getVersion().toString());
 
 			task.getVersion().set(versionProvider);
 			task.getNextSnapshotVersionFile().set(project.getLayout().getBuildDirectory().file(OUTPUT_VERSION_PATH));

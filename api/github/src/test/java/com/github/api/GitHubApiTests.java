@@ -65,7 +65,7 @@ public class GitHubApiTests {
 		assertThat(recordedRequest.getMethod()).isEqualTo(HttpMethod.POST.name());
 		assertThat(recordedRequest.getPath()).isEqualTo("/repos/spring-projects/spring-security/releases");
 		assertThat(recordedRequest.getBody().readString(Charset.defaultCharset()))
-				.isEqualTo(string("CreateReleaseRequest.json"));
+			.isEqualTo(string("CreateReleaseRequest.json"));
 	}
 
 	@Test
@@ -80,7 +80,7 @@ public class GitHubApiTests {
 		assertThat(recordedRequest.getMethod()).isEqualTo(HttpMethod.POST.name());
 		assertThat(recordedRequest.getPath()).isEqualTo("/repos/spring-projects/spring-security/milestones");
 		assertThat(recordedRequest.getBody().readString(Charset.defaultCharset()))
-				.isEqualTo(string("CreateMilestoneRequest.json"));
+			.isEqualTo(string("CreateMilestoneRequest.json"));
 	}
 
 	@Test
@@ -95,7 +95,7 @@ public class GitHubApiTests {
 		var recordedRequest = this.server.takeRequest();
 		assertThat(recordedRequest.getMethod()).isEqualTo(HttpMethod.GET.name());
 		assertThat(recordedRequest.getPath())
-				.isEqualTo("/repos/spring-projects/spring-security/milestones?per_page=100");
+			.isEqualTo("/repos/spring-projects/spring-security/milestones?per_page=100");
 	}
 
 	@Test
@@ -108,7 +108,7 @@ public class GitHubApiTests {
 		var recordedRequest = this.server.takeRequest();
 		assertThat(recordedRequest.getMethod()).isEqualTo(HttpMethod.GET.name());
 		assertThat(recordedRequest.getPath())
-				.isEqualTo("/repos/spring-projects/spring-security/milestones?per_page=100");
+			.isEqualTo("/repos/spring-projects/spring-security/milestones?per_page=100");
 	}
 
 	@Test
@@ -121,7 +121,7 @@ public class GitHubApiTests {
 		var recordedRequest = this.server.takeRequest();
 		assertThat(recordedRequest.getMethod()).isEqualTo(HttpMethod.GET.name());
 		assertThat(recordedRequest.getPath())
-				.isEqualTo("/repos/spring-projects/spring-security/milestones?per_page=100");
+			.isEqualTo("/repos/spring-projects/spring-security/milestones?per_page=100");
 	}
 
 	@Test
@@ -134,7 +134,7 @@ public class GitHubApiTests {
 		var recordedRequest = this.server.takeRequest();
 		assertThat(recordedRequest.getMethod()).isEqualTo(HttpMethod.GET.name());
 		assertThat(recordedRequest.getPath())
-				.isEqualTo("/repos/spring-projects/spring-security/issues?per_page=1&milestone=202");
+			.isEqualTo("/repos/spring-projects/spring-security/issues?per_page=1&milestone=202");
 	}
 
 	@Test
@@ -147,12 +147,12 @@ public class GitHubApiTests {
 		var recordedRequest = this.server.takeRequest();
 		assertThat(recordedRequest.getMethod()).isEqualTo(HttpMethod.GET.name());
 		assertThat(recordedRequest.getPath())
-				.isEqualTo("/repos/spring-projects/spring-security/issues?per_page=1&milestone=191");
+			.isEqualTo("/repos/spring-projects/spring-security/issues?per_page=1&milestone=191");
 	}
 
 	private static MockResponse json(String path) throws IOException {
 		return new MockResponse().addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-				.setBody(string(path));
+			.setBody(string(path));
 	}
 
 	private static String string(String path) throws IOException {

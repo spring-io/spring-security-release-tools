@@ -212,23 +212,23 @@ public class SpringReleaseTrainTests {
 		SpringReleaseTrain releaseTrain = new SpringReleaseTrain(releaseTrainSpec);
 		for (int dayOfMonth = 1; dayOfMonth <= 31; dayOfMonth++) {
 			assertThat(releaseTrain.isTrainDate("1.0.0-M1", LocalDate.of(2022, 1, dayOfMonth)))
-					.isEqualTo(dayOfMonth == 17);
+				.isEqualTo(dayOfMonth == 17);
 		}
 		for (int dayOfMonth = 1; dayOfMonth <= 28; dayOfMonth++) {
 			assertThat(releaseTrain.isTrainDate("1.0.0-M2", LocalDate.of(2022, 2, dayOfMonth)))
-					.isEqualTo(dayOfMonth == 21);
+				.isEqualTo(dayOfMonth == 21);
 		}
 		for (int dayOfMonth = 1; dayOfMonth <= 31; dayOfMonth++) {
 			assertThat(releaseTrain.isTrainDate("1.0.0-M3", LocalDate.of(2022, 3, dayOfMonth)))
-					.isEqualTo(dayOfMonth == 21);
+				.isEqualTo(dayOfMonth == 21);
 		}
 		for (int dayOfMonth = 1; dayOfMonth <= 30; dayOfMonth++) {
 			assertThat(releaseTrain.isTrainDate("1.0.0-RC1", LocalDate.of(2022, 4, dayOfMonth)))
-					.isEqualTo(dayOfMonth == 18);
+				.isEqualTo(dayOfMonth == 18);
 		}
 		for (int dayOfMonth = 1; dayOfMonth <= 31; dayOfMonth++) {
 			assertThat(releaseTrain.isTrainDate("1.0.0", LocalDate.of(2022, 5, dayOfMonth)))
-					.isEqualTo(dayOfMonth == 16);
+				.isEqualTo(dayOfMonth == 16);
 		}
 	}
 

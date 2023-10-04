@@ -76,13 +76,13 @@ public abstract class GetPreviousReleaseMilestoneTask extends DefaultTask {
 			task.setDescription("Finds the previous release version based on the current version.");
 
 			var versionProvider = ProjectUtils.getProperty(project, CURRENT_VERSION_PROPERTY)
-					.orElse(project.getRootProject().getVersion().toString());
+				.orElse(project.getRootProject().getVersion().toString());
 
 			task.getGitHubAccessToken().set(ProjectUtils.getProperty(project, GITHUB_ACCESS_TOKEN_PROPERTY));
 			task.getProjectName().set(project.getRootProject().getName());
 			task.getVersion().set(versionProvider);
 			task.getPreviousReleaseMilestoneFile()
-					.set(project.getLayout().getBuildDirectory().file(OUTPUT_VERSION_PATH));
+				.set(project.getLayout().getBuildDirectory().file(OUTPUT_VERSION_PATH));
 		});
 	}
 

@@ -48,8 +48,12 @@ public final class ProjectUtils {
 	}
 
 	public static <T extends Task> T findTaskByType(Project project, Class<T> taskType) {
-		return project.getTasks().withType(taskType).stream().findFirst().map(taskType::cast)
-				.orElseThrow(() -> new UnknownTaskException("Unable to find task of type [%s]".formatted(taskType)));
+		return project.getTasks()
+			.withType(taskType)
+			.stream()
+			.findFirst()
+			.map(taskType::cast)
+			.orElseThrow(() -> new UnknownTaskException("Unable to find task of type [%s]".formatted(taskType)));
 	}
 
 }
