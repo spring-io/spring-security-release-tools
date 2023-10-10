@@ -1,5 +1,5 @@
 plugins {
-	id "io.spring.convention.spring-gradle-plugin"
+	id "io.spring.convention.spring-module"
 }
 
 dependencies {
