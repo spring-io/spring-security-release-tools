@@ -4,10 +4,10 @@ plugins {
 
 dependencies {
 	management platform(project(":dependencies"))
-
 	implementation "org.springframework:spring-webflux"
 	implementation "com.fasterxml.jackson.core:jackson-databind"
 	implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310"
+
 	testImplementation "org.springframework:spring-test"
 	testImplementation "org.junit.jupiter:junit-jupiter-api"
 	testImplementation "org.junit.jupiter:junit-jupiter-params"
