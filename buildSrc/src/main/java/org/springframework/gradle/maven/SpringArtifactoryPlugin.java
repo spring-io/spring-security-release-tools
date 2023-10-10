@@ -16,8 +16,6 @@
 
 package org.springframework.gradle.maven;
 
-import java.util.Objects;
-
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.publish.maven.plugins.MavenPublishPlugin;
@@ -46,9 +44,10 @@ public class SpringArtifactoryPlugin implements Plugin<Project> {
 				publish.repository((repository) -> {
 					String repoKey = isSnapshot ? "libs-snapshot-local" : isMilestone ? "libs-milestone-local" : "libs-release-local";
 					repository.setRepoKey(repoKey);
-					if (project.hasProperty("artifactoryUsername") && project.hasProperty("artifactoryPassword")) {
-						String artifactoryUsername = Objects.requireNonNull(project.findProperty("artifactoryUsername")).toString();
-						String artifactoryPassword = Objects.requireNonNull(project.findProperty("artifactoryPassword")).toString();
+
+					String artifactoryUsername = System.getenv("ARTIFACTORY_USERNAME");
+					String artifactoryPassword = System.getenv("ARTIFACTORY_PASSWORD");
+					if (artifactoryUsername != null && artifactoryPassword != null) {
 						repository.setUsername(artifactoryUsername);
 						repository.setPassword(artifactoryPassword);
 					}
