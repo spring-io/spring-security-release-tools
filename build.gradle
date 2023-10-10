@@ -2,7 +2,7 @@ plugins {
 	id "io.spring.convention.root"
 }
 
-group = "io.spring"
+group = "io.spring.gradle"
 description = "Spring Security Release Tools"
 
 if (hasProperty("buildScan")) {
