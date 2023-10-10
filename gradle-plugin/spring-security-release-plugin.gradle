@@ -23,6 +23,14 @@ publishing {
 	}
 }
 
+artifactory {
+	publish {
+		defaults {
+			publications("shadow")
+		}
+	}
+}
+
 dependencies {
 	management platform(project(":dependencies"))
 	implementation project(":github-api")
