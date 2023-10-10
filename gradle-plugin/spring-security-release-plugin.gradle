@@ -1,6 +1,5 @@
 plugins {
 	id "io.spring.convention.spring-gradle-plugin"
-	id "com.github.johnrengelman.shadow" version "8.1.1"
 }
 
 gradlePlugin {
@@ -8,24 +7,6 @@ gradlePlugin {
 		springReleasePlugin {
 			id = "io.spring.release"
 			implementationClass = "io.spring.gradle.plugin.release.SpringReleasePlugin"
-		}
-	}
-}
-
-shadowJar {
-	minimize()
-}
-
-publishing {
-	publications.register("shadow", MavenPublication) {
-		project.shadow.component(it)
-	}
-}
-
-artifactory {
-	publish {
-		defaults {
-			publications("shadow", "springReleasePluginPluginMarkerMaven")
 		}
 	}
 }
