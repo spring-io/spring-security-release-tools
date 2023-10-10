@@ -13,4 +13,7 @@ jobs:
       - name: Set up JDK 17
         uses: spring-io/spring-gradle-build-action@v2
       - name: Build with Gradle
-        run: ./gradlew build --continue -PartifactoryUsername="$ARTIFACTORY_USERNAME" -PartifactoryPassword="$ARTIFACTORY_PASSWORD"
+        env:
+          ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
+          ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+        run: ./gradlew build --continue

@@ -11,6 +11,9 @@ jobs:
       - name: Set up JDK 17
         uses: spring-io/spring-gradle-build-action@v2
       - name: Build with Gradle
+        env:
+          ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
+          ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
         run: ./gradlew build --continue
   deploy:
     name: Deploy
@@ -21,4 +24,7 @@ jobs:
       - name: Set up JDK 17
         uses: spring-io/spring-gradle-build-action@v2
       - name: Deploy artifacts
-        run: ./gradlew :spring-security-release-plugin:publishArtifacts finalizeDeployArtifacts --stacktrace -PartifactoryUsername="$ARTIFACTORY_USERNAME" -PartifactoryPassword="$ARTIFACTORY_PASSWORD"
+        env:
+          ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
+          ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+        run: ./gradlew :spring-security-release-plugin:publishArtifacts finalizeDeployArtifacts --stacktrace
