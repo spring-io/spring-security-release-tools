@@ -27,4 +27,4 @@ jobs:
         env:
           ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
           ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
-        run: ./gradlew :spring-security-release-plugin:publishArtifacts finalizeDeployArtifacts --stacktrace
+        run: ./gradlew publishArtifacts finalizeDeployArtifacts --stacktrace
