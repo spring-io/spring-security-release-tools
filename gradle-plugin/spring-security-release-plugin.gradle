@@ -4,7 +4,6 @@ plugins {
 }
 
 gradlePlugin {
-	automatedPublishing = false
 	plugins {
 		springReleasePlugin {
 			id = "io.spring.release"
@@ -26,7 +25,7 @@ publishing {
 artifactory {
 	publish {
 		defaults {
-			publications("shadow")
+			publications("shadow", "springReleasePluginPluginMarkerMaven")
 		}
 	}
 }
