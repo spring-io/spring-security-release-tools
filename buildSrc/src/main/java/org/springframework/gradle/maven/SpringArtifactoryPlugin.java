@@ -53,7 +53,7 @@ public class SpringArtifactoryPlugin implements Plugin<Project> {
 					}
 				});
 
-				publish.defaults((defaults) -> defaults.publications("mavenJava", "pluginMaven"));
+				publish.defaults((defaults) -> defaults.publications("mavenJava"));
 			});
 		});
 	}
