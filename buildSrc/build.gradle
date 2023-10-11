@@ -20,5 +20,4 @@ dependencies {
 	implementation "io.spring.javaformat:spring-javaformat-gradle-plugin:0.0.39"
 	implementation "io.spring.nohttp:nohttp-gradle:0.0.11"
 	implementation "org.jfrog.buildinfo:build-info-extractor-gradle:5.1.10"
-	implementation "org.springframework:spring-core:6.0.12"
 }

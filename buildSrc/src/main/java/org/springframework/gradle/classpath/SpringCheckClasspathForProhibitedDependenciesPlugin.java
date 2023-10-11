@@ -25,8 +25,6 @@ import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.language.base.plugins.LifecycleBasePlugin;
 
-import org.springframework.util.StringUtils;
-
 /**
  * @author Andy Wilkinson
  * @author Rob Winch
@@ -55,7 +53,7 @@ public class SpringCheckClasspathForProhibitedDependenciesPlugin implements Plug
 	}
 
 	private void createProhibitedDependenciesCheck(Configuration classpath, Project project) {
-		String taskName = "check" + StringUtils.capitalize(classpath.getName() + "ForProhibitedDependencies");
+		String taskName = "check" + capitalize(classpath.getName() + "ForProhibitedDependencies");
 		TaskProvider<CheckClasspathForProhibitedDependencies> checkClasspathTask = project.getTasks().register(taskName,
 				CheckClasspathForProhibitedDependencies.class, (checkClasspath) -> {
 					checkClasspath.setGroup(LifecycleBasePlugin.CHECK_TASK_NAME);
@@ -63,5 +61,9 @@ public class SpringCheckClasspathForProhibitedDependenciesPlugin implements Plug
 					checkClasspath.setClasspath(classpath);
 				});
 		project.getTasks().named(SpringCheckProhibitedDependenciesLifecyclePlugin.CHECK_PROHIBITED_DEPENDENCIES_TASK_NAME, (checkProhibitedTask) -> checkProhibitedTask.dependsOn(checkClasspathTask));
+	}
+
+	private static String capitalize(String s) {
+		return s.substring(0, 1).toUpperCase() + s.substring(1);
 	}
 }
