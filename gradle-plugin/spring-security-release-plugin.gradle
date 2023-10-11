@@ -14,7 +14,7 @@ gradlePlugin {
 artifactory {
 	publish {
 		defaults {
-			publications("springSecurityReleasePluginPluginMarkerMaven")
+			publications("pluginMaven", "springSecurityReleasePluginPluginMarkerMaven")
 		}
 	}
 }
