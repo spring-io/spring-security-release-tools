@@ -4,8 +4,8 @@ plugins {
 
 gradlePlugin {
 	plugins {
-		springReleasePlugin {
-			id = "io.spring.release"
+		springSecurityReleasePlugin {
+			id = "io.spring.security.release"
 			implementationClass = "io.spring.gradle.plugin.release.SpringReleasePlugin"
 		}
 	}
@@ -14,7 +14,7 @@ gradlePlugin {
 artifactory {
 	publish {
 		defaults {
-			publications("springReleasePluginPluginMarkerMaven")
+			publications("springSecurityReleasePluginPluginMarkerMaven")
 		}
 	}
 }
