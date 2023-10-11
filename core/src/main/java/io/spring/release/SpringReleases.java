@@ -161,9 +161,13 @@ public class SpringReleases {
 	public boolean isDueToday(String owner, String repo, String version) {
 		var repository = new Repository(owner, repo);
 		var milestone = this.gitHubApi.getMilestone(repository, version);
+		if (milestone == null || milestone.dueOn() == null) {
+			return false;
+		}
+
 		var today = LocalDate.now();
-		var dueOn = (milestone.dueOn() != null) ? milestone.dueOn().atZone(ZoneOffset.UTC).toLocalDate() : null;
-		return (dueOn != null && today.compareTo(dueOn) >= 0);
+		var dueOn = milestone.dueOn().atZone(ZoneOffset.UTC).toLocalDate();
+		return !today.isBefore(dueOn);
 	}
 
 	/**

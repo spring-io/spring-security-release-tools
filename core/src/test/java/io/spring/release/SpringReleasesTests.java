@@ -244,6 +244,23 @@ public class SpringReleasesTests {
 	}
 
 	@Test
+	public void isDueTodayWhenMilestoneDoesNotExistThenFalse() {
+		var version = "6.1.0";
+		when(this.gitHubApi.getMilestone(any(Repository.class), anyString())).thenReturn(null);
+
+		var isDueToday = this.springReleases.isDueToday(OWNER, REPO, version);
+		assertThat(isDueToday).isFalse();
+
+		var repositoryCaptor = forClass(Repository.class);
+		verify(this.gitHubApi).getMilestone(repositoryCaptor.capture(), eq(version));
+		verifyNoMoreInteractions(this.gitHubApi);
+
+		var repository = repositoryCaptor.getValue();
+		assertThat(repository.owner()).isEqualTo(OWNER);
+		assertThat(repository.name()).isEqualTo(REPO);
+	}
+
+	@Test
 	public void hasNoOpenIssuesWhenNoOpenIssuesThenTrue() {
 		var version = "6.1.0";
 		var milestone = new Milestone(version, 1L, Instant.now());
