@@ -1,9 +1,16 @@
 plugins {
 	id "io.spring.convention.root"
+	id "io.spring.release" version "1.0.0-SNAPSHOT"
 }
 
 group = "io.spring.gradle"
 description = "Spring Security Release Tools"
+
+springRelease {
+	repositoryOwner = "spring-io"
+	weekOfMonth = 3
+	dayOfWeek = 3
+}
 
 if (hasProperty("buildScan")) {
 	buildScan {
