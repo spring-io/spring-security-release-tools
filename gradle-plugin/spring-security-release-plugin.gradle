@@ -11,6 +11,14 @@ gradlePlugin {
 	}
 }
 
+artifactory {
+	publish {
+		defaults {
+			publications("springReleasePluginPluginMarkerMaven")
+		}
+	}
+}
+
 dependencies {
 	management platform(project(":dependencies"))
 	implementation project(":github-api")
