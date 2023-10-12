@@ -1,0 +1,59 @@
+name: Update Scheduled Release Version
+
+on:
+  workflow_call:
+    secrets:
+      GRADLE_ENTERPRISE_CACHE_USER:
+        required: false
+      GRADLE_ENTERPRISE_CACHE_PASSWORD:
+        required: false
+      GRADLE_ENTERPRISE_SECRET_ACCESS_KEY:
+        required: false
+      GH_ACTIONS_REPO_TOKEN:
+        required: true
+
+env:
+  GRADLE_ENTERPRISE_CACHE_USERNAME: ${{ secrets.GRADLE_ENTERPRISE_CACHE_USER }}
+  GRADLE_ENTERPRISE_CACHE_PASSWORD: ${{ secrets.GRADLE_ENTERPRISE_CACHE_PASSWORD }}
+  GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_SECRET_ACCESS_KEY }}
+  TOKEN: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
+
+jobs:
+  update-scheduled-release-version:
+    name: Update Scheduled Release Version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
+      - name: Set up JDK 17
+        uses: spring-io/spring-gradle-build-action@v2
+      - id: next-release-milestone
+        name: Get Next Release Milestone
+        run: echo "version=$(./gradlew -q getNextReleaseMilestone -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
+      - id: is-due-today
+        name: Check Release Due Date
+        env:
+          VERSION: ${{ steps.next-release-milestone.outputs.version }}
+        run: echo "result=$(./gradlew -q checkMilestoneIsDueToday -PnextVersion=$VERSION -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
+      - id: has-open-issues
+        name: Check for Open Issues
+        if: steps.is-due-today.outputs.result == 'true'
+        env:
+          VERSION: ${{ steps.next-release-milestone.outputs.version }}
+        run: echo "result=$(./gradlew -q checkMilestoneHasNoOpenIssues -PnextVersion=$VERSION -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
+      - name: Validate State of Release
+        if: steps.is-due-today.outputs.result == 'true' && steps.has-open-issues.outputs.result == 'true'
+        run: echo "The release is due today but there are open issues" && exit 1
+      - name: Update Version
+        if: steps.is-due-today.outputs.result == 'true' && steps.has-open-issues.outputs.result == 'false'
+        env:
+          VERSION: ${{ steps.next-release-milestone.outputs.version }}
+        run: |
+          sed -ie "s/^version=.*/version=$VERSION/" gradle.properties
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git commit -am "Release $VERSION"
+          git tag $VERSION
+          git push
+          git push origin $VERSION

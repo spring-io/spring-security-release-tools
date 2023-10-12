@@ -1,0 +1,68 @@
+name: Deploy Artifacts
+
+on:
+  workflow_call:
+    inputs:
+      should-deploy-artifacts:
+        description: Whether artifacts should be deployed.
+        required: true
+        type: string
+    outputs:
+      artifacts-deployed:
+        description: Whether artifacts were actually deployed.
+        value: ${{ jobs.deploy-artifacts.outputs.artifacts-deployed }}
+      project-version:
+        description: The project version extracted from the current branch/tag.
+        value: ${{ jobs.deploy-artifacts.outputs.project-version }}
+    secrets:
+      GRADLE_ENTERPRISE_CACHE_USER:
+        required: false
+      GRADLE_ENTERPRISE_CACHE_PASSWORD:
+        required: false
+      GRADLE_ENTERPRISE_SECRET_ACCESS_KEY:
+        required: false
+      ARTIFACTORY_USERNAME:
+        required: false
+      ARTIFACTORY_PASSWORD:
+        required: false
+      OSSRH_S01_TOKEN_USERNAME:
+        required: false
+      OSSRH_S01_TOKEN_PASSWORD:
+        required: false
+      GPG_PRIVATE_KEY:
+        required: false
+      GPG_PASSPHRASE:
+        required: false
+
+env:
+  GRADLE_ENTERPRISE_CACHE_USERNAME: ${{ secrets.GRADLE_ENTERPRISE_CACHE_USER }}
+  GRADLE_ENTERPRISE_CACHE_PASSWORD: ${{ secrets.GRADLE_ENTERPRISE_CACHE_PASSWORD }}
+  GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_SECRET_ACCESS_KEY }}
+  ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
+  ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+  OSSRH_TOKEN_USERNAME: ${{ secrets.OSSRH_S01_TOKEN_USERNAME }}
+  OSSRH_TOKEN_PASSWORD: ${{ secrets.OSSRH_S01_TOKEN_PASSWORD }}
+
+jobs:
+  deploy-artifacts:
+    name: Deploy Artifacts
+    if: ${{ inputs.should-deploy-artifacts == 'true' }}
+    runs-on: ubuntu-latest
+    outputs:
+      artifacts-deployed: ${{ steps.artifacts-deployed.outputs.result }}
+      project-version: ${{ steps.project-version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 17
+        uses: spring-io/spring-gradle-build-action@v2
+      - name: Deploy Artifacts
+        env:
+          ORG_GRADLE_PROJECT_signingKey: ${{ secrets.GPG_PRIVATE_KEY }}
+          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSPHRASE }}
+        run: ./gradlew publishArtifacts finalizeDeployArtifacts -PossrhUsername="$OSSRH_TOKEN_USERNAME" -PossrhPassword="$OSSRH_TOKEN_PASSWORD" -PartifactoryUsername="$ARTIFACTORY_USERNAME" -PartifactoryPassword="$ARTIFACTORY_PASSWORD" --stacktrace
+      - id: artifacts-deployed
+        name: Artifacts Deployed
+        run: echo "result=true" >> $GITHUB_OUTPUT
+      - id: project-version
+        name: Extract Project Version
+        run: echo "version=$(cat gradle.properties | grep 'version=' | awk -F'=' '{print $2}')" >> $GITHUB_OUTPUT

@@ -1,0 +1,173 @@
+name: Perform Release
+
+on:
+  workflow_call:
+    inputs:
+      should-perform-release:
+        description: Whether the release should be performed.
+        required: false
+        default: false
+        type: string
+      project-version:
+        description: The project version extracted from the current branch/tag, used to restrict running the workflow to release versions.
+        required: true
+        type: string
+      milestone-repo-url:
+        description: The base URL of the milestone repository (e.g. https://repo.spring.io/artifactory/milestone).
+        required: true
+        type: string
+      release-repo-url:
+        description: The base URL of the release repository (e.g. https://repo1.maven.org/maven2).
+        required: true
+        type: string
+      artifact-path:
+        description: The artifact path within the repository (e.g. org/springframework/security/spring-security-core) used to check for the existence of an artifact version.
+        required: true
+        type: string
+      slack-announcing-id:
+        description: The slack announcing id (e.g. spring-security-announcing) to use for slack release notifications.
+        required: true
+        type: string
+    secrets:
+      GRADLE_ENTERPRISE_CACHE_USER:
+        required: false
+      GRADLE_ENTERPRISE_CACHE_PASSWORD:
+        required: false
+      GRADLE_ENTERPRISE_SECRET_ACCESS_KEY:
+        required: false
+      GH_ACTIONS_REPO_TOKEN:
+        required: true
+      SPRING_RELEASE_SLACK_WEBHOOK_URL:
+        required: true
+
+env:
+  GRADLE_ENTERPRISE_CACHE_USERNAME: ${{ secrets.GRADLE_ENTERPRISE_CACHE_USER }}
+  GRADLE_ENTERPRISE_CACHE_PASSWORD: ${{ secrets.GRADLE_ENTERPRISE_CACHE_PASSWORD }}
+  GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_SECRET_ACCESS_KEY }}
+
+jobs:
+  perform-release:
+    name: Perform Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    if: ${{ inputs.should-perform-release == 'true' && !endsWith(inputs.project-version, '-SNAPSHOT') }}
+    env:
+      REPO: ${{ github.repository }}
+      BRANCH: ${{ github.ref_name }}
+      TOKEN: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
+      MILESTONE_REPO: ${{ inputs.milestone-repo-url }}
+      RELEASE_REPO: ${{ inputs.release-repo-url }}
+      ARTIFACT_PATH: ${{ inputs.artifact-path }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 17
+        uses: spring-io/spring-gradle-build-action@v2
+      - id: project-version
+        name: Extract Project Version
+        run: echo "version=$(cat gradle.properties | grep 'version=' | awk -F'=' '{print $2}')" >> $GITHUB_OUTPUT
+      - name: Wait for Milestone Artifacts
+        if: ${{ contains(steps.project-version.outputs.version, '-RC') || contains(steps.project-version.outputs.version, '-M') }}
+        env:
+          VERSION: ${{ steps.project-version.outputs.version }}
+        run: |
+          echo "Wait for artifacts of $REPO@$VERSION to appear on milestone repository ($MILESTONE_REPO)."
+          until curl -f -s $MILESTONE_REPO/$ARTIFACT_PATH/$VERSION/ > /dev/null
+          do
+            sleep 30
+            echo "."
+          done
+          echo "Artifacts for $REPO@$VERSION have been released to milestone repository ($MILESTONE_REPO)."
+      - name: Wait for Release Artifacts
+        if: ${{ !contains(steps.project-version.outputs.version, '-RC') && !contains(steps.project-version.outputs.version, '-M') }}
+        env:
+          VERSION: ${{ steps.project-version.outputs.version }}
+        run: |
+          echo "Wait for artifacts of $REPO@$VERSION to appear on release repository ($RELEASE_REPO)."
+          until curl -f -s $RELEASE_REPO/$ARTIFACT_PATH/$VERSION/ > /dev/null
+          do
+            sleep 30
+            echo "."
+          done
+          echo "Artifacts for $REPO@$VERSION have been released to release repository ($RELEASE_REPO)."
+      - name: Create GitHub Release
+        env:
+          VERSION: ${{ steps.project-version.outputs.version }}
+        run: ./gradlew createGitHubRelease -PnextVersion=$VERSION -Pbranch=$BRANCH -PcreateRelease=true -PgitHubAccessToken=$TOKEN
+      - name: Delete Previous Version
+        env:
+          VERSION: ${{ steps.project-version.outputs.version }}
+        run: ./gradlew deleteSaganRelease -PcurrentVersion=$VERSION -PgitHubAccessToken=$TOKEN
+      - name: Create Released Version
+        env:
+          VERSION: ${{ steps.project-version.outputs.version }}
+        run: ./gradlew createSaganRelease -PnextVersion=$VERSION -PgitHubAccessToken=$TOKEN
+      - name: Announce Release on Slack
+        uses: slackapi/slack-github-action@v1.19.0
+        env:
+          VERSION: ${{ steps.project-version.outputs.version }}
+          SLACK_ANNOUNCING_ID: ${{ inputs.slack-announcing-id }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SPRING_RELEASE_SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+        with:
+          payload: |
+            {
+              "text": "${{ env.SLACK_ANNOUNCING_ID }} `${{ env.VERSION }}` is available now",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "${{ env.SLACK_ANNOUNCING_ID }} `${{ env.VERSION }}` is available now"
+                  }
+                }
+              ]
+            }
+  next-development-version:
+    name: Next Development Version
+    runs-on: ubuntu-latest
+    needs: [perform-release]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
+      - name: Set up JDK 17
+        uses: spring-io/spring-gradle-build-action@v2
+      - id: project-version
+        name: Extract Project Version
+        run: echo "version=$(cat gradle.properties | grep 'version=' | awk -F'=' '{print $2}')" >> $GITHUB_OUTPUT
+      - id: next-snapshot-version
+        name: Calculate Next Snapshot Version
+        env:
+          VERSION: ${{ steps.project-version.outputs.version }}
+        run: echo "version=$(./gradlew getNextSnapshotVersion -PcurrentVersion=$VERSION)" >> $GITHUB_OUTPUT
+      - name: Update Version
+        env:
+          VERSION: ${{ steps.next-snapshot-version.outputs.version }}
+        run: |
+          sed -ie "s/^version=.*/version=$VERSION/" gradle.properties
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git commit -am "Next development version"
+          git push
+      - id: previous-release-milestone
+        name: Get Previous Release Milestone
+        env:
+          VERSION: ${{ steps.next-snapshot-version.outputs.version }}
+        run: echo "version=$(./gradlew -q getPreviousReleaseMilestone -PcurrentVersion=$VERSION -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
+      - name: Delete Previous Snapshot Version
+        env:
+          VERSION: ${{ steps.previous-release-milestone.outputs.version }}
+        run: ./gradlew deleteSaganRelease -PpreviousVersion=$VERSION -PgitHubAccessToken=$TOKEN
+      - name: Create Next Snapshot Version
+        env:
+          VERSION: ${{ steps.next-snapshot-version.outputs.version }}
+        run: ./gradlew createSaganRelease -PnextVersion=$VERSION -PgitHubAccessToken=$TOKEN
+      - id: next-release-milestone
+        name: Get Next Release Milestone
+        env:
+          VERSION: ${{ steps.next-snapshot-version.outputs.version }}
+        run: echo "version=$(./gradlew -q getNextReleaseMilestone -PcurrentVersion=$VERSION -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
+      - name: Schedule Next Release (if not already scheduled)
+        env:
+          VERSION: ${{ steps.next-release-milestone.outputs.version }}
+        run: ./gradlew scheduleNextRelease -PnextVersion=$VERSION -PgitHubAccessToken=$TOKEN

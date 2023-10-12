@@ -1,0 +1,23 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+  test:
+    name: Test
+    uses: ./.github/workflows/test.yml
+    secrets: inherit
+  deploy:
+    name: Deploy Artifacts
+    needs: [build, test]
+    uses: ./.github/workflows/deploy-artifacts.yml
+    with:
+      should-deploy-artifacts: ${{ needs.build.outputs.should-deploy-artifacts }}
+    secrets: inherit

@@ -1,4 +1,4 @@
-name: Build
+name: Test
 
 on:
   workflow_call:
@@ -13,20 +13,12 @@ on:
         required: false
         default: 'temurin'
         type: string
-      runs-on:
-        description: 'GitHub Actions runner to run the build task on.'
+      test-args:
+        description: 'Arguments for the gradle test command.'
         required: false
-        default: 'ubuntu-latest'
+        default: ''
         type: string
-    outputs:
-      should-deploy-artifacts:
-        description: Whether artifacts should be deployed.
-        value: ${{ jobs.build.outputs.should-deploy-artifacts }}
     secrets:
-      ARTIFACTORY_USERNAME:
-        required: false
-      ARTIFACTORY_PASSWORD:
-        required: false
       GRADLE_ENTERPRISE_CACHE_USER:
         required: false
       GRADLE_ENTERPRISE_CACHE_PASSWORD:
@@ -35,18 +27,14 @@ on:
         required: false
 
 env:
-  ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
-  ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
   GRADLE_ENTERPRISE_CACHE_USERNAME: ${{ secrets.GRADLE_ENTERPRISE_CACHE_USER }}
   GRADLE_ENTERPRISE_CACHE_PASSWORD: ${{ secrets.GRADLE_ENTERPRISE_CACHE_PASSWORD }}
   GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_SECRET_ACCESS_KEY }}
 
 jobs:
-  build:
-    name: Build
-    runs-on: ${{ inputs.runs-on }}
-    outputs:
-      should-deploy-artifacts: ${{ steps.should-deploy-artifacts.outputs.result }}
+  test:
+    name: Test
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK ${{ inputs.java-version }}
@@ -54,14 +42,7 @@ jobs:
         with:
           java-version: ${{ inputs.java-version }}
           distribution: ${{ inputs.distribution }}
-      - name: Build with Gradle
-        run: ./gradlew build --continue
-      - id: should-deploy-artifacts
-        name: Check Deploy Artifacts using Secrets
-        if: ${{ runner.os == 'Linux' }}
-        run: |
-          if [[ -z "$ARTIFACTORY_PASSWORD" ]] ; then
-            echo "result=false" >> $GITHUB_OUTPUT
-          else
-            echo "result=true" >> $GITHUB_OUTPUT
-          fi
+      - name: Run Tests
+        env:
+          TEST_ARGS: ${{ inputs.test-args }}
+        run: ./gradlew test $TEST_ARGS
