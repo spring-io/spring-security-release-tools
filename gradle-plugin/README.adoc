@@ -185,7 +185,7 @@ The following command will perform a dry-run and provide output of what creating
 === `createSaganRelease`
 
 Create a new release version for the current project on spring.io using the Sagan API.
-This task uses the configured `referenceDocUrl` and `apiDocUrl` values from the DSL.
+This task uses the configured `referenceDocUrl`, `apiDocUrl` and `replaceSnapshotVersionInReferenceDocUrl` values from the DSL.
 
 The following command will create a new release version:
 
@@ -196,7 +196,7 @@ The following command will create a new release version:
 
 *Task properties:*
 
-* `nextVersion`: Specify the version used to create the release (optional, uses <<getNextReleaseMilestone>> if not specified)
+* `nextVersion`: Specify the version used to create the release (optional, uses `project.version` if not specified)
 * `gitHubAccessToken`: A personal access token used to access the Sagan API (required)
 
 *Full example:*

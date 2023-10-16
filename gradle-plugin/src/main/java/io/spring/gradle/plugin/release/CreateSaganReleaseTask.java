@@ -17,7 +17,6 @@ package io.spring.gradle.plugin.release;
 
 import com.github.api.Repository;
 import io.spring.gradle.plugin.core.ProjectUtils;
-import io.spring.gradle.plugin.core.RegularFileUtils;
 import io.spring.release.SpringReleases;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
@@ -85,9 +84,7 @@ public abstract class CreateSaganReleaseTask extends DefaultTask {
 
 			// @formatter:off
 			var versionProvider = ProjectUtils.getProperty(project, SpringReleasePlugin.NEXT_VERSION_PROPERTY)
-					.orElse(ProjectUtils.findTaskByType(project, GetNextReleaseMilestoneTask.class)
-							.getNextReleaseMilestoneFile()
-							.map(RegularFileUtils::readString));
+					.orElse(project.getRootProject().getVersion().toString());
 			// @formatter:on
 
 			var owner = springRelease.getRepositoryOwner().get();
