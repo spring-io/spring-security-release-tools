@@ -227,7 +227,7 @@ The following command will delete the previous release version:
 
 [source,bash]
 ----
-./gradlew createSaganRelease -PnextVersion=1.0.0 -PgitHubAccessToken=$GITHUB_ACCESS_TOKEN
+./gradlew deleteSaganRelease -PpreviousVersion=1.0.0 -PgitHubAccessToken=$GITHUB_ACCESS_TOKEN
 ----
 
 [[generateChangelog]]
