@@ -18,7 +18,7 @@ Then apply the plugin in your project's root `build.gradle`:
 [source,gradle]
 ----
 plugins {
-	id "io.spring.release" version "1.0.0"
+	id "io.spring.security.release" version "1.0.0"
 }
 ----
 
