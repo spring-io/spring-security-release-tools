@@ -80,7 +80,7 @@ public abstract class ScheduleNextReleaseTask extends DefaultTask {
 			// @formatter:on
 
 			var owner = springRelease.getRepositoryOwner().get();
-			var name = project.getRootProject().getName();
+			var name = springRelease.getRepositoryName().get();
 			task.getRepository().set(new Repository(owner, name));
 			task.getGitHubAccessToken()
 				.set(ProjectUtils.getProperty(project, SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY));

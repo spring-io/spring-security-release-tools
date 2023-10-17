@@ -80,7 +80,7 @@ public abstract class GetNextReleaseMilestoneTask extends DefaultTask {
 				.orElse(project.getRootProject().getVersion().toString());
 
 			var owner = springRelease.getRepositoryOwner().get();
-			var name = project.getRootProject().getName();
+			var name = springRelease.getRepositoryName().get();
 			task.getRepository().set(new Repository(owner, name));
 			task.getVersion().set(versionProvider);
 			task.getGitHubAccessToken()

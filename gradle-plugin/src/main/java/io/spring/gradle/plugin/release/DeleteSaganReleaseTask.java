@@ -25,6 +25,8 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.TaskAction;
 
+import org.springframework.util.Assert;
+
 public abstract class DeleteSaganReleaseTask extends DefaultTask {
 
 	public static final String TASK_NAME = "deleteSaganRelease";
@@ -54,6 +56,9 @@ public abstract class DeleteSaganReleaseTask extends DefaultTask {
 	}
 
 	public static void register(Project project) {
+		var springRelease = project.getExtensions().findByType(SpringReleasePluginExtension.class);
+		Assert.notNull(springRelease, "Cannot find " + SpringReleasePluginExtension.class);
+
 		project.getTasks().register(TASK_NAME, DeleteSaganReleaseTask.class, (task) -> {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
 			task.setDescription("Delete a version for the specified project on spring.io.");
@@ -66,9 +71,10 @@ public abstract class DeleteSaganReleaseTask extends DefaultTask {
 							.map(RegularFileUtils::readString));
 			// @formatter:on
 
+			var name = springRelease.getRepositoryName().get();
 			task.getGitHubAccessToken()
 				.set(ProjectUtils.getProperty(project, SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY));
-			task.getProjectName().set(project.getRootProject().getName());
+			task.getProjectName().set(name);
 			task.getVersion().set(versionProvider);
 		});
 	}

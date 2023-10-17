@@ -24,6 +24,8 @@ public interface SpringReleasePluginExtension {
 
 	Property<String> getRepositoryOwner();
 
+	Property<String> getRepositoryName();
+
 	Property<Integer> getWeekOfMonth();
 
 	Property<Integer> getDayOfWeek();
