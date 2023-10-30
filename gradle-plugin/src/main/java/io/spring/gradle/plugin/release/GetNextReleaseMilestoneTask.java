@@ -15,6 +15,8 @@
  */
 package io.spring.gradle.plugin.release;
 
+import java.util.Objects;
+
 import com.github.api.Repository;
 import io.spring.gradle.plugin.core.ProjectUtils;
 import io.spring.gradle.plugin.core.RegularFileUtils;
@@ -27,8 +29,6 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
-
-import org.springframework.util.Assert;
 
 /**
  * @author Steve Riesenberg
@@ -68,7 +68,7 @@ public abstract class GetNextReleaseMilestoneTask extends DefaultTask {
 
 	public static void register(Project project) {
 		var springRelease = project.getExtensions().findByType(SpringReleasePluginExtension.class);
-		Assert.notNull(springRelease, "Cannot find " + SpringReleasePluginExtension.class);
+		Objects.requireNonNull(springRelease, "Cannot find " + SpringReleasePluginExtension.class);
 
 		project.getTasks().register(TASK_NAME, GetNextReleaseMilestoneTask.class, (task) -> {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);

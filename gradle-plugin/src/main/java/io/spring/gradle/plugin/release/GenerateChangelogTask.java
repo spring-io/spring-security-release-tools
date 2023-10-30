@@ -25,8 +25,6 @@ import org.gradle.api.tasks.JavaExec;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputFile;
 
-import org.springframework.util.Assert;
-
 /**
  * @author Steve Riesenberg
  */
@@ -67,8 +65,8 @@ public abstract class GenerateChangelogTask extends JavaExec {
 		var password = getPassword().getOrNull();
 		var outputFile = getReleaseNotesFile().getAsFile().get();
 		var parent = outputFile.getParentFile();
-		if (!parent.exists()) {
-			Assert.isTrue(parent.mkdirs(), "Unable to create " + outputFile);
+		if (!parent.exists() && !parent.mkdirs()) {
+			throw new IllegalStateException("Unable to create " + outputFile);
 		}
 
 		args("--spring.config.location=scripts/release/release-notes-sections.yml");

@@ -15,6 +15,8 @@
  */
 package io.spring.gradle.plugin.release;
 
+import java.util.Objects;
+
 import com.github.api.Repository;
 import groovy.lang.MissingPropertyException;
 import io.spring.gradle.plugin.core.ProjectUtils;
@@ -26,8 +28,6 @@ import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.TaskAction;
-
-import org.springframework.util.Assert;
 
 /**
  * @author Steve Riesenberg
@@ -101,7 +101,7 @@ public abstract class CreateReleaseTask extends DefaultTask {
 
 	public static void register(Project project) {
 		var springRelease = project.getExtensions().findByType(SpringReleasePluginExtension.class);
-		Assert.notNull(springRelease, "Cannot find " + SpringReleasePluginExtension.class);
+		Objects.requireNonNull(springRelease, "Cannot find " + SpringReleasePluginExtension.class);
 
 		project.getTasks().register(TASK_NAME, CreateReleaseTask.class, (task) -> {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);

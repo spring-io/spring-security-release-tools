@@ -19,8 +19,7 @@ package io.spring.release;
 import java.time.LocalDate;
 import java.time.Month;
 import java.time.Year;
-
-import org.springframework.util.Assert;
+import java.util.Objects;
 
 /**
  * A specification for a release train.
@@ -239,11 +238,11 @@ public final class SpringReleaseTrainSpec {
 		}
 
 		public SpringReleaseTrainSpec build() {
-			Assert.notNull(this.train, "train cannot be null");
-			Assert.notNull(this.version, "version cannot be null");
-			Assert.notNull(this.weekOfMonth, "weekOfMonth cannot be null");
-			Assert.notNull(this.dayOfWeek, "dayOfWeek cannot be null");
-			Assert.notNull(this.year, "year cannot be null");
+			Objects.requireNonNull(this.train, "train cannot be null");
+			Objects.requireNonNull(this.version, "version cannot be null");
+			Objects.requireNonNull(this.weekOfMonth, "weekOfMonth cannot be null");
+			Objects.requireNonNull(this.dayOfWeek, "dayOfWeek cannot be null");
+			Objects.requireNonNull(this.year, "year cannot be null");
 			return new SpringReleaseTrainSpec(this.train, this.version, this.weekOfMonth, this.dayOfWeek, this.year);
 		}
 
