@@ -29,9 +29,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
 import org.springframework.util.StreamUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -73,7 +70,7 @@ public class SaganApiTests {
 		assertThat(projects).hasSize(2);
 
 		var recordedRequest = this.server.takeRequest();
-		assertThat(recordedRequest.getMethod()).isEqualTo(HttpMethod.GET.name());
+		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath()).isEqualTo("/projects");
 	}
 
@@ -86,7 +83,7 @@ public class SaganApiTests {
 		assertThat(project.slug()).isEqualTo("spring-security");
 
 		var recordedRequest = this.server.takeRequest();
-		assertThat(recordedRequest.getMethod()).isEqualTo(HttpMethod.GET.name());
+		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath()).isEqualTo("/projects/spring-security");
 	}
 
@@ -102,7 +99,7 @@ public class SaganApiTests {
 		assertThat(currentReleases.get(0).version()).isEqualTo(this.release.version());
 
 		var recordedRequest = this.server.takeRequest();
-		assertThat(recordedRequest.getMethod()).isEqualTo(HttpMethod.GET.name());
+		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath()).isEqualTo("/projects/spring-security/releases");
 	}
 
@@ -114,7 +111,7 @@ public class SaganApiTests {
 		assertThat(releases).isEmpty();
 
 		var recordedRequest = this.server.takeRequest();
-		assertThat(recordedRequest.getMethod()).isEqualTo(HttpMethod.GET.name());
+		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath()).isEqualTo("/projects/spring-social/releases");
 	}
 
@@ -124,7 +121,7 @@ public class SaganApiTests {
 		this.saganApi.createRelease("spring-security", this.release);
 
 		var recordedRequest = this.server.takeRequest();
-		assertThat(recordedRequest.getMethod()).isEqualTo(HttpMethod.POST.name());
+		assertThat(recordedRequest.getMethod()).isEqualTo("POST");
 		assertThat(recordedRequest.getPath()).isEqualTo("/projects/spring-security/releases");
 		assertThat(recordedRequest.getBody().readString(Charset.defaultCharset()))
 			.isEqualTo(string("CreateReleaseRequest.json"));
@@ -140,7 +137,7 @@ public class SaganApiTests {
 		assertThat(release.apiDocUrl()).isEqualTo(this.release.apiDocUrl());
 
 		var recordedRequest = this.server.takeRequest();
-		assertThat(recordedRequest.getMethod()).isEqualTo(HttpMethod.GET.name());
+		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath()).isEqualTo("/projects/spring-security/releases/6.1.0");
 	}
 
@@ -150,7 +147,7 @@ public class SaganApiTests {
 		this.saganApi.deleteRelease("spring-security", this.release.version());
 
 		var recordedRequest = this.server.takeRequest();
-		assertThat(recordedRequest.getMethod()).isEqualTo(HttpMethod.DELETE.name());
+		assertThat(recordedRequest.getMethod()).isEqualTo("DELETE");
 		assertThat(recordedRequest.getPath()).isEqualTo("/projects/spring-security/releases/6.1.0");
 	}
 
@@ -173,7 +170,7 @@ public class SaganApiTests {
 		assertThat(currentGeneration.commercialSupportEndDate()).isEqualTo(LocalDate.parse("2025-09-15"));
 
 		var recordedRequest = this.server.takeRequest();
-		assertThat(recordedRequest.getMethod()).isEqualTo(HttpMethod.GET.name());
+		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath()).isEqualTo("/projects/spring-security/generations");
 	}
 
@@ -185,7 +182,7 @@ public class SaganApiTests {
 		assertThat(generations).isEmpty();
 
 		var recordedRequest = this.server.takeRequest();
-		assertThat(recordedRequest.getMethod()).isEqualTo(HttpMethod.GET.name());
+		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath()).isEqualTo("/projects/spring-social/generations");
 	}
 
@@ -201,14 +198,14 @@ public class SaganApiTests {
 		assertThat(generation.commercialSupportEndDate()).isEqualTo(LocalDate.parse("2025-09-15"));
 
 		var recordedRequest = this.server.takeRequest();
-		assertThat(recordedRequest.getMethod()).isEqualTo(HttpMethod.GET.name());
+		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath()).isEqualTo("/projects/spring-security/generations/6.1.x");
 	}
 
 	private static MockResponse json(String path) throws IOException {
 		// @formatter:off
 		return new MockResponse()
-				.addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+				.addHeader("Content-Type", "application/json")
 				.setBody(string(path));
 		// @formatter:on
 	}

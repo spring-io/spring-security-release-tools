@@ -15,22 +15,33 @@
  */
 package com.github.api;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-
-import org.springframework.http.MediaType;
-import org.springframework.http.codec.json.Jackson2JsonDecoder;
-import org.springframework.http.codec.json.Jackson2JsonEncoder;
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
-import org.springframework.web.reactive.function.client.WebClient;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 /**
  * @author Steve Riesenberg
  */
 public class GitHubApi {
 
-	private final WebClient webClient;
+	private final HttpClient httpClient;
+
+	private final ObjectMapper objectMapper;
+
+	private final String baseUrl;
+
+	private final String accessToken;
 
 	/**
 	 * @param accessToken The optional access token for the GitHub API
@@ -44,28 +55,19 @@ public class GitHubApi {
 	 * @param accessToken The optional access token for the GitHub API
 	 */
 	public GitHubApi(String baseUrl, String accessToken) {
-		// @formatter:off
-		var objectMapper = Jackson2ObjectMapperBuilder.json()
-				.serializationInclusion(JsonInclude.Include.NON_NULL)
-				.build();
-		// @formatter:on
-		var encoder = new Jackson2JsonEncoder(objectMapper, MediaType.APPLICATION_JSON);
-		var decoder = new Jackson2JsonDecoder(objectMapper, MediaType.APPLICATION_JSON);
-		// @formatter:off
-		this.webClient = WebClient.builder()
-				.codecs((configurer) -> configurer
-						.defaultCodecs()
-						.jackson2JsonEncoder(encoder)
-				)
-				.codecs((configurer) -> configurer
-						.defaultCodecs()
-						.jackson2JsonDecoder(decoder)
-				)
-				.baseUrl(baseUrl)
-				.filter(new BearerAuthFilterFunction(accessToken))
-				.defaultHeader("X-GitHub-Api-Version", "2022-11-28")
-				.build();
-		// @formatter:on
+		this.httpClient = HttpClient.newHttpClient();
+		this.objectMapper = getObjectMapper();
+		this.baseUrl = baseUrl;
+		this.accessToken = accessToken;
+	}
+
+	private static ObjectMapper getObjectMapper() {
+		var objectMapper = new ObjectMapper();
+		objectMapper.setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL);
+		objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		objectMapper.registerModule(new JavaTimeModule());
+
+		return objectMapper;
 	}
 
 	/**
@@ -73,7 +75,8 @@ public class GitHubApi {
 	 * @return A GitHub User
 	 */
 	public User getUser() {
-		return this.webClient.get().uri("/user").retrieve().bodyToMono(User.class).block();
+		var httpRequest = requestBuilder("/user").GET().build();
+		return performRequest(httpRequest, User.class);
 	}
 
 	/**
@@ -82,12 +85,9 @@ public class GitHubApi {
 	 * @param release The contents of the release
 	 */
 	public void createRelease(Repository repository, Release release) {
-		this.webClient.post()
-			.uri("/repos/{owner}/{name}/releases", repository.owner(), repository.name())
-			.bodyValue(release)
-			.retrieve()
-			.bodyToMono(Void.class)
-			.block();
+		var uri = "/repos/%s/%s/releases".formatted(repository.owner(), repository.name());
+		var httpRequest = requestBuilder(uri).POST(bodyValue(release)).build();
+		performRequest(httpRequest, Void.class);
 	}
 
 	/**
@@ -96,12 +96,9 @@ public class GitHubApi {
 	 * @param milestone The milestone containing a title and due date
 	 */
 	public void createMilestone(Repository repository, Milestone milestone) {
-		this.webClient.post()
-			.uri("/repos/{owner}/{name}/milestones", repository.owner(), repository.name())
-			.bodyValue(milestone)
-			.retrieve()
-			.bodyToMono(Void.class)
-			.block();
+		var uri = "/repos/%s/%s/milestones".formatted(repository.owner(), repository.name());
+		var httpRequest = requestBuilder(uri).POST(bodyValue(milestone)).build();
+		performRequest(httpRequest, Void.class);
 	}
 
 	/**
@@ -110,12 +107,9 @@ public class GitHubApi {
 	 * @return A list of the first 100 milestones for the repository
 	 */
 	public List<Milestone> getMilestones(Repository repository) {
-		return this.webClient.get()
-			.uri("/repos/{owner}/{name}/milestones?per_page=100", repository.owner(), repository.name())
-			.retrieve()
-			.bodyToFlux(Milestone.class)
-			.collectList()
-			.block();
+		var uri = "/repos/%s/%s/milestones?per_page=100".formatted(repository.owner(), repository.name());
+		var httpRequest = requestBuilder(uri).GET().build();
+		return new ArrayList<>(Arrays.asList(performRequest(httpRequest, Milestone[].class)));
 	}
 
 	/**
@@ -125,13 +119,15 @@ public class GitHubApi {
 	 * @return The milestone, or null if not found within the first 100 milestones
 	 */
 	public Milestone getMilestone(Repository repository, String title) {
-		return this.webClient.get()
-			.uri("/repos/{owner}/{name}/milestones?per_page=100", repository.owner(), repository.name())
-			.retrieve()
-			.bodyToFlux(Milestone.class)
-			.filter((milestone) -> milestone.title().equals(title))
-			.next()
-			.block();
+		var uri = "/repos/%s/%s/milestones?per_page=100".formatted(repository.owner(), repository.name());
+		var httpRequest = requestBuilder(uri).GET().build();
+		var milestones = performRequest(httpRequest, Milestone[].class);
+		for (var m : milestones) {
+			if (m.title().equals(title)) {
+				return m;
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -141,15 +137,69 @@ public class GitHubApi {
 	 * @return true if the milestone has open issues, false otherwise
 	 */
 	public boolean hasOpenIssues(Repository repository, Long milestone) {
-		Boolean result = this.webClient.get()
-			.uri("/repos/{owner}/{name}/issues?per_page=1&milestone={milestone}", repository.owner(), repository.name(),
-					milestone)
-			.retrieve()
-			.bodyToFlux(Issue.class)
-			.count()
-			.map((num) -> num > 0)
-			.block();
-		return (result != null && result);
+		var uri = "/repos/%s/%s/issues?per_page=1&milestone=%s".formatted(repository.owner(), repository.name(),
+				milestone);
+		var httpRequest = requestBuilder(uri).GET().build();
+		var issues = performRequest(httpRequest, Issue[].class);
+		return (issues.length > 0);
+	}
+
+	private HttpRequest.Builder requestBuilder(String uri) {
+		return HttpRequest.newBuilder()
+			.uri(URI.create(this.baseUrl + uri).normalize())
+			.header("Accept", "application/json")
+			.header("X-GitHub-Api-Version", "2022-11-28")
+			.header("Authorization", "Bearer %s".formatted(this.accessToken));
+	}
+
+	private <T> T performRequest(HttpRequest httpRequest, Class<T> responseType) {
+		try {
+			var httpResponse = this.httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+			if (httpResponse.statusCode() >= 300) {
+				throw new HttpClientException(httpResponse.statusCode(), httpResponse.body());
+			}
+			String responseBody = Void.class.isAssignableFrom(responseType) ? "null" : httpResponse.body();
+			return this.objectMapper.readValue(responseBody, responseType);
+		}
+		catch (IOException | InterruptedException ex) {
+			throw new RuntimeException("Unable to perform request:", ex);
+		}
+	}
+
+	private <T> HttpRequest.BodyPublisher bodyValue(T body) {
+		try {
+			return HttpRequest.BodyPublishers.ofString(this.objectMapper.writeValueAsString(body));
+		}
+		catch (JsonProcessingException ex) {
+			throw new RuntimeException("Unable to serialize json:", ex);
+		}
+	}
+
+	public static class HttpClientException extends RuntimeException {
+
+		private final int statusCode;
+
+		private final String responseBody;
+
+		private HttpClientException(int statusCode, String responseBody) {
+			super(statusCode + "[" + responseBody + "]");
+			this.statusCode = statusCode;
+			this.responseBody = responseBody;
+		}
+
+		public int getStatusCode() {
+			return this.statusCode;
+		}
+
+		public String getResponseBody() {
+			return this.responseBody;
+		}
+
+		@Override
+		public String toString() {
+			return this.statusCode + "[" + this.responseBody + "]";
+		}
+
 	}
 
 }

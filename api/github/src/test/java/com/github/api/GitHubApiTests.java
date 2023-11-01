@@ -27,9 +27,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
 import org.springframework.util.StreamUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -65,19 +62,19 @@ public class GitHubApiTests {
 		assertThat(user.url()).isEqualTo("https://api.github.com/users/octocat");
 
 		var recordedRequest = this.server.takeRequest();
-		assertThat(recordedRequest.getMethod()).isEqualTo(HttpMethod.GET.name());
+		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath()).isEqualTo("/user");
 	}
 
 	@Test
 	public void createReleaseWhenValidParametersThenSuccess() throws Exception {
-		this.server.enqueue(json("CreateReleaseResponse.json"));
+		this.server.enqueue(json("CreateReleaseResponse.json").setResponseCode(201));
 
 		var release = Release.tag("1.0.0").build();
 		this.githubApi.createRelease(this.repository, release);
 
 		var recordedRequest = this.server.takeRequest();
-		assertThat(recordedRequest.getMethod()).isEqualTo(HttpMethod.POST.name());
+		assertThat(recordedRequest.getMethod()).isEqualTo("POST");
 		assertThat(recordedRequest.getPath()).isEqualTo("/repos/spring-projects/spring-security/releases");
 		assertThat(recordedRequest.getBody().readString(Charset.defaultCharset()))
 			.isEqualTo(string("CreateReleaseRequest.json"));
@@ -85,14 +82,14 @@ public class GitHubApiTests {
 
 	@Test
 	public void createMilestoneWhenValidParametersThenSuccess() throws Exception {
-		this.server.enqueue(new MockResponse().setResponseCode(204));
+		this.server.enqueue(json("CreateMilestoneResponse.json").setResponseCode(201));
 
 		var dueOn = Instant.parse("2022-05-04T12:00:00Z");
 		var milestone = new Milestone("1.0.0", null, dueOn);
 		this.githubApi.createMilestone(this.repository, milestone);
 
 		var recordedRequest = this.server.takeRequest();
-		assertThat(recordedRequest.getMethod()).isEqualTo(HttpMethod.POST.name());
+		assertThat(recordedRequest.getMethod()).isEqualTo("POST");
 		assertThat(recordedRequest.getPath()).isEqualTo("/repos/spring-projects/spring-security/milestones");
 		assertThat(recordedRequest.getBody().readString(Charset.defaultCharset()))
 			.isEqualTo(string("CreateMilestoneRequest.json"));
@@ -108,7 +105,7 @@ public class GitHubApiTests {
 		assertThat(milestones.get(1).number()).isEqualTo(191);
 
 		var recordedRequest = this.server.takeRequest();
-		assertThat(recordedRequest.getMethod()).isEqualTo(HttpMethod.GET.name());
+		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath())
 			.isEqualTo("/repos/spring-projects/spring-security/milestones?per_page=100");
 	}
@@ -121,7 +118,7 @@ public class GitHubApiTests {
 		assertThat(milestone.number()).isEqualTo(191);
 
 		var recordedRequest = this.server.takeRequest();
-		assertThat(recordedRequest.getMethod()).isEqualTo(HttpMethod.GET.name());
+		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath())
 			.isEqualTo("/repos/spring-projects/spring-security/milestones?per_page=100");
 	}
@@ -134,7 +131,7 @@ public class GitHubApiTests {
 		assertThat(milestone).isNull();
 
 		var recordedRequest = this.server.takeRequest();
-		assertThat(recordedRequest.getMethod()).isEqualTo(HttpMethod.GET.name());
+		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath())
 			.isEqualTo("/repos/spring-projects/spring-security/milestones?per_page=100");
 	}
@@ -147,7 +144,7 @@ public class GitHubApiTests {
 		assertThat(hasOpenIssues).isFalse();
 
 		var recordedRequest = this.server.takeRequest();
-		assertThat(recordedRequest.getMethod()).isEqualTo(HttpMethod.GET.name());
+		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath())
 			.isEqualTo("/repos/spring-projects/spring-security/issues?per_page=1&milestone=202");
 	}
@@ -160,14 +157,13 @@ public class GitHubApiTests {
 		assertThat(hasOpenIssues).isTrue();
 
 		var recordedRequest = this.server.takeRequest();
-		assertThat(recordedRequest.getMethod()).isEqualTo(HttpMethod.GET.name());
+		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath())
 			.isEqualTo("/repos/spring-projects/spring-security/issues?per_page=1&milestone=191");
 	}
 
 	private static MockResponse json(String path) throws IOException {
-		return new MockResponse().addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-			.setBody(string(path));
+		return new MockResponse().addHeader("Content-Type", "application/json").setBody(string(path));
 	}
 
 	private static String string(String path) throws IOException {

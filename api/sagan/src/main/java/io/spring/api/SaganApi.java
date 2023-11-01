@@ -15,119 +15,164 @@
  */
 package io.spring.api;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 
-import org.springframework.web.reactive.function.client.WebClient;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 /**
  * @author Steve Riesenberg
  */
 public class SaganApi {
 
-	private final WebClient webClient;
+	private final HttpClient httpClient;
+
+	private final ObjectMapper objectMapper;
+
+	private final String baseUrl;
+
+	private final String username;
+
+	private final String accessToken;
 
 	public SaganApi(String username, String accessToken) {
 		this("https://api.spring.io", username, accessToken);
 	}
 
 	public SaganApi(String baseUrl, String username, String accessToken) {
-		// @formatter:off
-		this.webClient = WebClient.builder()
-				.baseUrl(baseUrl)
-				.filter(new BasicAuthFilterFunction(username, accessToken))
-				.build();
-		// @formatter:on
+		this.httpClient = HttpClient.newHttpClient();
+		this.objectMapper = getObjectMapper();
+		this.baseUrl = baseUrl;
+		this.username = username;
+		this.accessToken = accessToken;
+	}
+
+	private static ObjectMapper getObjectMapper() {
+		ObjectMapper objectMapper = new ObjectMapper();
+		objectMapper.setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL);
+		objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		objectMapper.registerModule(new JavaTimeModule());
+
+		return objectMapper;
 	}
 
 	public List<Project> getProjects() {
-		// @formatter:off
-		return this.webClient.get()
-				.uri("/projects")
-				.retrieve()
-				.bodyToMono(EmbeddedProjectsWrapper.class)
-				.mapNotNull(EmbeddedProjectsWrapper::_embedded)
-				.map(EmbeddedProjects::projects)
-				.defaultIfEmpty(Collections.emptyList())
-				.block();
-		// @formatter:on
+		var httpRequest = requestBuilder("/projects").GET().build();
+		var wrapper = performRequest(httpRequest, EmbeddedProjectsWrapper.class);
+		return (wrapper._embedded != null) ? wrapper._embedded.projects : Collections.emptyList();
 	}
 
 	public Project getProject(String slug) {
-		// @formatter:off
-		return this.webClient.get()
-				.uri("/projects/{slug}", slug)
-				.retrieve()
-				.bodyToMono(Project.class)
-				.block();
-		// @formatter:on
+		var uri = "/projects/%s".formatted(slug);
+		var httpRequest = requestBuilder(uri).GET().build();
+		return performRequest(httpRequest, Project.class);
 	}
 
 	public List<Release> getReleases(String slug) {
-		// @formatter:off
-		return this.webClient.get()
-				.uri("/projects/{slug}/releases", slug)
-				.retrieve()
-				.bodyToMono(EmbeddedReleasesWrapper.class)
-				.mapNotNull(EmbeddedReleasesWrapper::_embedded)
-				.map(EmbeddedReleases::releases)
-				.defaultIfEmpty(Collections.emptyList())
-				.block();
-		// @formatter:on
+		var uri = "/projects/%s/releases".formatted(slug);
+		var httpRequest = requestBuilder(uri).GET().build();
+		var wrapper = performRequest(httpRequest, EmbeddedReleasesWrapper.class);
+		return (wrapper._embedded != null) ? wrapper._embedded.releases : Collections.emptyList();
 	}
 
 	public void createRelease(String slug, Release release) {
-		// @formatter:off
-		this.webClient.post()
-				.uri("/projects/{slug}/releases", slug)
-				.bodyValue(release)
-				.retrieve()
-				.bodyToMono(Void.class)
-				.block();
-		// @formatter:on
+		var uri = "/projects/%s/releases".formatted(slug);
+		var httpRequest = requestBuilder(uri).POST(bodyValue(release)).build();
+		performRequest(httpRequest, Void.class);
 	}
 
 	public Release getRelease(String slug, String version) {
-		// @formatter:off
-		return this.webClient.get()
-				.uri("/projects/{slug}/releases/{version}", slug, version)
-				.retrieve()
-				.bodyToMono(Release.class)
-				.block();
-		// @formatter:on
+		var uri = "/projects/%s/releases/%s".formatted(slug, version);
+		var httpRequest = requestBuilder(uri).GET().build();
+		return performRequest(httpRequest, Release.class);
 	}
 
 	public void deleteRelease(String slug, String version) {
-		// @formatter:off
-		this.webClient.delete()
-				.uri("/projects/{slug}/releases/{version}", slug, version)
-				.retrieve()
-				.bodyToMono(Void.class)
-				.block();
-		// @formatter:on
+		var uri = "/projects/%s/releases/%s".formatted(slug, version);
+		var httpRequest = requestBuilder(uri).DELETE().build();
+		performRequest(httpRequest, Void.class);
 	}
 
 	public List<Generation> getGenerations(String slug) {
-		// @formatter:off
-		return this.webClient.get()
-				.uri("/projects/{slug}/generations", slug)
-				.retrieve()
-				.bodyToMono(EmbeddedGenerationsWrapper.class)
-				.mapNotNull(EmbeddedGenerationsWrapper::_embedded)
-				.map(EmbeddedGenerations::generations)
-				.defaultIfEmpty(Collections.emptyList())
-				.block();
-		// @formatter:on
+		var uri = "/projects/%s/generations".formatted(slug);
+		var httpRequest = requestBuilder(uri).GET().build();
+		var wrapper = performRequest(httpRequest, EmbeddedGenerationsWrapper.class);
+		return (wrapper._embedded != null) ? wrapper._embedded.generations : Collections.emptyList();
 	}
 
 	public Generation getGeneration(String slug, String name) {
-		// @formatter:off
-		return this.webClient.get()
-				.uri("/projects/{slug}/generations/{name}", slug, name)
-				.retrieve()
-				.bodyToMono(Generation.class)
-				.block();
-		// @formatter:on
+		var uri = "/projects/%s/generations/%s".formatted(slug, name);
+		var httpRequest = requestBuilder(uri).GET().build();
+		return performRequest(httpRequest, Generation.class);
+	}
+
+	private HttpRequest.Builder requestBuilder(String uri) {
+		var credentials = "%s:%s".formatted(this.username, this.accessToken);
+		var basicAuth = Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
+		return HttpRequest.newBuilder()
+			.uri(URI.create(this.baseUrl + uri).normalize())
+			.header("Authorization", "Basic %s".formatted(basicAuth));
+	}
+
+	private <T> T performRequest(HttpRequest httpRequest, Class<T> responseType) {
+		try {
+			var httpResponse = this.httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+			if (httpResponse.statusCode() >= 300) {
+				throw new HttpClientException(httpResponse.statusCode(), httpResponse.body());
+			}
+			String responseBody = Void.class.isAssignableFrom(responseType) ? "null" : httpResponse.body();
+			return this.objectMapper.readValue(responseBody, responseType);
+		}
+		catch (IOException | InterruptedException ex) {
+			throw new RuntimeException("Unable to perform request:", ex);
+		}
+	}
+
+	private <T> HttpRequest.BodyPublisher bodyValue(T body) {
+		try {
+			return HttpRequest.BodyPublishers.ofString(this.objectMapper.writeValueAsString(body));
+		}
+		catch (JsonProcessingException ex) {
+			throw new RuntimeException("Unable to serialize json:", ex);
+		}
+	}
+
+	public static class HttpClientException extends RuntimeException {
+
+		private final int statusCode;
+
+		private final String responseBody;
+
+		private HttpClientException(int statusCode, String responseBody) {
+			super(statusCode + "[" + responseBody + "]");
+			this.statusCode = statusCode;
+			this.responseBody = responseBody;
+		}
+
+		public int getStatusCode() {
+			return this.statusCode;
+		}
+
+		public String getResponseBody() {
+			return this.responseBody;
+		}
+
+		@Override
+		public String toString() {
+			return this.statusCode + "[" + this.responseBody + "]";
+		}
+
 	}
 
 	private record EmbeddedProjectsWrapper(EmbeddedProjects _embedded) {
