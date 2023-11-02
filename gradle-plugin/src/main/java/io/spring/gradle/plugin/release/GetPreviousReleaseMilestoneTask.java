@@ -63,9 +63,10 @@ public abstract class GetPreviousReleaseMilestoneTask extends DefaultTask {
 			System.out.println(previousReleaseMilestone);
 		}
 		else {
-			System.out.println(
-					"Unable to determine previous release milestone, either because multiple matches were found or none exists");
 			RegularFileUtils.writeString(outputFile, "");
+			System.out.println();
+			getLogger().warn(
+					"Unable to determine previous release milestone, either because multiple matches were found or none exists");
 		}
 	}
 
