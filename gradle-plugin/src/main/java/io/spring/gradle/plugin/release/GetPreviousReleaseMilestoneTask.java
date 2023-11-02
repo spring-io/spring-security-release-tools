@@ -76,6 +76,7 @@ public abstract class GetPreviousReleaseMilestoneTask extends DefaultTask {
 		project.getTasks().register(TASK_NAME, GetPreviousReleaseMilestoneTask.class, (task) -> {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
 			task.setDescription("Finds the previous release version based on the current version.");
+			task.doNotTrackState("API call to api.spring.io needs to check for releases every time");
 
 			var versionProvider = ProjectUtils.getProperty(project, SpringReleasePlugin.CURRENT_VERSION_PROPERTY)
 				.orElse(project.getRootProject().getVersion().toString());
