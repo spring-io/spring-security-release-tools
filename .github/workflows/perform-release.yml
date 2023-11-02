@@ -93,10 +93,16 @@ jobs:
         env:
           VERSION: ${{ steps.project-version.outputs.version }}
         run: ./gradlew createGitHubRelease -PnextVersion=$VERSION -Pbranch=$BRANCH -PcreateRelease=true -PgitHubAccessToken=$TOKEN
-      - name: Delete Previous Version
+      - id: previous-release-milestone
+        name: Get Previous Release Milestone
         env:
           VERSION: ${{ steps.project-version.outputs.version }}
-        run: ./gradlew deleteSaganRelease -PcurrentVersion=$VERSION -PgitHubAccessToken=$TOKEN
+        run: echo "version=$(./gradlew -q getPreviousReleaseMilestone -PcurrentVersion=$VERSION -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
+      - name: Delete Previous Version
+        if: ${{ steps.previous-release-milestone.outputs.version != '' }}
+        env:
+          VERSION: ${{ steps.previous-release-milestone.outputs.version }}
+        run: ./gradlew deleteSaganRelease -PpreviousVersion=$VERSION -PgitHubAccessToken=$TOKEN
       - name: Create Released Version
         env:
           VERSION: ${{ steps.project-version.outputs.version }}
@@ -149,14 +155,15 @@ jobs:
           git config user.email 'github-actions[bot]@users.noreply.github.com'
           git commit -am "Next development version"
           git push
-      - id: previous-release-milestone
-        name: Get Previous Release Milestone
+      - id: previous-snapshot-version
+        name: Get Previous Snapshot Version
         env:
           VERSION: ${{ steps.next-snapshot-version.outputs.version }}
         run: echo "version=$(./gradlew -q getPreviousReleaseMilestone -PcurrentVersion=$VERSION -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
       - name: Delete Previous Snapshot Version
+        if: ${{ steps.previous-snapshot-version.outputs.version != '' }}
         env:
-          VERSION: ${{ steps.previous-release-milestone.outputs.version }}
+          VERSION: ${{ steps.previous-snapshot-version.outputs.version }}
         run: ./gradlew deleteSaganRelease -PpreviousVersion=$VERSION -PgitHubAccessToken=$TOKEN
       - name: Create Next Snapshot Version
         env:
