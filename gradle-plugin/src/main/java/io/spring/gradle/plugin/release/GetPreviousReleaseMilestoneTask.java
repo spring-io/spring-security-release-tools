@@ -35,7 +35,7 @@ public abstract class GetPreviousReleaseMilestoneTask extends DefaultTask {
 
 	public static final String TASK_NAME = "getPreviousReleaseMilestone";
 
-	private static final String OUTPUT_VERSION_PATH = "previous-release-milestone-version.txt";
+	public static final String OUTPUT_VERSION_PATH = "previous-release-milestone-version.txt";
 
 	@Input
 	public abstract Property<String> getGitHubAccessToken();

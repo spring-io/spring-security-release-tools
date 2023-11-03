@@ -20,6 +20,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.gradle.api.Transformer;
+import org.gradle.api.file.Directory;
+import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.RegularFile;
 
 /**
@@ -53,6 +55,13 @@ public final class RegularFileUtils {
 
 	public static Transformer<Path, RegularFile> writeString(String value) {
 		return (regularFile) -> writeString(regularFile, value);
+	}
+
+	public static void mkdirs(DirectoryProperty property) {
+		Directory directory = property.get();
+		if (!directory.getAsFile().mkdirs()) {
+			throw new IllegalArgumentException("Unable to create directories for " + directory);
+		}
 	}
 
 }

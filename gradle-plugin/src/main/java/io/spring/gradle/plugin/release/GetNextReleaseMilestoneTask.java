@@ -37,7 +37,7 @@ public abstract class GetNextReleaseMilestoneTask extends DefaultTask {
 
 	public static final String TASK_NAME = "getNextReleaseMilestone";
 
-	private static final String OUTPUT_VERSION_PATH = "next-release-milestone-version.txt";
+	public static final String OUTPUT_VERSION_PATH = "next-release-milestone-version.txt";
 
 	@Input
 	public abstract Property<Repository> getRepository();

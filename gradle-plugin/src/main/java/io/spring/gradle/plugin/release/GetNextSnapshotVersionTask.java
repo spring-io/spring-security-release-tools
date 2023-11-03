@@ -33,7 +33,7 @@ public abstract class GetNextSnapshotVersionTask extends DefaultTask {
 
 	public static final String TASK_NAME = "getNextSnapshotVersion";
 
-	private static final String OUTPUT_VERSION_PATH = "next-snapshot-version.txt";
+	public static final String OUTPUT_VERSION_PATH = "next-snapshot-version.txt";
 
 	@Input
 	public abstract Property<String> getVersion();
