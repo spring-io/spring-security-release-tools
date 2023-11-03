@@ -118,11 +118,16 @@ public class SaganApi {
 	}
 
 	private HttpRequest.Builder requestBuilder(String uri) {
-		var credentials = "%s:%s".formatted(this.username, this.accessToken);
-		var basicAuth = Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
-		return HttpRequest.newBuilder()
-			.uri(URI.create(this.baseUrl + uri).normalize())
-			.header("Authorization", "Basic %s".formatted(basicAuth));
+		// @formatter:off
+		HttpRequest.Builder builder = HttpRequest.newBuilder()
+			.uri(URI.create(this.baseUrl + uri).normalize());
+		// @formatter:on
+		if (this.username != null && this.accessToken != null) {
+			var credentials = "%s:%s".formatted(this.username, this.accessToken);
+			var basicAuth = Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
+			builder.setHeader("Authorization", "Basic %s".formatted(basicAuth));
+		}
+		return builder;
 	}
 
 	private <T> T performRequest(HttpRequest httpRequest, Class<T> responseType) {

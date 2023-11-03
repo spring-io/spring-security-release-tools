@@ -145,11 +145,16 @@ public class GitHubApi {
 	}
 
 	private HttpRequest.Builder requestBuilder(String uri) {
-		return HttpRequest.newBuilder()
+		// @formatter:off
+		HttpRequest.Builder builder = HttpRequest.newBuilder()
 			.uri(URI.create(this.baseUrl + uri).normalize())
 			.header("Accept", "application/json")
-			.header("X-GitHub-Api-Version", "2022-11-28")
-			.header("Authorization", "Bearer %s".formatted(this.accessToken));
+			.header("X-GitHub-Api-Version", "2022-11-28");
+		// @formatter:on
+		if (this.accessToken != null) {
+			builder.setHeader("Authorization", "Bearer %s".formatted(this.accessToken));
+		}
+		return builder;
 	}
 
 	private <T> T performRequest(HttpRequest httpRequest, Class<T> responseType) {

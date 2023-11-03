@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.util.Base64;
 import java.util.Comparator;
 
 import io.spring.api.Release.ReleaseStatus;
@@ -37,6 +38,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Steve Riesenberg
  */
 public class SaganApiTests {
+
+	private static final String AUTH_TOKEN = Base64.getEncoder()
+		.encodeToString("user:personal-access-token".getBytes());
 
 	private SaganApi saganApi;
 
@@ -72,6 +76,22 @@ public class SaganApiTests {
 		var recordedRequest = this.server.takeRequest();
 		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath()).isEqualTo("/projects");
+		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Basic %s".formatted(AUTH_TOKEN));
+	}
+
+	@Test
+	public void getProjectWhenUsernameAndAccessTokenAreNullThenSuccess() throws Exception {
+		this.saganApi = new SaganApi(this.server.url("/").toString(), null, null);
+		this.server.enqueue(json("ProjectResponse.json"));
+
+		var project = this.saganApi.getProject("spring-security");
+		assertThat(project).isNotNull();
+		assertThat(project.slug()).isEqualTo("spring-security");
+
+		var recordedRequest = this.server.takeRequest();
+		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
+		assertThat(recordedRequest.getPath()).isEqualTo("/projects/spring-security");
+		assertThat(recordedRequest.getHeaders().names().contains("Authorization")).isFalse();
 	}
 
 	@Test
@@ -85,6 +105,7 @@ public class SaganApiTests {
 		var recordedRequest = this.server.takeRequest();
 		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath()).isEqualTo("/projects/spring-security");
+		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Basic %s".formatted(AUTH_TOKEN));
 	}
 
 	@Test
@@ -101,6 +122,7 @@ public class SaganApiTests {
 		var recordedRequest = this.server.takeRequest();
 		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath()).isEqualTo("/projects/spring-security/releases");
+		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Basic %s".formatted(AUTH_TOKEN));
 	}
 
 	@Test
@@ -113,6 +135,7 @@ public class SaganApiTests {
 		var recordedRequest = this.server.takeRequest();
 		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath()).isEqualTo("/projects/spring-social/releases");
+		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Basic %s".formatted(AUTH_TOKEN));
 	}
 
 	@Test
@@ -123,6 +146,7 @@ public class SaganApiTests {
 		var recordedRequest = this.server.takeRequest();
 		assertThat(recordedRequest.getMethod()).isEqualTo("POST");
 		assertThat(recordedRequest.getPath()).isEqualTo("/projects/spring-security/releases");
+		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Basic %s".formatted(AUTH_TOKEN));
 		assertThat(recordedRequest.getBody().readString(Charset.defaultCharset()))
 			.isEqualTo(string("CreateReleaseRequest.json"));
 	}
@@ -139,6 +163,7 @@ public class SaganApiTests {
 		var recordedRequest = this.server.takeRequest();
 		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath()).isEqualTo("/projects/spring-security/releases/6.1.0");
+		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Basic %s".formatted(AUTH_TOKEN));
 	}
 
 	@Test
@@ -149,6 +174,7 @@ public class SaganApiTests {
 		var recordedRequest = this.server.takeRequest();
 		assertThat(recordedRequest.getMethod()).isEqualTo("DELETE");
 		assertThat(recordedRequest.getPath()).isEqualTo("/projects/spring-security/releases/6.1.0");
+		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Basic %s".formatted(AUTH_TOKEN));
 	}
 
 	@Test
@@ -172,6 +198,7 @@ public class SaganApiTests {
 		var recordedRequest = this.server.takeRequest();
 		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath()).isEqualTo("/projects/spring-security/generations");
+		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Basic %s".formatted(AUTH_TOKEN));
 	}
 
 	@Test
@@ -184,6 +211,7 @@ public class SaganApiTests {
 		var recordedRequest = this.server.takeRequest();
 		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath()).isEqualTo("/projects/spring-social/generations");
+		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Basic %s".formatted(AUTH_TOKEN));
 	}
 
 	@Test
@@ -200,6 +228,7 @@ public class SaganApiTests {
 		var recordedRequest = this.server.takeRequest();
 		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath()).isEqualTo("/projects/spring-security/generations/6.1.x");
+		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Basic %s".formatted(AUTH_TOKEN));
 	}
 
 	private static MockResponse json(String path) throws IOException {

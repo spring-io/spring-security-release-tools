@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.concurrent.TimeUnit;
 
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -30,8 +31,11 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.util.StreamUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 public class GitHubApiTests {
+
+	private static final String AUTH_TOKEN = "personal-access-token";
 
 	private GitHubApi githubApi;
 
@@ -43,7 +47,7 @@ public class GitHubApiTests {
 	public void setUp() throws Exception {
 		this.server = new MockWebServer();
 		this.server.start();
-		this.githubApi = new GitHubApi(this.server.url("/").toString(), "personal-access-token");
+		this.githubApi = new GitHubApi(this.server.url("/").toString(), AUTH_TOKEN);
 		this.repository = new Repository("spring-projects", "spring-security");
 	}
 
@@ -64,6 +68,23 @@ public class GitHubApiTests {
 		var recordedRequest = this.server.takeRequest();
 		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath()).isEqualTo("/user");
+		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Bearer %s".formatted(AUTH_TOKEN));
+	}
+
+	@Test
+	public void getUserWhenAccessTokenIsNullThenNoAuthorizationHeader() throws Exception {
+		this.githubApi = new GitHubApi(this.server.url("/").toString(), null);
+		this.server.enqueue(new MockResponse().setResponseCode(401));
+
+		// @formatter:off
+		assertThatExceptionOfType(GitHubApi.HttpClientException.class)
+			.isThrownBy(() -> this.githubApi.getUser());
+		// @formatter:on
+
+		var recordedRequest = this.server.takeRequest(1, TimeUnit.SECONDS);
+		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
+		assertThat(recordedRequest.getPath()).isEqualTo("/user");
+		assertThat(recordedRequest.getHeaders().names().contains("Authorization")).isFalse();
 	}
 
 	@Test
@@ -76,6 +97,7 @@ public class GitHubApiTests {
 		var recordedRequest = this.server.takeRequest();
 		assertThat(recordedRequest.getMethod()).isEqualTo("POST");
 		assertThat(recordedRequest.getPath()).isEqualTo("/repos/spring-projects/spring-security/releases");
+		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Bearer %s".formatted(AUTH_TOKEN));
 		assertThat(recordedRequest.getBody().readString(Charset.defaultCharset()))
 			.isEqualTo(string("CreateReleaseRequest.json"));
 	}
@@ -91,6 +113,7 @@ public class GitHubApiTests {
 		var recordedRequest = this.server.takeRequest();
 		assertThat(recordedRequest.getMethod()).isEqualTo("POST");
 		assertThat(recordedRequest.getPath()).isEqualTo("/repos/spring-projects/spring-security/milestones");
+		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Bearer %s".formatted(AUTH_TOKEN));
 		assertThat(recordedRequest.getBody().readString(Charset.defaultCharset()))
 			.isEqualTo(string("CreateMilestoneRequest.json"));
 	}
@@ -108,6 +131,7 @@ public class GitHubApiTests {
 		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath())
 			.isEqualTo("/repos/spring-projects/spring-security/milestones?per_page=100");
+		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Bearer %s".formatted(AUTH_TOKEN));
 	}
 
 	@Test
@@ -121,6 +145,7 @@ public class GitHubApiTests {
 		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath())
 			.isEqualTo("/repos/spring-projects/spring-security/milestones?per_page=100");
+		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Bearer %s".formatted(AUTH_TOKEN));
 	}
 
 	@Test
@@ -134,6 +159,7 @@ public class GitHubApiTests {
 		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath())
 			.isEqualTo("/repos/spring-projects/spring-security/milestones?per_page=100");
+		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Bearer %s".formatted(AUTH_TOKEN));
 	}
 
 	@Test
@@ -147,6 +173,7 @@ public class GitHubApiTests {
 		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath())
 			.isEqualTo("/repos/spring-projects/spring-security/issues?per_page=1&milestone=202");
+		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Bearer %s".formatted(AUTH_TOKEN));
 	}
 
 	@Test
@@ -160,6 +187,7 @@ public class GitHubApiTests {
 		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath())
 			.isEqualTo("/repos/spring-projects/spring-security/issues?per_page=1&milestone=191");
+		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Bearer %s".formatted(AUTH_TOKEN));
 	}
 
 	private static MockResponse json(String path) throws IOException {
