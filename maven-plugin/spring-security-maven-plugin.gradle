@@ -1,0 +1,36 @@
+plugins {
+	id "io.spring.convention.spring-gradle-plugin"
+}
+
+gradlePlugin {
+	plugins {
+		springSecurityMavenPlugin {
+			id = "io.spring.security.maven"
+			implementationClass = "io.spring.gradle.plugin.maven.SpringMavenPlugin"
+		}
+	}
+}
+
+artifactory {
+	publish {
+		defaults {
+			publications("pluginMaven", "springSecurityMavenPluginPluginMarkerMaven")
+		}
+	}
+}
+
+repositories {
+	gradlePluginPortal()
+}
+
+dependencies {
+	management platform(project(":dependencies"))
+	implementation "io.github.gradle-nexus:publish-plugin:1.3.0"
+	implementation "org.jfrog.buildinfo:build-info-extractor-gradle:5.1.10"
+
+	testImplementation "org.junit.jupiter:junit-jupiter-api"
+	testImplementation "org.junit.jupiter:junit-jupiter-params"
+	testImplementation "org.junit.jupiter:junit-jupiter-engine"
+	testImplementation "org.assertj:assertj-core"
+	testImplementation "org.mockito:mockito-core"
+}
