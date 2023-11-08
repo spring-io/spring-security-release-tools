@@ -1,0 +1,137 @@
+= Spring Security Maven Plugin
+
+Spring Security Maven Plugin is a Gradle plugin that provides tasks for publishing releases to Maven Central (Sonatype) and Spring (Artifactory) repositories.
+
+To use the plugin, add the following repository to `settings.gradle`:
+
+[source,gradle]
+----
+pluginManagement {
+	repositories {
+		maven { url "https://repo.spring.io/release" }
+	}
+}
+----
+
+Then apply the plugin in your project's root `build.gradle` and in each sub-module that requires publishing artifacts:
+
+[source,gradle]
+----
+plugins {
+	id "io.spring.security.maven" version "1.0.0"
+}
+----
+
+== Overview
+
+This plugin has two main goals:
+
+1. Automatically apply plugins and configuration for publishing artifacts to both Maven Central (Sonatype) and Spring (Artifactory).
+2. Provide tasks for automatically choosing which artifact repository to publish artifacts to based on the project version.
+
+This plugin performs the following on the root project:
+
+* Applies the `io.github.gradle-nexus.publish-plugin` plugin
+* Creates an `ossrh` repository for publishing artifacts to the Sonatype staging repository
+* Configures the `publishArtifacts` task to publish releases to the Sonatype staging repository (`ossrh`)
+* Configures the `finalizeDeployArtifacts` task to close and release any opened staging repository (for Sonatype releases only)
+
+This plugin also performs the following on each sub-module it is applied to:
+
+* Applies the `maven-publish` plugin
+* Applies the `signing` plugin
+* Applies the `com.jfrog.artifactory` plugin
+* Creates a `mavenJava` publication with the `java` component
+* Configures the `signing` extension using gradle properties
+* Configures the `publishing` extension to sign artifacts
+* Creates a `local` repository for publishing artifacts to a local directory
+* Configures the `artifactory` extension using gradle properties
+* Configures the `publishArtifacts` task to publish snapshots, milestones and release candidates to Artifactory
+
+== Task Reference
+
+=== `publishArtifacts`
+
+This task works together with `finalizeDeployArtifacts` to publish artifacts to the appropriate artifact repository and automatically close and release staging repositories (for Sonatype releases only) once publishing is complete.
+
+For snapshots, milestones , and release candidates (e.g. `-SNAPSHOT`, `-M1`, `-RC1`, etc.), Artifactory is used.
+For releases (any other version), the Sonatype staging repository is used instead.
+
+The default Nexus URL is `https://s01.oss.sonatype.org/service/local/`, which is for the Sonatype staging repository.
+You can override this by passing the optional environment variable `OSSRH_URL`.
+
+The default Nexus snapshots URL is `https://s01.oss.sonatype.org/content/repositories/snapshots/`.
+You can override this by passing the optional environment variable `OSSRH_SNAPSHOT_REPOSITORY_URL`.
+
+The default Artifactory URL is `https://repo.spring.io`.
+You can override this by passing the optional environment variable `ARTIFACTORY_URL`.
+
+*Example:*
+
+[source,bash]
+----
+export ORG_GRADLE_PROJECT_signingKey=...
+export ORG_GRADLE_PROJECT_signingPassword=...
+OSSRH_USERNAME=...
+OSSRH_PASSWORD=...
+ARTIFACTORY_USERNAME=...
+ARTIFACTORY_PASSWORD=...
+./gradlew publishArtifacts finalizeDeployArtifacts -PossrhUsername="$OSSRH_USERNAME" -PossrhPassword="$OSSRH_PASSWORD" -PartifactoryUsername="$ARTIFACTORY_USERNAME" -PartifactoryPassword="$ARTIFACTORY_PASSWORD" --stacktrace
+----
+
+== `publishToOssrh`
+
+This task is provided by the `maven-publish` plugin when the `ossrh` repository is defined, and can be used directly to publish snapshots and other artifacts to the Sonatype staging repository.
+
+[NOTE]
+====
+You will need to call `closeAndReleaseOssrhStagingRepository` yourself.
+====
+
+*Example:*
+
+[source,bash]
+----
+export ORG_GRADLE_PROJECT_signingKey=...
+export ORG_GRADLE_PROJECT_signingPassword=...
+OSSRH_USERNAME=...
+OSSRH_PASSWORD=...
+./gradlew publishToOssrh closeAndReleaseOssrhStagingRepository -PossrhUsername="$OSSRH_USERNAME" -PossrhPassword="$OSSRH_PASSWORD" --stacktrace
+----
+
+== `artifactoryPublish`
+
+This task is provided by the `com.jfrog.artifactory` plugin, and can be used directly to publish artifacts (including releases) to Artifactory.
+
+*Example:*
+
+[source,bash]
+----
+export ORG_GRADLE_PROJECT_signingKey=...
+export ORG_GRADLE_PROJECT_signingPassword=...
+ARTIFACTORY_USERNAME=...
+ARTIFACTORY_PASSWORD=...
+./gradlew artifactoryPublish -PartifactoryUsername="$ARTIFACTORY_USERNAME" -PartifactoryPassword="$ARTIFACTORY_PASSWORD" --stacktrace
+----
+
+== `publishToMavenLocal`
+
+This task is provided by the `maven-publish` plugin, and can be used directly to publish artifacts to the local Maven cache for testing.
+
+*Example:*
+
+[source,bash]
+----
+./gradlew publishToMavenLocal
+----
+
+== `publishMavenJavaPublicationToLocalRepository`
+
+This task is provided by the `maven-publish` plugin when the `local` repository is defined, and can be used directly to publish artifacts to a local directory (`build/publication/repos`) for testing.
+
+*Example:*
+
+[source,bash]
+----
+./gradlew publishMavenJavaPublicationToLocalRepository
+----
