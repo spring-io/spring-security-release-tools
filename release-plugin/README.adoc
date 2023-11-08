@@ -1,6 +1,6 @@
-= Spring Release Plugin
+= Spring Security Release Plugin
 
-Spring Release Plugin is a Gradle plugin that provides common tasks for automating releases.
+Spring Security Release Plugin is a Gradle plugin that provides common tasks for automating releases.
 
 To use the plugin, add the following repository to `settings.gradle`:
 
