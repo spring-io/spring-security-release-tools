@@ -172,6 +172,18 @@ public class SpringReleases {
 	}
 
 	/**
+	 * Close a GitHub milestone.
+	 * @param owner The GitHub user or organization name
+	 * @param repo The GitHub repository name
+	 * @param version The version of the milestone to close
+	 */
+	public void closeMilestone(String owner, String repo, String version) {
+		var repository = new Repository(owner, repo);
+		var milestone = this.gitHubApi.getMilestone(repository, version);
+		this.gitHubApi.closeMilestone(repository, milestone.number());
+	}
+
+	/**
 	 * Create a GitHub release with release notes using the GitHub API and a new release
 	 * version for the current project on spring.io using the Sagan API.
 	 * @param owner The GitHub user or organization name

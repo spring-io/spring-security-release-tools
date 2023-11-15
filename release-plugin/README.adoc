@@ -61,6 +61,7 @@ Top-level tasks:
 
 * <<checkMilestoneIsDueToday>>
 * <<checkMilestoneHasNoOpenIssues>>
+* <<closeMilestone>>
 * <<createRelease>>
 * <<createGitHubRelease>>
 * <<createSaganRelease>>
@@ -125,6 +126,30 @@ The following command will determine if there are no open issues (based on the c
 [source,bash]
 ----
 ./gradlew checkMilestoneHasNoOpenIssues -PnextVersion=1.0.0 -PgitHubAccessToken=$GITHUB_ACCESS_TOKEN
+----
+
+[[closeMilestone]]
+=== `closeMilestone`
+
+Closes a release milestone for the specified version.
+
+The following command will close a release milestone (based on the current version):
+
+[source,bash]
+----
+./gradlew closeMilestone
+----
+
+*Task properties:*
+
+* `nextVersion`: Specify the version of the release milestone to close (optional, uses <<getNextReleaseMilestone>> if not specified)
+* `gitHubAccessToken`: A personal access token used access the GitHub API (required)
+
+*Full example:*
+
+[source,bash]
+----
+./gradlew closeMilestone -PnextVersion=1.0.0 -PgitHubAccessToken=$GITHUB_ACCESS_TOKEN
 ----
 
 [[createRelease]]

@@ -78,6 +78,9 @@ public class SpringReleasePlugin implements Plugin<Project> {
 
 		// Create release milestone if necessary using GitHub API
 		ScheduleNextReleaseTask.register(project);
+
+		// Close release milestone using GitHub API
+		CloseMilestoneTask.register(project);
 	}
 
 }

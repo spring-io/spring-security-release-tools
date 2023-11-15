@@ -24,6 +24,7 @@ import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -129,6 +130,18 @@ public class GitHubApi {
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * Close a milestone.
+	 * @param repository The repository owner/name
+	 * @param milestone The milestone number
+	 */
+	public void closeMilestone(Repository repository, Long milestone) {
+		var uri = "/repos/%s/%s/milestones/%s".formatted(repository.owner(), repository.name(), milestone);
+		var request = Map.of("state", "closed");
+		var httpRequest = requestBuilder(uri).method("PATCH", bodyValue(request)).build();
+		performRequest(httpRequest, Void.class);
 	}
 
 	/**

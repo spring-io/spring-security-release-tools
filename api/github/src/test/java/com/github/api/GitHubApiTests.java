@@ -191,6 +191,20 @@ public class GitHubApiTests {
 		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Bearer %s".formatted(AUTH_TOKEN));
 	}
 
+	@Test
+	public void closeMilestoneWhenValidParametersThenSuccess() throws Exception {
+		this.server.enqueue(json("CreateMilestoneResponse.json"));
+
+		this.githubApi.closeMilestone(this.repository, 191L);
+
+		var recordedRequest = this.server.takeRequest();
+		assertThat(recordedRequest.getMethod()).isEqualTo("PATCH");
+		assertThat(recordedRequest.getPath()).isEqualTo("/repos/spring-projects/spring-security/milestones/191");
+		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Bearer %s".formatted(AUTH_TOKEN));
+		assertThat(recordedRequest.getBody().readString(Charset.defaultCharset()))
+			.isEqualTo(string("UpdateMilestoneRequest.json"));
+	}
+
 	private static MockResponse json(String path) throws IOException {
 		return new MockResponse().addHeader("Content-Type", "application/json").setBody(string(path));
 	}
