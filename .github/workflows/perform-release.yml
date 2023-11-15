@@ -107,6 +107,10 @@ jobs:
         env:
           VERSION: ${{ steps.project-version.outputs.version }}
         run: ./gradlew createSaganRelease -PnextVersion=$VERSION -PgitHubAccessToken=$TOKEN
+      - name: Close Release Milestone
+        env:
+          VERSION: ${{ steps.project-version.outputs.version }}
+        run: ./gradlew closeMilestone -PnextVersion=$VERSION -PgitHubAccessToken=$TOKEN
       - name: Announce Release on Slack
         uses: slackapi/slack-github-action@v1.19.0
         env:
@@ -169,10 +173,6 @@ jobs:
         env:
           VERSION: ${{ steps.next-snapshot-version.outputs.version }}
         run: ./gradlew createSaganRelease -PnextVersion=$VERSION -PgitHubAccessToken=$TOKEN
-      - name: Close Release Milestone
-        env:
-          VERSION: ${{ steps.project-version.outputs.version }}
-        run: ./gradlew closeMilestone -PnextVersion=$VERSION -PgitHubAccessToken=$TOKEN
       - id: next-release-milestone
         name: Get Next Release Milestone
         env:
