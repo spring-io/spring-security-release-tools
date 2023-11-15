@@ -21,7 +21,6 @@ import org.gradle.api.Project;
 import org.gradle.api.plugins.BasePlugin;
 import org.gradle.api.plugins.PluginManager;
 
-import org.springframework.gradle.classpath.SpringCheckProhibitedDependenciesLifecyclePlugin;
 import org.springframework.gradle.maven.SpringNexusPlugin;
 import org.springframework.gradle.nohttp.SpringNoHttpPlugin;
 
@@ -36,7 +35,6 @@ public class SpringRootProjectPlugin implements Plugin<Project> {
 		pluginManager.apply(BasePlugin.class);
 		pluginManager.apply(SpringNoHttpPlugin.class);
 		pluginManager.apply(SpringNexusPlugin.class);
-		pluginManager.apply(SpringCheckProhibitedDependenciesLifecyclePlugin.class);
 
 		// Apply default repositories
 		project.getRepositories().mavenCentral();
