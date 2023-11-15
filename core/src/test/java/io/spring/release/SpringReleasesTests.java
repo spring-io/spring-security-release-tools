@@ -26,6 +26,7 @@ import java.util.List;
 import com.github.api.GitHubApi;
 import com.github.api.Milestone;
 import com.github.api.Repository;
+import io.spring.api.Generation;
 import io.spring.api.Release;
 import io.spring.api.Release.ReleaseStatus;
 import io.spring.api.SaganApi;
@@ -279,6 +280,90 @@ public class SpringReleasesTests {
 		var repository = repositoryCaptor.getValue();
 		assertThat(repository.owner()).isEqualTo(OWNER);
 		assertThat(repository.name()).isEqualTo(REPO);
+	}
+
+	@Test
+	public void hasOssSupportWhenInsideOssSupportWindowThenTrue() {
+		var version = "6.1.0";
+		var today = LocalDate.now();
+		var generation = new Generation(version, today.minusYears(1), today, today.plusYears(1));
+		when(this.saganApi.getGeneration(anyString(), anyString())).thenReturn(generation);
+
+		var hasOssSupport = this.springReleases.hasOssSupport(REPO, version);
+		assertThat(hasOssSupport).isTrue();
+
+		verify(this.saganApi).getGeneration(REPO, version);
+		verifyNoMoreInteractions(this.saganApi);
+	}
+
+	@Test
+	public void hasOssSupportWhenBeforeOssSupportWindowThenFalse() {
+		var version = "6.1.0";
+		var today = LocalDate.now();
+		var generation = new Generation(version, today.plusDays(1), today.plusYears(1), today.plusYears(2));
+		when(this.saganApi.getGeneration(anyString(), anyString())).thenReturn(generation);
+
+		var hasOssSupport = this.springReleases.hasOssSupport(REPO, version);
+		assertThat(hasOssSupport).isFalse();
+
+		verify(this.saganApi).getGeneration(REPO, version);
+		verifyNoMoreInteractions(this.saganApi);
+	}
+
+	@Test
+	public void hasOssSupportWhenAfterOssSupportWindowThenFalse() {
+		var version = "6.1.0";
+		var today = LocalDate.now();
+		var generation = new Generation(version, today.minusYears(1), today.minusDays(1), today.plusYears(1));
+		when(this.saganApi.getGeneration(anyString(), anyString())).thenReturn(generation);
+
+		var hasOssSupport = this.springReleases.hasOssSupport(REPO, version);
+		assertThat(hasOssSupport).isFalse();
+
+		verify(this.saganApi).getGeneration(REPO, version);
+		verifyNoMoreInteractions(this.saganApi);
+	}
+
+	@Test
+	public void hasCommercialSupportWhenInsideCommercialSupportWindowThenTrue() {
+		var version = "6.1.0";
+		var today = LocalDate.now();
+		var generation = new Generation(version, today.minusYears(1), today.minusDays(1), today.plusYears(1));
+		when(this.saganApi.getGeneration(anyString(), anyString())).thenReturn(generation);
+
+		var hasCommercialSupport = this.springReleases.hasCommercialSupport(REPO, version);
+		assertThat(hasCommercialSupport).isTrue();
+
+		verify(this.saganApi).getGeneration(REPO, version);
+		verifyNoMoreInteractions(this.saganApi);
+	}
+
+	@Test
+	public void hasCommercialSupportWhenBeforeCommercialSupportWindowThenFalse() {
+		var version = "6.1.0";
+		var today = LocalDate.now();
+		var generation = new Generation(version, today.minusYears(1), today.plusDays(1), today.plusYears(1));
+		when(this.saganApi.getGeneration(anyString(), anyString())).thenReturn(generation);
+
+		var hasCommercialSupport = this.springReleases.hasCommercialSupport(REPO, version);
+		assertThat(hasCommercialSupport).isFalse();
+
+		verify(this.saganApi).getGeneration(REPO, version);
+		verifyNoMoreInteractions(this.saganApi);
+	}
+
+	@Test
+	public void hasCommercialSupportWhenAfterCommercialSupportWindowThenFalse() {
+		var version = "6.1.0";
+		var today = LocalDate.now();
+		var generation = new Generation(version, today.minusYears(2), today.minusYears(1), today.minusDays(1));
+		when(this.saganApi.getGeneration(anyString(), anyString())).thenReturn(generation);
+
+		var hasCommercialSupport = this.springReleases.hasCommercialSupport(REPO, version);
+		assertThat(hasCommercialSupport).isFalse();
+
+		verify(this.saganApi).getGeneration(REPO, version);
+		verifyNoMoreInteractions(this.saganApi);
 	}
 
 	@Test
