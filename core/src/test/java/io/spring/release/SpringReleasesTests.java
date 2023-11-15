@@ -263,14 +263,34 @@ public class SpringReleasesTests {
 	}
 
 	@Test
-	public void hasNoOpenIssuesWhenNoOpenIssuesThenTrue() {
+	public void hasOpenIssuesWhenNoOpenIssuesThenFalse() {
 		var version = "6.1.0";
 		var milestone = new Milestone(version, 1L, Instant.now());
 		when(this.gitHubApi.getMilestone(any(Repository.class), anyString())).thenReturn(milestone);
 		when(this.gitHubApi.hasOpenIssues(any(Repository.class), anyLong())).thenReturn(false);
 
-		var hasNoOpenIssues = this.springReleases.hasNoOpenIssues(OWNER, REPO, version);
-		assertThat(hasNoOpenIssues).isTrue();
+		var hasOpenIssues = this.springReleases.hasOpenIssues(OWNER, REPO, version);
+		assertThat(hasOpenIssues).isFalse();
+
+		var repositoryCaptor = forClass(Repository.class);
+		verify(this.gitHubApi).getMilestone(repositoryCaptor.capture(), eq(version));
+		verify(this.gitHubApi).hasOpenIssues(repositoryCaptor.getValue(), milestone.number());
+		verifyNoMoreInteractions(this.gitHubApi);
+
+		var repository = repositoryCaptor.getValue();
+		assertThat(repository.owner()).isEqualTo(OWNER);
+		assertThat(repository.name()).isEqualTo(REPO);
+	}
+
+	@Test
+	public void hasOpenIssuesWhenOpenIssuesThenTrue() {
+		var version = "6.1.0";
+		var milestone = new Milestone(version, 1L, Instant.now());
+		when(this.gitHubApi.getMilestone(any(Repository.class), anyString())).thenReturn(milestone);
+		when(this.gitHubApi.hasOpenIssues(any(Repository.class), anyLong())).thenReturn(true);
+
+		var hasOpenIssues = this.springReleases.hasOpenIssues(OWNER, REPO, version);
+		assertThat(hasOpenIssues).isTrue();
 
 		var repositoryCaptor = forClass(Repository.class);
 		verify(this.gitHubApi).getMilestone(repositoryCaptor.capture(), eq(version));

@@ -70,8 +70,8 @@ public class SpringReleasePlugin implements Plugin<Project> {
 		// Create release version using Sagan API
 		CreateSaganReleaseTask.register(project);
 
-		// Check if the next milestone has no open issues (prints true or false)
-		CheckMilestoneHasNoOpenIssuesTask.register(project);
+		// Check if the next milestone has open issues (prints true or false)
+		CheckMilestoneHasOpenIssuesTask.register(project);
 
 		// Check if the next milestone is due today (prints true or false)
 		CheckMilestoneIsDueTodayTask.register(project);

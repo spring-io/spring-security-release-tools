@@ -140,16 +140,16 @@ public class SpringReleases {
 	}
 
 	/**
-	 * Checks if there are no open issues for the next release milestone.
+	 * Checks if there are open issues for the next release milestone.
 	 * @param owner The GitHub user or organization name
 	 * @param repo The GitHub repository name
 	 * @param version The version used to check for open issues
-	 * @return true if there are no open issues, or false otherwise
+	 * @return true if there are open issues, or false otherwise
 	 */
-	public boolean hasNoOpenIssues(String owner, String repo, String version) {
+	public boolean hasOpenIssues(String owner, String repo, String version) {
 		var repository = new Repository(owner, repo);
 		var milestone = this.gitHubApi.getMilestone(repository, version);
-		return !this.gitHubApi.hasOpenIssues(repository, milestone.number());
+		return this.gitHubApi.hasOpenIssues(repository, milestone.number());
 	}
 
 	/**

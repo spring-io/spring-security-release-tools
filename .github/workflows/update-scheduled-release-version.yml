@@ -41,7 +41,7 @@ jobs:
         if: steps.is-due-today.outputs.result == 'true'
         env:
           VERSION: ${{ steps.next-release-milestone.outputs.version }}
-        run: echo "result=$(./gradlew -q checkMilestoneHasNoOpenIssues -PnextVersion=$VERSION -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
+        run: echo "result=$(./gradlew -q checkMilestoneHasOpenIssues -PnextVersion=$VERSION -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
       - name: Validate State of Release
         if: steps.is-due-today.outputs.result == 'true' && steps.has-open-issues.outputs.result == 'true'
         run: echo "The release is due today but there are open issues" && exit 1

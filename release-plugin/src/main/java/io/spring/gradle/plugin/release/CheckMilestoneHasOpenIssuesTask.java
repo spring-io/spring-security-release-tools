@@ -32,9 +32,9 @@ import org.gradle.api.tasks.TaskAction;
 /**
  * @author Steve Riesenberg
  */
-public abstract class CheckMilestoneHasNoOpenIssuesTask extends DefaultTask {
+public abstract class CheckMilestoneHasOpenIssuesTask extends DefaultTask {
 
-	public static final String TASK_NAME = "checkMilestoneHasNoOpenIssues";
+	public static final String TASK_NAME = "checkMilestoneHasOpenIssues";
 
 	@Input
 	public abstract Property<Repository> getRepository();
@@ -47,21 +47,21 @@ public abstract class CheckMilestoneHasNoOpenIssuesTask extends DefaultTask {
 	public abstract Property<String> getGitHubAccessToken();
 
 	@TaskAction
-	public void checkMilestoneHasNoOpenIssues() {
+	public void checkMilestoneHasOpenIssues() {
 		var gitHubAccessToken = getGitHubAccessToken().getOrNull();
 		var repository = getRepository().get();
 		var version = getVersion().get();
 
 		var springReleases = new SpringReleases(gitHubAccessToken);
-		var hasOpenIssues = springReleases.hasNoOpenIssues(repository.owner(), repository.name(), version);
-		System.out.println(!hasOpenIssues);
+		var hasOpenIssues = springReleases.hasOpenIssues(repository.owner(), repository.name(), version);
+		System.out.println(hasOpenIssues);
 	}
 
 	public static void register(Project project) {
 		var springRelease = project.getExtensions().findByType(SpringReleasePluginExtension.class);
 		Objects.requireNonNull(springRelease, "Cannot find " + SpringReleasePluginExtension.class);
 
-		project.getTasks().register(TASK_NAME, CheckMilestoneHasNoOpenIssuesTask.class, (task) -> {
+		project.getTasks().register(TASK_NAME, CheckMilestoneHasOpenIssuesTask.class, (task) -> {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
 			task.setDescription(
 					"Checks if there are any open issues for the specified repository and milestone and outputs true or false");

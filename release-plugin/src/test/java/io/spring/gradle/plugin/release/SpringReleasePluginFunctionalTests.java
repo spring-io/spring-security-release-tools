@@ -119,7 +119,7 @@ public class SpringReleasePluginFunctionalTests {
 
 	@Test
 	public void checkMilestoneHasNoOpenIssuesTaskWhenPluginAppliedThenExists() {
-		var task = this.project.getTasks().findByName(CheckMilestoneHasNoOpenIssuesTask.TASK_NAME);
+		var task = this.project.getTasks().findByName(CheckMilestoneHasOpenIssuesTask.TASK_NAME);
 		assertThat(task).isNotNull();
 	}
 
