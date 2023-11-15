@@ -76,6 +76,12 @@ public class SpringReleasePlugin implements Plugin<Project> {
 		// Check if the next milestone is due today (prints true or false)
 		CheckMilestoneIsDueTodayTask.register(project);
 
+		// Check if the current branch has OSS support
+		CheckBranchHasOssSupportTask.register(project);
+
+		// Check if the current branch has commercial support
+		CheckBranchHasCommercialSupportTask.register(project);
+
 		// Create release milestone if necessary using GitHub API
 		ScheduleNextReleaseTask.register(project);
 

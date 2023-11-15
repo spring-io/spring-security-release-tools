@@ -175,7 +175,8 @@ public class SpringReleases {
 	 * Checks if the given branch has OSS support (i.e. is in the OSS support window).
 	 * @param repo The GitHub repository name
 	 * @param branch The branch name corresponding to a release generation (e.g. 5.8.x)
-	 * @return true if the branch represents an OSS supported generation, or false otherwise
+	 * @return true if the branch represents an OSS supported generation, or false
+	 * otherwise
 	 */
 	public boolean hasOssSupport(String repo, String branch) {
 		if (branch.equals("main")) {
@@ -188,10 +189,12 @@ public class SpringReleases {
 	}
 
 	/**
-	 * Checks if the given branch has commercial support (i.e. is in the commercial support window).
+	 * Checks if the given branch has commercial support (i.e. is in the commercial
+	 * support window).
 	 * @param repo The GitHub repository name
 	 * @param branch The branch name corresponding to a release generation (e.g. 5.8.x)
-	 * @return true if the branch represents a commercially supported generation, or false otherwise
+	 * @return true if the branch represents a commercially supported generation, or false
+	 * otherwise
 	 */
 	public boolean hasCommercialSupport(String repo, String branch) {
 		if (branch.equals("main")) {

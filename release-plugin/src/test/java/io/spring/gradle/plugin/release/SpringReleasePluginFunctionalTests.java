@@ -130,6 +130,18 @@ public class SpringReleasePluginFunctionalTests {
 	}
 
 	@Test
+	public void checkBranchHasOssSupportTaskWhenPluginAppliedThenExists() {
+		var task = this.project.getTasks().findByName(CheckBranchHasOssSupportTask.TASK_NAME);
+		assertThat(task).isNotNull();
+	}
+
+	@Test
+	public void checkBranchHasCommercialSupportTaskWhenPluginAppliedThenExists() {
+		var task = this.project.getTasks().findByName(CheckBranchHasCommercialSupportTask.TASK_NAME);
+		assertThat(task).isNotNull();
+	}
+
+	@Test
 	public void createGitHubReleaseTaskWhenPluginAppliedThenExists() {
 		var task = this.project.getTasks().findByName(CreateGitHubReleaseTask.TASK_NAME);
 		assertThat(task).isNotNull();
@@ -138,6 +150,12 @@ public class SpringReleasePluginFunctionalTests {
 	@Test
 	public void createReleaseTaskWhenPluginAppliedThenExists() {
 		var task = this.project.getTasks().findByName(CreateReleaseTask.TASK_NAME);
+		assertThat(task).isNotNull();
+	}
+
+	@Test
+	public void closeMilestoneTaskWhenPluginAppliedThenExists() {
+		var task = this.project.getTasks().findByName(CloseMilestoneTask.TASK_NAME);
 		assertThat(task).isNotNull();
 	}
 

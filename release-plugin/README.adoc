@@ -59,6 +59,8 @@ NOTE: Some top-level tasks are also used by other tasks.
 
 Top-level tasks:
 
+* <<checkBranchHasCommercialSupport>>
+* <<checkBranchHasOssSupport>>
 * <<checkMilestoneIsDueToday>>
 * <<checkMilestoneHasNoOpenIssues>>
 * <<closeMilestone>>
@@ -79,6 +81,54 @@ Internal tasks (only used by other tasks):
 TIP: By adding `gitHubAccessToken=...` to `~/.gradle/gradle.properties`, many of these tasks can be performed with no additional inputs and therefore can be run directly from your IDE while avoiding GitHub rate limits.
 
 == Task Reference
+
+[[checkBranchHasCommercialSupport]]
+=== `checkBranchHasCommercialSupport`
+
+Checks if the given branch has commercial support and outputs `true` or `false`.
+
+The following command will determine if the given branch has commercial support:
+
+[source,bash]
+----
+./gradlew checkBranchHasCommercialSupport -Pbranch=1.0.x
+----
+
+*Task properties:*
+
+* `branch`: Specify the branch used check support (required)
+* `gitHubAccessToken`: A personal access token used to avoid hitting rate limits on the GitHub API (optional)
+
+*Full example:*
+
+[source,bash]
+----
+./gradlew checkBranchHasCommercialSupport -Pbranch=1.0.x -PgitHubAccessToken=$GITHUB_ACCESS_TOKEN
+----
+
+[[checkBranchHasOssSupport]]
+=== `checkBranchHasOssSupport`
+
+Checks if the given branch has OSS support and outputs `true` or `false`.
+
+The following command will determine if the given branch has OSS support:
+
+[source,bash]
+----
+./gradlew checkBranchHasOssSupport -Pbranch=1.0.x
+----
+
+*Task properties:*
+
+* `branch`: Specify the branch used to check support (required)
+* `gitHubAccessToken`: A personal access token used to avoid hitting rate limits on the GitHub API (optional)
+
+*Full example:*
+
+[source,bash]
+----
+./gradlew checkBranchHasOssSupport -Pbranch=1.0.x -PgitHubAccessToken=$GITHUB_ACCESS_TOKEN
+----
 
 [[checkMilestoneIsDueToday]]
 === `checkMilestoneIsDueToday`
