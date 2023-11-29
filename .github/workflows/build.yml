@@ -4,17 +4,17 @@ on:
   workflow_call:
     inputs:
       java-version:
-        description: 'Version of the JDK to use to run the Gradle command.'
+        description: Version of the JDK to use to run the Gradle command.
         required: false
         default: '17'
         type: string
       distribution:
-        description: 'Distribution of the JDK to use to run the Gradle command.'
+        description: Distribution of the JDK to use to run the Gradle command.
         required: false
         default: 'temurin'
         type: string
       runs-on:
-        description: 'GitHub Actions runner to run the build task on.'
+        description: GitHub Actions runner to run the build task on.
         required: false
         default: 'ubuntu-latest'
         type: string
