@@ -313,19 +313,24 @@ public class SpringReleases {
 	 */
 	public void scheduleReleaseIfNotExists(String owner, String repo, String version, int weekOfMonth, int dayOfWeek) {
 		var versionMatcher = versionMatcher(version);
-		if (versionMatcher.group(4) != null) {
+		var major = versionMatcher.group(1);
+		var minor = versionMatcher.group(2);
+		var patch = versionMatcher.group(3);
+		var suffix = versionMatcher.group(4);
+		if (suffix != null && !Objects.equals(suffix, "-SNAPSHOT")) {
 			return;
 		}
 
+		var baseVersion = "%s.%s.%s".formatted(major, minor, patch);
 		var repository = new Repository(owner, repo);
-		if (this.gitHubApi.getMilestone(repository, version) != null) {
+		if (this.gitHubApi.getMilestone(repository, baseVersion) != null) {
 			return;
 		}
 
 		// @formatter:off
 		var releaseTrainSpec = SpringReleaseTrainSpec.builder()
 				.nextTrain()
-				.version(version)
+				.version(baseVersion)
 				.weekOfMonth(dayOfWeek)
 				.dayOfWeek(weekOfMonth)
 				.build();
@@ -336,7 +341,7 @@ public class SpringReleases {
 		// Next milestone is either a patch version or minor version
 		// Note: Major versions will be handled like minor and get a release
 		// train which can be manually updated to match the desired schedule.
-		if (version.endsWith(".0")) {
+		if (baseVersion.endsWith(".0")) {
 			// Create M1, M2, M3, RC1 and GA milestones for release train
 			releaseTrain.getTrainDates().forEach((milestoneTitle, dueOn) -> {
 				// Note: GitHub seems to store full date/time as UTC then displays
@@ -353,7 +358,7 @@ public class SpringReleases {
 			// Create GA milestone for patch release on the next even month
 			var startDate = LocalDate.now();
 			var dueOn = releaseTrain.getNextReleaseDate(startDate);
-			var milestone = new Milestone(version, null, dueOn.atTime(LocalTime.NOON).toInstant(ZoneOffset.UTC));
+			var milestone = new Milestone(baseVersion, null, dueOn.atTime(LocalTime.NOON).toInstant(ZoneOffset.UTC));
 			this.gitHubApi.createMilestone(repository, milestone);
 		}
 	}
