@@ -183,8 +183,8 @@ public class SpringReleases {
 			return true;
 		}
 
-		var generation = this.saganApi.getGeneration(repo, branch);
 		var today = LocalDate.now();
+		var generation = this.saganApi.getGeneration(repo, branch);
 		return (!today.isBefore(generation.initialReleaseDate()) && !today.isAfter(generation.ossSupportEndDate()));
 	}
 
@@ -201,8 +201,8 @@ public class SpringReleases {
 			return false;
 		}
 
-		var generation = this.saganApi.getGeneration(repo, branch);
 		var today = LocalDate.now();
+		var generation = this.saganApi.getGeneration(repo, branch);
 		return (today.isAfter(generation.ossSupportEndDate()) && !today.isAfter(generation.commercialSupportEndDate()));
 	}
 
