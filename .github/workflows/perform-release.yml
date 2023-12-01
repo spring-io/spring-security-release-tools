@@ -136,6 +136,8 @@ jobs:
     name: Next Development Version
     runs-on: ubuntu-latest
     needs: [perform-release]
+    env:
+      BRANCH: ${{ github.ref_name }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -178,7 +180,11 @@ jobs:
         env:
           VERSION: ${{ steps.next-snapshot-version.outputs.version }}
         run: echo "version=$(./gradlew -q getNextReleaseMilestone -PcurrentVersion=$VERSION -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
+      - id: has-oss-support
+        name: Check OSS Support (for current branch)
+        run: echo "result=$(./gradlew -q checkBranchHasOssSupport -Pbranch=$BRANCH -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
       - name: Schedule Next Release (if not already scheduled)
+        if: ${{ steps.has-oss-support.outputs.result == 'true' }}
         env:
           VERSION: ${{ steps.next-release-milestone.outputs.version }}
         run: ./gradlew scheduleNextRelease -PnextVersion=$VERSION -PgitHubAccessToken=$TOKEN
