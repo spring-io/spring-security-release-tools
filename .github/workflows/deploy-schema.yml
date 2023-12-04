@@ -1,0 +1,51 @@
+name: Deploy Docs
+
+on:
+  workflow_call:
+    inputs:
+      should-deploy-schema:
+        description: Whether schema files should be deployed.
+        required: true
+        type: string
+    outputs:
+      schema-deployed:
+        description: Whether schema files were actually deployed.
+        value: ${{ jobs.deploy-schema.outputs.docs-deployed }}
+    secrets:
+      GRADLE_ENTERPRISE_CACHE_USER:
+        required: false
+      GRADLE_ENTERPRISE_CACHE_PASSWORD:
+        required: false
+      GRADLE_ENTERPRISE_SECRET_ACCESS_KEY:
+        required: false
+      DOCS_USERNAME:
+        required: false
+      DOCS_SSH_KEY:
+        required: false
+      DOCS_HOST:
+        required: false
+
+env:
+  GRADLE_ENTERPRISE_CACHE_USERNAME: ${{ secrets.GRADLE_ENTERPRISE_CACHE_USER }}
+  GRADLE_ENTERPRISE_CACHE_PASSWORD: ${{ secrets.GRADLE_ENTERPRISE_CACHE_PASSWORD }}
+  GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_SECRET_ACCESS_KEY }}
+  DOCS_USERNAME: ${{ secrets.DOCS_USERNAME }}
+  DOCS_SSH_KEY: ${{ secrets.DOCS_SSH_KEY }}
+  DOCS_HOST: ${{ secrets.DOCS_HOST }}
+
+jobs:
+  deploy-schema:
+    name: Deploy Schema
+    if: ${{ inputs.should-deploy-schema == 'true' }}
+    runs-on: ubuntu-latest
+    outputs:
+      schema-deployed: ${{ steps.schema-deployed.outputs.result }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 17
+        uses: spring-io/spring-gradle-build-action@v2
+      - name: Deploy Schema
+        run: ./gradlew deploySchema -PdeployDocsSshKey="$DOCS_SSH_KEY" -PdeployDocsSshUsername="$DOCS_USERNAME" -PdeployDocsHost="$DOCS_HOST" --stacktrace --info
+      - id: schema-deployed
+        name: Schema Deployed
+        run: echo "result=true" >> $GITHUB_OUTPUT
