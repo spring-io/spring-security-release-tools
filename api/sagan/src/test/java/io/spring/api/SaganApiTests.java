@@ -16,12 +16,14 @@
 
 package io.spring.api;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.Base64;
 import java.util.Comparator;
+import java.util.Objects;
 
 import io.spring.api.Release.ReleaseStatus;
 import okhttp3.mockwebserver.MockResponse;
@@ -29,9 +31,6 @@ import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.util.StreamUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -241,8 +240,10 @@ public class SaganApiTests {
 	}
 
 	private static String string(String path) throws IOException {
-		try (var inputStream = new ClassPathResource(path).getInputStream()) {
-			return StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8);
+		var outputStream = new ByteArrayOutputStream();
+		try (var inputStream = ClassLoader.getSystemClassLoader().getResourceAsStream(path)) {
+			Objects.requireNonNull(inputStream).transferTo(outputStream);
+			return outputStream.toString(StandardCharsets.UTF_8);
 		}
 	}
 

@@ -16,10 +16,12 @@
 
 package com.github.api;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.mockwebserver.MockResponse;
@@ -27,9 +29,6 @@ import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.util.StreamUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -210,8 +209,10 @@ public class GitHubApiTests {
 	}
 
 	private static String string(String path) throws IOException {
-		try (var inputStream = new ClassPathResource(path).getInputStream()) {
-			return StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8);
+		var outputStream = new ByteArrayOutputStream();
+		try (var inputStream = ClassLoader.getSystemClassLoader().getResourceAsStream(path)) {
+			Objects.requireNonNull(inputStream).transferTo(outputStream);
+			return outputStream.toString(StandardCharsets.UTF_8);
 		}
 	}
 
