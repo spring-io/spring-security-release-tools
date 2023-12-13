@@ -23,9 +23,6 @@ import io.github.gradlenexus.publishplugin.NexusPublishExtension;
 import io.github.gradlenexus.publishplugin.NexusPublishPlugin;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.Task;
-
-import org.springframework.gradle.ProjectUtils;
 
 /**
  * @author Steve Riesenberg
@@ -47,11 +44,7 @@ public class SpringNexusPlugin implements Plugin<Project> {
 		nexusPublishing.getConnectTimeout().set(Duration.ofMinutes(3));
 		nexusPublishing.getClientTimeout().set(Duration.ofMinutes(3));
 
-		// Ensure release build automatically closes and releases staging repository
-		Task finalizeDeployArtifacts = project.task("finalizeDeployArtifacts");
-		if (ProjectUtils.isRelease(project) && project.hasProperty("ossrhUsername")) {
-			Task closeAndReleaseOssrhStagingRepository = project.getTasks().findByName("closeAndReleaseOssrhStagingRepository");
-			finalizeDeployArtifacts.dependsOn(closeAndReleaseOssrhStagingRepository);
-		}
+		// Create stub task for consistency with OSS repositories
+		project.task("finalizeDeployArtifacts");
 	}
 }
