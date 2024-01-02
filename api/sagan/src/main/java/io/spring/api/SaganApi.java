@@ -126,8 +126,7 @@ public class SaganApi {
 	private HttpRequest.Builder requestBuilder(String uri) {
 		// @formatter:off
 		HttpRequest.Builder builder = HttpRequest.newBuilder()
-			.uri(URI.create(this.baseUrl + uri).normalize())
-			.header("Accept", "application/json");
+			.uri(URI.create(this.baseUrl + uri).normalize());
 		// @formatter:on
 		if (this.username != null && this.accessToken != null) {
 			var credentials = "%s:%s".formatted(this.username, this.accessToken);
