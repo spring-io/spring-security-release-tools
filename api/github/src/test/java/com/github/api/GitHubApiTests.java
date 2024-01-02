@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2023 the original author or authors.
+ * Copyright 2002-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,6 +68,7 @@ public class GitHubApiTests {
 		var recordedRequest = this.server.takeRequest();
 		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath()).isEqualTo("/user");
+		assertThat(recordedRequest.getHeader("Accept")).isEqualTo("application/json");
 		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Bearer %s".formatted(AUTH_TOKEN));
 	}
 
@@ -84,6 +85,7 @@ public class GitHubApiTests {
 		var recordedRequest = this.server.takeRequest(1, TimeUnit.SECONDS);
 		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath()).isEqualTo("/user");
+		assertThat(recordedRequest.getHeader("Accept")).isEqualTo("application/json");
 		assertThat(recordedRequest.getHeaders().names().contains("Authorization")).isFalse();
 	}
 
@@ -97,6 +99,8 @@ public class GitHubApiTests {
 		var recordedRequest = this.server.takeRequest();
 		assertThat(recordedRequest.getMethod()).isEqualTo("POST");
 		assertThat(recordedRequest.getPath()).isEqualTo("/repos/spring-projects/spring-security/releases");
+		assertThat(recordedRequest.getHeader("Accept")).isEqualTo("application/json");
+		assertThat(recordedRequest.getHeader("Content-Type")).isEqualTo("application/json");
 		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Bearer %s".formatted(AUTH_TOKEN));
 		assertThat(recordedRequest.getBody().readString(Charset.defaultCharset()))
 			.isEqualTo(string("CreateReleaseRequest.json"));
@@ -113,6 +117,8 @@ public class GitHubApiTests {
 		var recordedRequest = this.server.takeRequest();
 		assertThat(recordedRequest.getMethod()).isEqualTo("POST");
 		assertThat(recordedRequest.getPath()).isEqualTo("/repos/spring-projects/spring-security/milestones");
+		assertThat(recordedRequest.getHeader("Accept")).isEqualTo("application/json");
+		assertThat(recordedRequest.getHeader("Content-Type")).isEqualTo("application/json");
 		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Bearer %s".formatted(AUTH_TOKEN));
 		assertThat(recordedRequest.getBody().readString(Charset.defaultCharset()))
 			.isEqualTo(string("CreateMilestoneRequest.json"));
@@ -131,6 +137,7 @@ public class GitHubApiTests {
 		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath())
 			.isEqualTo("/repos/spring-projects/spring-security/milestones?per_page=100");
+		assertThat(recordedRequest.getHeader("Accept")).isEqualTo("application/json");
 		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Bearer %s".formatted(AUTH_TOKEN));
 	}
 
@@ -145,6 +152,7 @@ public class GitHubApiTests {
 		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath())
 			.isEqualTo("/repos/spring-projects/spring-security/milestones?per_page=100");
+		assertThat(recordedRequest.getHeader("Accept")).isEqualTo("application/json");
 		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Bearer %s".formatted(AUTH_TOKEN));
 	}
 
@@ -159,6 +167,7 @@ public class GitHubApiTests {
 		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath())
 			.isEqualTo("/repos/spring-projects/spring-security/milestones?per_page=100");
+		assertThat(recordedRequest.getHeader("Accept")).isEqualTo("application/json");
 		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Bearer %s".formatted(AUTH_TOKEN));
 	}
 
@@ -173,6 +182,7 @@ public class GitHubApiTests {
 		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath())
 			.isEqualTo("/repos/spring-projects/spring-security/issues?per_page=1&milestone=202");
+		assertThat(recordedRequest.getHeader("Accept")).isEqualTo("application/json");
 		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Bearer %s".formatted(AUTH_TOKEN));
 	}
 
@@ -187,6 +197,7 @@ public class GitHubApiTests {
 		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath())
 			.isEqualTo("/repos/spring-projects/spring-security/issues?per_page=1&milestone=191");
+		assertThat(recordedRequest.getHeader("Accept")).isEqualTo("application/json");
 		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Bearer %s".formatted(AUTH_TOKEN));
 	}
 
@@ -199,6 +210,7 @@ public class GitHubApiTests {
 		var recordedRequest = this.server.takeRequest();
 		assertThat(recordedRequest.getMethod()).isEqualTo("PATCH");
 		assertThat(recordedRequest.getPath()).isEqualTo("/repos/spring-projects/spring-security/milestones/191");
+		assertThat(recordedRequest.getHeader("Accept")).isEqualTo("application/json");
 		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Bearer %s".formatted(AUTH_TOKEN));
 		assertThat(recordedRequest.getBody().readString(Charset.defaultCharset()))
 			.isEqualTo(string("UpdateMilestoneRequest.json"));

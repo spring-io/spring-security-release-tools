@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2023 the original author or authors.
+ * Copyright 2002-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,7 +88,12 @@ public class GitHubApi {
 	 */
 	public void createRelease(Repository repository, Release release) {
 		var uri = "/repos/%s/%s/releases".formatted(repository.owner(), repository.name());
-		var httpRequest = requestBuilder(uri).POST(bodyValue(release)).build();
+		// @formatter:off
+		var httpRequest = requestBuilder(uri)
+			.header("Content-Type", "application/json")
+			.POST(bodyValue(release))
+			.build();
+		// @formatter:on
 		performRequest(httpRequest, Void.class);
 	}
 
@@ -99,7 +104,12 @@ public class GitHubApi {
 	 */
 	public void createMilestone(Repository repository, Milestone milestone) {
 		var uri = "/repos/%s/%s/milestones".formatted(repository.owner(), repository.name());
-		var httpRequest = requestBuilder(uri).POST(bodyValue(milestone)).build();
+		// @formatter:off
+		var httpRequest = requestBuilder(uri)
+			.header("Content-Type", "application/json")
+			.POST(bodyValue(milestone))
+			.build();
+		// @formatter:on
 		performRequest(httpRequest, Void.class);
 	}
 
