@@ -10,6 +10,7 @@ springRelease {
 	repositoryOwner = "spring-io"
 	weekOfMonth = 2
 	dayOfWeek = 1
+	releaseVersionPrefix = "v"
 }
 
 if (hasProperty("buildScan")) {
