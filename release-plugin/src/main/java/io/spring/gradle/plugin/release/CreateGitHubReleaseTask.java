@@ -54,6 +54,10 @@ public abstract class CreateGitHubReleaseTask extends DefaultTask {
 
 	@Input
 	@Optional
+	public abstract Property<String> getVersionPrefix();
+
+	@Input
+	@Optional
 	public abstract Property<String> getGitHubAccessToken();
 
 	@TaskAction
@@ -61,6 +65,7 @@ public abstract class CreateGitHubReleaseTask extends DefaultTask {
 		var gitHubAccessToken = getGitHubAccessToken().getOrNull();
 		var repository = getRepository().get();
 		var version = getVersion().get();
+		var versionPrefix = getVersionPrefix().getOrElse("");
 		var branch = getBranch().get();
 		var body = getReleaseNotes().get();
 		var createRelease = getCreateRelease().get();
@@ -68,13 +73,13 @@ public abstract class CreateGitHubReleaseTask extends DefaultTask {
 			throw new MissingPropertyException("Please provide an access token with -PgitHubAccessToken=...");
 		}
 
-		System.out.printf("%sCreating GitHub release for %s/%s@%s%n", createRelease ? "" : "[DRY RUN] ",
-				repository.owner(), repository.name(), version);
+		System.out.printf("%sCreating GitHub release for %s/%s@%s%s%n", createRelease ? "" : "[DRY RUN] ",
+				repository.owner(), repository.name(), versionPrefix, version);
 		System.out.printf("%nRelease Notes:%n%n----%n%s%n----%n%n", body.trim());
 
 		if (createRelease) {
 			var springReleases = new SpringReleases(gitHubAccessToken);
-			springReleases.createGitHubRelease(repository.owner(), repository.name(), version, branch, body);
+			springReleases.createGitHubRelease(repository.owner(), repository.name(), versionPrefix + version, branch, body);
 		}
 	}
 
@@ -101,8 +106,10 @@ public abstract class CreateGitHubReleaseTask extends DefaultTask {
 
 			var owner = springRelease.getRepositoryOwner().get();
 			var name = springRelease.getRepositoryName().get();
+			var releaseVersionPrefix = springRelease.getReleaseVersionPrefix().get();
 			task.getRepository().set(new Repository(owner, name));
 			task.getVersion().set(versionProvider);
+			task.getVersionPrefix().set(releaseVersionPrefix);
 			task.getReleaseNotes().set(releaseNotesProvider);
 			task.getBranch().set(ProjectUtils.getProperty(project, SpringReleasePlugin.BRANCH_PROPERTY).orElse("main"));
 			task.getCreateRelease().set(createReleaseProvider.orElse(false));

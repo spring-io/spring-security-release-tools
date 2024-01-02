@@ -406,6 +406,7 @@ public class SpringReleases {
 		// @formatter:off
 		return com.github.api.Release.tag(version)
 				.commit(branch)
+				.name(version)
 				.body(body)
 				.preRelease(version.contains("-"))
 				.build();

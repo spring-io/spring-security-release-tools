@@ -35,6 +35,7 @@ springRelease {
     referenceDocUrl = "https://docs.spring.io/spring-framework/reference/{version}/index.html"
     apiDocUrl = "https://docs.spring.io/spring-framework/docs/{version}/api/"
     replaceSnapshotVersionInReferenceDocUrl = true
+    releaseVersionPrefix = "v"
 }
 ----
 
@@ -47,6 +48,7 @@ springRelease {
 * `referenceDocUrl`: The template URL for a version of the reference documentation; can contain the variable `{version}` which is automatically substituted based on the current version (required)
 * `apiDocUrl`: The template URL for a version of the API documentation; can contain the variable `{version}` which is automatically substituted based on the current version (required)
 * `replaceSnapshotVersionInReferenceDocUrl`: Flag controlling whether `{version}` should be replaced (`true`) or left as-is (`false`) in the `referenceDocUrl`; Useful for working with Antora (optional, defaults to `false`)
+* `releaseVersionPrefix`: The prefix used to tag the release version; typically used to prefix with `v`, e.g. `v1.0.1` (optional, defaults to an empty string)
 
 == Tasks
 

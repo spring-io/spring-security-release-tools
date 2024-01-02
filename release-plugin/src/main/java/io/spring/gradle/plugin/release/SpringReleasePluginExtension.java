@@ -37,4 +37,6 @@ public interface SpringReleasePluginExtension {
 
 	Property<Boolean> getReplaceSnapshotVersionInReferenceDocUrl();
 
+	Property<String> getReleaseVersionPrefix();
+
 }
