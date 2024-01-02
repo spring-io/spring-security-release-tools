@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2023 the original author or authors.
+ * Copyright 2019-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,7 +89,12 @@ public class SaganApi {
 
 	public void createRelease(String slug, Release release) {
 		var uri = "/projects/%s/releases".formatted(slug);
-		var httpRequest = requestBuilder(uri).POST(bodyValue(release)).build();
+		// @formatter:off
+		var httpRequest = requestBuilder(uri)
+			.header("Content-Type", "application/json")
+			.POST(bodyValue(release))
+			.build();
+		// @formatter:on
 		performRequest(httpRequest, Void.class);
 	}
 
@@ -121,7 +126,8 @@ public class SaganApi {
 	private HttpRequest.Builder requestBuilder(String uri) {
 		// @formatter:off
 		HttpRequest.Builder builder = HttpRequest.newBuilder()
-			.uri(URI.create(this.baseUrl + uri).normalize());
+			.uri(URI.create(this.baseUrl + uri).normalize())
+			.header("Accept", "application/json");
 		// @formatter:on
 		if (this.username != null && this.accessToken != null) {
 			var credentials = "%s:%s".formatted(this.username, this.accessToken);
