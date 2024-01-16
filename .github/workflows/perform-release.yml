@@ -151,7 +151,7 @@ jobs:
         name: Calculate Next Snapshot Version
         env:
           VERSION: ${{ steps.project-version.outputs.version }}
-        run: echo "version=$(./gradlew getNextSnapshotVersion -PcurrentVersion=$VERSION)" >> $GITHUB_OUTPUT
+        run: echo "version=$(./gradlew -q getNextSnapshotVersion -PcurrentVersion=$VERSION)" >> $GITHUB_OUTPUT
       - name: Update Version
         env:
           VERSION: ${{ steps.next-snapshot-version.outputs.version }}
