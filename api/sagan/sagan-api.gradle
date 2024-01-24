@@ -14,3 +14,18 @@ dependencies {
 	testImplementation "org.mockito:mockito-core"
 	testImplementation "com.squareup.okhttp3:mockwebserver"
 }
+
+/*
+ * The following tasks disabled since these dependencies
+ * are shaded via the Shadow plugin.
+ */
+
+tasks.withType(PublishToMavenRepository).configureEach {
+	enabled = false
+}
+
+tasks.withType(PublishToMavenLocal).configureEach {
+	enabled = false
+}
+
+artifactoryPublish.enabled = false
