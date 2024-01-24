@@ -41,7 +41,7 @@ jobs:
     outputs:
       schema-deployed: ${{ steps.schema-deployed.outputs.result }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up JDK 17
         uses: spring-io/spring-gradle-build-action@v2
       - name: Deploy Schema

@@ -59,7 +59,7 @@ jobs:
       RELEASE_REPO: ${{ inputs.release-repo-url }}
       ARTIFACT_PATH: ${{ inputs.artifact-path }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up JDK 17
         uses: spring-io/spring-gradle-build-action@v2
       - id: project-version
@@ -139,7 +139,7 @@ jobs:
     env:
       BRANCH: ${{ github.ref_name }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           token: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
       - name: Set up JDK 17
