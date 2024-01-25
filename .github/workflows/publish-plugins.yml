@@ -1,0 +1,66 @@
+name: Publish Plugins
+
+on:
+  workflow_call:
+    inputs:
+      should-publish-plugins:
+        description: Whether plugins should be published.
+        required: true
+        type: string
+      project-version:
+        description: The project version extracted from the current branch/tag, used to restrict running the workflow to publish plugins.
+        required: true
+        type: string
+    outputs:
+      plugins-published:
+        description: Whether plugins were actually published.
+        value: ${{ jobs.publish-plugins.outputs.plugins-published }}
+      project-version:
+        description: The project version extracted from the current branch/tag.
+        value: ${{ jobs.publish-plugins.outputs.project-version }}
+    secrets:
+      GRADLE_ENTERPRISE_CACHE_USER:
+        required: false
+      GRADLE_ENTERPRISE_CACHE_PASSWORD:
+        required: false
+      GRADLE_ENTERPRISE_SECRET_ACCESS_KEY:
+        required: false
+      GRADLE_PUBLISH_KEY:
+        required: false
+      GRADLE_PUBLISH_SECRET:
+        required: false
+      GPG_PRIVATE_KEY:
+        required: false
+      GPG_PASSPHRASE:
+        required: false
+
+env:
+  GRADLE_ENTERPRISE_CACHE_USERNAME: ${{ secrets.GRADLE_ENTERPRISE_CACHE_USER }}
+  GRADLE_ENTERPRISE_CACHE_PASSWORD: ${{ secrets.GRADLE_ENTERPRISE_CACHE_PASSWORD }}
+  GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_SECRET_ACCESS_KEY }}
+  GRADLE_PUBLISH_KEY: ${{ secrets.GRADLE_PUBLISH_KEY }}
+  GRADLE_PUBLISH_SECRET: ${{ secrets.GRADLE_PUBLISH_SECRET }}
+
+jobs:
+  publish-plugins:
+    name: Publish Plugins
+    if: ${{ inputs.should-publish-plugins == 'true' && !endsWith(inputs.project-version, '-SNAPSHOT') && !contains(inputs.project-version, '-RC') && !contains(inputs.project-version, '-M') }}
+    runs-on: ubuntu-latest
+    outputs:
+      plugins-published: ${{ steps.plugins-published.outputs.result }}
+      project-version: ${{ steps.project-version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: spring-io/spring-gradle-build-action@v2
+      - name: Publish Plugins
+        env:
+          ORG_GRADLE_PROJECT_signingKey: ${{ secrets.GPG_PRIVATE_KEY }}
+          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSPHRASE }}
+        run: ./gradlew publishPlugins -Pgradle.publish.key="$GRADLE_PUBLISH_KEY" -Pgradle.publish.secret="$GRADLE_PUBLISH_SECRET" --stacktrace
+      - id: plugins-published
+        name: Plugins Published
+        run: echo "result=true" >> $GITHUB_OUTPUT
+      - id: project-version
+        name: Extract Project Version
+        run: echo "version=$(cat gradle.properties | grep 'version=' | awk -F'=' '{print $2}')" >> $GITHUB_OUTPUT
