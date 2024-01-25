@@ -1,5 +1,7 @@
 plugins {
 	id "io.spring.convention.spring-gradle-plugin"
+	id "com.gradle.plugin-publish" version "1.2.1"
+	id "com.github.johnrengelman.shadow" version "8.1.1"
 }
 
 gradlePlugin {
@@ -19,14 +21,10 @@ artifactory {
 	}
 }
 
-configurations.testImplementation {
-	extendsFrom configurations.compileOnly
-}
-
 dependencies {
 	management platform(project(":dependencies"))
-	compileOnly project(":github-api")
-	compileOnly project(":sagan-api")
+	implementation project(":github-api")
+	implementation project(":sagan-api")
 	implementation project(":spring-security-release-tools-core")
 
 	testImplementation "org.junit.jupiter:junit-jupiter-api"
@@ -34,4 +32,9 @@ dependencies {
 	testImplementation "org.junit.jupiter:junit-jupiter-engine"
 	testImplementation "org.assertj:assertj-core"
 	testImplementation "org.mockito:mockito-core"
+}
+
+shadowJar {
+	archiveClassifier = ""
+	relocate "com.fasterxml", "shaded.com.fasterxml"
 }
