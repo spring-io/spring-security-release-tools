@@ -2,23 +2,12 @@
 
 Spring Security Release Plugin is a Gradle plugin that provides common tasks for automating releases.
 
-To use the plugin, add the following repository to `settings.gradle`:
-
-[source,gradle]
-----
-pluginManagement {
-	repositories {
-		maven { url "https://repo.spring.io/release" }
-	}
-}
-----
-
-Then apply the plugin in your project's root `build.gradle`:
+To use the plugin, apply the plugin in your project's root `build.gradle`:
 
 [source,gradle]
 ----
 plugins {
-	id "io.spring.security.release" version "1.0.0"
+	id "io.spring.security.release" version "1.0.1"
 }
 ----
 

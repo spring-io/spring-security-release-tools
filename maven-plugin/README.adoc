@@ -2,23 +2,12 @@
 
 Spring Security Maven Plugin is a Gradle plugin that provides tasks for publishing releases to Maven Central (Sonatype) and Spring (Artifactory) repositories.
 
-To use the plugin, add the following repository to `settings.gradle`:
-
-[source,gradle]
-----
-pluginManagement {
-	repositories {
-		maven { url "https://repo.spring.io/release" }
-	}
-}
-----
-
-Then apply the plugin in your project's root `build.gradle` and in each sub-module that requires publishing artifacts:
+To use the plugin, apply the plugin in your project's root `build.gradle` and in each sub-module that requires publishing artifacts:
 
 [source,gradle]
 ----
 plugins {
-	id "io.spring.security.maven" version "1.0.0"
+	id "io.spring.security.maven" version "1.0.1"
 }
 ----
 

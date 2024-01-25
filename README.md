@@ -7,7 +7,7 @@ Plugins
 ===
 
 * [`spring-security-release-plugin`](release-plugin) ([docs](release-plugin/README.adoc))
-* [`spring-security-maven-plugin`](maven-plugin) ([docs](maven-plugin/README.adoc)) - **Note:** This plugin is still in development.
+* [`spring-security-maven-plugin`](maven-plugin) ([docs](maven-plugin/README.adoc))
 
 Libraries
 ===
