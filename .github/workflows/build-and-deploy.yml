@@ -14,10 +14,18 @@ jobs:
     name: Test
     uses: ./.github/workflows/test.yml
     secrets: inherit
-  deploy:
+  deploy-artifacts:
     name: Deploy Artifacts
     needs: [build, test]
     uses: ./.github/workflows/deploy-artifacts.yml
     with:
       should-deploy-artifacts: ${{ needs.build.outputs.should-deploy-artifacts }}
+    secrets: inherit
+  publish-plugins:
+    name: Publish Plugins
+    needs: [deploy-artifacts]
+    uses: ./.github/workflows/publish-plugins.yml
+    with:
+      should-publish-plugins: ${{ needs.build.outputs.should-deploy-artifacts }}
+      project-version: ${{ needs.deploy-artifacts.outputs.project-version }}
     secrets: inherit
