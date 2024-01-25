@@ -5,9 +5,14 @@ plugins {
 }
 
 gradlePlugin {
+	website = "https://github.com/spring-io/spring-security-release-tools/release-plugin"
+	vcsUrl = "https://github.com/spring-io/spring-security-release-tools.git"
 	plugins {
 		springSecurityReleasePlugin {
 			id = "io.spring.security.release"
+			displayName = "Spring Security Release Plugin"
+			description = "Spring Security Release Plugin is a Gradle plugin that provides common tasks for automating Spring releases."
+			tags.addAll("spring", "github", "release")
 			implementationClass = "io.spring.gradle.plugin.release.SpringReleasePlugin"
 		}
 	}

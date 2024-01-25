@@ -4,9 +4,14 @@ plugins {
 }
 
 gradlePlugin {
+	website = "https://github.com/spring-io/spring-security-release-tools/maven-plugin"
+	vcsUrl = "https://github.com/spring-io/spring-security-release-tools.git"
 	plugins {
 		springSecurityMavenPlugin {
 			id = "io.spring.security.maven"
+			displayName = "Spring Security Maven Plugin"
+			description = "Spring Security Maven Plugin is a Gradle plugin that provides tasks for publishing releases to Maven Central (Sonatype) and Spring (Artifactory) repositories."
+			tags.addAll("spring", "maven", "nexus", "artifactory")
 			implementationClass = "io.spring.gradle.plugin.maven.SpringMavenPlugin"
 		}
 	}
