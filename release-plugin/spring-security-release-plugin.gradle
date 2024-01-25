@@ -5,7 +5,7 @@ plugins {
 }
 
 gradlePlugin {
-	website = "https://github.com/spring-io/spring-security-release-tools/release-plugin"
+	website = "https://github.com/spring-io/spring-security-release-tools/tree/main/release-plugin"
 	vcsUrl = "https://github.com/spring-io/spring-security-release-tools.git"
 	plugins {
 		springSecurityReleasePlugin {
