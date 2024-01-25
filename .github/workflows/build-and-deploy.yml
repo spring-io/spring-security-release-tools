@@ -26,6 +26,6 @@ jobs:
     needs: [deploy-artifacts]
     uses: ./.github/workflows/publish-plugins.yml
     with:
-      should-publish-plugins: ${{ needs.build.outputs.should-deploy-artifacts }}
+      should-publish-plugins: ${{ needs.deploy-artifacts.outputs.artifacts-deployed }}
       project-version: ${{ needs.deploy-artifacts.outputs.project-version }}
     secrets: inherit
