@@ -15,7 +15,7 @@ on:
     outputs:
       supported_versions:
         description: "The supported versions"
-        value: ${{ jobs.retrieve-supported-versions.outputs.versions }}
+        value: ${{ jobs.retrieve-supported-versions.outputs.supported_versions }}
 
 jobs:
   retrieve-supported-versions:
