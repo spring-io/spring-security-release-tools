@@ -1,0 +1,33 @@
+name: Retrieve Spring Supported Versions
+
+on:
+  workflow_call:
+    inputs:
+      project:
+        description: 'The name of the Spring Project, lowercase separated by dashes, e.g. spring-security'
+        required: true
+        type: string
+      type:
+        description: 'The type of the support, accepts commercial or oss'
+        default: 'oss'
+        required: false
+        type: string
+    outputs:
+      supported_versions:
+        description: "The supported versions"
+        value: ${{ jobs.retrieve-supported-versions.outputs.versions }}
+
+jobs:
+  retrieve-supported-versions:
+    runs-on: ubuntu-latest
+    outputs:
+      supported_versions: ${{ steps.get-supported-versions.outputs.supported_versions }}
+    steps:
+      - id: get-supported-versions
+        run: |
+          if [ "${{ inputs.type }}" = "commercial" ]
+          then
+            echo "supported_versions=$(curl https://api.spring.io/projects/${{ inputs.project }}/generations | jq --arg current "$(date +%F)" -c '.["_embedded"]["generations"] | map(select((.commercialSupportEndDate + "T00:00:00") > $current and (.ossSupportEndDate + "T00:00:00") < $current))' | jq '.[].name' -r | grep -E '^[6-9]' | paste -sd ',' -)" >> $GITHUB_OUTPUT
+          else
+            echo "supported_versions=$(curl https://api.spring.io/projects/${{ inputs.project }}/generations | jq --arg current "$(date +%F)" -c '.["_embedded"]["generations"] | map(select((.ossSupportEndDate + "T00:00:00") > $current))' | jq '.[].name' -r | paste -sd ',' -)" >> $GITHUB_OUTPUT
+          fi
