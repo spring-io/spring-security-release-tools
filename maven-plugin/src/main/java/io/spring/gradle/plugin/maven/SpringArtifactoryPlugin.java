@@ -16,6 +16,8 @@
 
 package io.spring.gradle.plugin.maven;
 
+import java.util.Map;
+
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.jfrog.gradle.plugin.artifactory.ArtifactoryPlugin;
@@ -28,7 +30,37 @@ public class SpringArtifactoryPlugin implements Plugin<Project> {
 
 	private static final String ARTIFACTORY_URL_NAME = "ARTIFACTORY_URL";
 
+	private static final String ARTIFACTORY_SNAPSHOT_REPOSITORY = "ARTIFACTORY_SNAPSHOT_REPOSITORY";
+
+	private static final String ARTIFACTORY_MILESTONE_REPOSITORY = "ARTIFACTORY_MILESTONE_REPOSITORY";
+
+	private static final String ARTIFACTORY_RELEASE_REPOSITORY = "ARTIFACTORY_RELEASE_REPOSITORY";
+
+	private static final String ARTIFACTORY_PROJECT_KEY = "ARTIFACTORY_PROJECT_KEY";
+
+	private static final String ARTIFACTORY_BUILD_NAME = "ARTIFACTORY_BUILD_NAME";
+
+	private static final String ARTIFACTORY_BUILD_NUMBER = "ARTIFACTORY_BUILD_NUMBER";
+
+	private static final String ARTIFACTORY_BUILD_URL = "ARTIFACTORY_BUILD_URL";
+
+	private static final String ARTIFACTORY_BUILD_AGENT_NAME = "ARTIFACTORY_BUILD_AGENT_NAME";
+
+	private static final String ARTIFACTORY_BUILD_AGENT_VERSION = "ARTIFACTORY_BUILD_AGENT_VERSION";
+
+	private static final String ARTIFACTORY_USER_AGENT_NAME = "ARTIFACTORY_USER_AGENT_NAME";
+
+	private static final String ARTIFACTORY_USER_AGENT_VERSION = "ARTIFACTORY_USER_AGENT_VERSION";
+
+	private static final String ARTIFACTORY_VCS_REVISION = "ARTIFACTORY_VCS_REVISION";
+
 	private static final String DEFAULT_ARTIFACTORY_URL = "https://repo.spring.io";
+
+	private static final String DEFAULT_ARTIFACTORY_SNAPSHOT_REPOSITORY = "libs-snapshot-local";
+
+	private static final String DEFAULT_ARTIFACTORY_MILESTONE_REPOSITORY = "libs-milestone-local";
+
+	private static final String DEFAULT_ARTIFACTORY_RELEASE_REPOSITORY = "libs-release-local";
 
 	@Override
 	public void apply(Project project) {
@@ -36,19 +68,33 @@ public class SpringArtifactoryPlugin implements Plugin<Project> {
 		project.getPluginManager().apply(ArtifactoryPlugin.class);
 
 		// Gather Artifactory repository configuration
-		String artifactoryUrl = System.getenv().getOrDefault(ARTIFACTORY_URL_NAME, DEFAULT_ARTIFACTORY_URL);
+		Map<String, String> env = System.getenv();
+		String artifactoryUrl = env.getOrDefault(ARTIFACTORY_URL_NAME, DEFAULT_ARTIFACTORY_URL);
+		String snapshotRepository = env.getOrDefault(ARTIFACTORY_SNAPSHOT_REPOSITORY, DEFAULT_ARTIFACTORY_SNAPSHOT_REPOSITORY);
+		String milestoneRepository = env.getOrDefault(ARTIFACTORY_MILESTONE_REPOSITORY, DEFAULT_ARTIFACTORY_MILESTONE_REPOSITORY);
+		String releaseRepository = env.getOrDefault(ARTIFACTORY_RELEASE_REPOSITORY, DEFAULT_ARTIFACTORY_RELEASE_REPOSITORY);
+		String projectKey = env.get(ARTIFACTORY_PROJECT_KEY);
+		String buildName = env.get(ARTIFACTORY_BUILD_NAME);
+		String buildNumber = env.get(ARTIFACTORY_BUILD_NUMBER);
+		String buildUrl = env.get(ARTIFACTORY_BUILD_URL);
+		String buildAgentName = env.get(ARTIFACTORY_BUILD_AGENT_NAME);
+		String buildAgentVersion = env.get(ARTIFACTORY_BUILD_AGENT_VERSION);
+		String userAgentName = env.get(ARTIFACTORY_USER_AGENT_NAME);
+		String userAgentVersion = env.get(ARTIFACTORY_USER_AGENT_VERSION);
+		String vcsRevision = env.get(ARTIFACTORY_VCS_REVISION);
 		String artifactoryUsername = (String) project.findProperty("artifactoryUsername");
 		String artifactoryPassword = (String) project.findProperty("artifactoryPassword");
 
 		// @formatter:off
-		String repoKey = ProjectUtils.isSnapshot(project) ? "libs-snapshot-local"
-				: ProjectUtils.isMilestone(project) ? "libs-milestone-local"
-				: "libs-release-local";
+		String repoKey = ProjectUtils.isSnapshot(project) ? snapshotRepository
+				: ProjectUtils.isMilestone(project) ? milestoneRepository
+				: releaseRepository;
 		// @formatter:on
 
 		// Apply Artifactory repository configuration
 		ArtifactoryPluginConvention artifactoryExtension = project.getExtensions()
 			.getByType(ArtifactoryPluginConvention.class);
+
 		artifactoryExtension.publish((publish) -> {
 			publish.setContextUrl(artifactoryUrl);
 			publish.repository((repository) -> {
@@ -60,6 +106,36 @@ public class SpringArtifactoryPlugin implements Plugin<Project> {
 			});
 
 			publish.defaults((defaults) -> defaults.publications("ALL_PUBLICATIONS"));
+		});
+
+		artifactoryExtension.buildInfo((buildInfo) -> {
+			if (projectKey != null) {
+				buildInfo.setProject(projectKey);
+			}
+			if (buildName != null) {
+				buildInfo.setBuildName(buildName);
+			}
+			if (buildNumber != null) {
+				buildInfo.setBuildNumber(buildNumber);
+			}
+			if (buildUrl != null) {
+				buildInfo.setBuildUrl(buildUrl);
+			}
+			if (buildAgentName != null) {
+				buildInfo.setBuildAgentName(buildAgentName);
+			}
+			if (buildAgentVersion != null) {
+				buildInfo.setBuildAgentVersion(buildAgentVersion);
+			}
+			if (userAgentName != null) {
+				buildInfo.setAgentName(userAgentName);
+			}
+			if (userAgentVersion != null) {
+				buildInfo.setAgentVersion(userAgentVersion);
+			}
+			if (vcsRevision != null) {
+				buildInfo.setVcsRevision(vcsRevision);
+			}
 		});
 
 		// Publish snapshots, milestones, and release candidates to Artifactory
