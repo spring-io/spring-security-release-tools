@@ -1,0 +1,28 @@
+name: 'The name of your action here'
+description: 'Provide a description here'
+author: 'Your name or organization here'
+
+# Add your action's branding here. This will appear on the GitHub Marketplace.
+branding:
+  icon: 'heart'
+  color: 'red'
+
+# Define your inputs here.
+inputs:
+  gradle-branches:
+    description: 'The branches for gradle package-ecosystem'
+    required: false
+  github-actions-branches:
+    description: 'The branches for github-actions package-ecosystem'
+    required: false
+  template-file:
+    description: 'The file used as template'
+    required: false
+    default: '.github/dependabot.template.yml'
+  gh-token:
+    description: 'GitHub Token'
+    required: true
+
+runs:
+  using: node20
+  main: dist/index.js
