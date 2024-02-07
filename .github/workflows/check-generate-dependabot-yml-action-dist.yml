@@ -36,6 +36,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version-file: .github/actions/generate-dependabot-yml/.node-version
+          cache-dependency-path: .github/actions/generate-dependabot-yml/package-lock.json
           cache: npm
 
       - name: Install Dependencies
