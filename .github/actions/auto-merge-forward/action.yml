@@ -1,0 +1,29 @@
+name: 'Auto Merge Forward'
+description: 'Automatically merge commits from older branches into more recents ones'
+author: 'marcusdacoregio'
+
+# Define your inputs here.
+inputs:
+  from-author:
+    description: 'Only merge if all commits match the author'
+    required: true
+    default: 'dependabot[bot]'
+  use-author-email:
+    description: 'Whether to use author email to check if the author matches, defaults to author name'
+    required: false
+    default: false
+  branches:
+    description: 'The branches to merge, from oldest to newest, separated by comma'
+    required: true
+  merge-strategy:
+    description: 'The merge strategy to use'
+    required: true
+    default: 'ours'
+  dry-run:
+    description: 'Whether to push the changes'
+    required: false
+    default: false
+
+runs:
+  using: node20
+  main: dist/index.js
