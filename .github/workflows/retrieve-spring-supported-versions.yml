@@ -7,9 +7,17 @@ on:
         description: 'The name of the Spring Project, lowercase separated by dashes, e.g. spring-security'
         required: true
         type: string
+      repository_name:
+        description: 'The fully qualified name of the repository, e.g. spring-projects/spring-security'
+        required: true
+        type: string
       type:
         description: 'The type of the support, accepts commercial or oss'
         default: 'oss'
+        required: false
+        type: string
+      additional_curl_args:
+        description: 'Additional curl arguments to pass to the curl'
         required: false
         type: string
     outputs:
@@ -24,10 +32,25 @@ jobs:
       supported_versions: ${{ steps.get-supported-versions.outputs.supported_versions }}
     steps:
       - id: get-supported-versions
+        shell: bash
         run: |
-          if [ "${{ inputs.type }}" = "commercial" ]
-          then
-            echo "supported_versions=$(curl https://api.spring.io/projects/${{ inputs.project }}/generations | jq --arg current "$(date +%F)" -c '.["_embedded"]["generations"] | map(select((.commercialSupportEndDate + "T00:00:00") > $current and (.ossSupportEndDate + "T00:00:00") < $current))' | jq '.[].name' -r | grep -E '^[6-9]' | paste -sd ',' -)" >> $GITHUB_OUTPUT
+          if [ "${{ inputs.type }}" = "commercial" ]; then
+            response=$(curl https://api.spring.io/projects/${{ inputs.project }}/generations | jq --arg current "$(date +%F)" -c '.["_embedded"]["generations"] | map(select((.commercialSupportEndDate + "T00:00:00") > $current and (.ossSupportEndDate + "T00:00:00") < $current)) | sort_by(.initialReleaseDate) | .[].name' -r ${{ inputs.additional_curl_args }})
           else
-            echo "supported_versions=$(curl https://api.spring.io/projects/${{ inputs.project }}/generations | jq --arg current "$(date +%F)" -c '.["_embedded"]["generations"] | map(select((.ossSupportEndDate + "T00:00:00") > $current))' | jq '.[].name' -r | paste -sd ',' -)" >> $GITHUB_OUTPUT
+            response=$(curl -s https://api.spring.io/projects/${{ inputs.project }}/generations | jq --arg current "$(date +%F)" -c '.["_embedded"]["generations"] | map(select((.ossSupportEndDate + "T00:00:00") > $current)) | sort_by(.initialReleaseDate) | .[].name' -r ${{ inputs.additional_curl_args }})
           fi
+          
+          versions=""
+          
+          for version in $(echo "$response" | tr '\n' ' '); do
+            status_code=$(curl -s -o /dev/null -w "%{http_code}" "https://github.com/${{ inputs.repository_name }}/tree/$version")
+            if [ "$status_code" -eq 200 ]; then
+              if [ -z "$versions" ]; then
+                versions="$version"
+              else
+                versions="$versions,$version"
+              fi
+            fi
+          done
+          
+          echo "supported_versions=$versions" >> $GITHUB_OUTPUT
