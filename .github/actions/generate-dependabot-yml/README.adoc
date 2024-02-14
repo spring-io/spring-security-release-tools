@@ -1,0 +1,75 @@
+= Generate Dependabot YML
+
+This action facilitates the automatic update of a Dependabot configuration template file (dependabot.yml).
+This action reads a template file, resolves updates based on specified package ecosystems and target branches, and then writes the updated template to the `.github` directory within your repository.
+
+== Inputs
+
+The action accepts the following inputs:
+
+- *gradle-branches* (string): Comma-separated list of target branches for Gradle dependencies.
+- *github-actions-branches* (string): Comma-separated list of target branches for GitHub Actions dependencies.
+- *template-file* (string): Path to the Dependabot template file within the repository. Defaults to `.github/dependabot.template.yml`.
+
+== Output
+
+This action doesn't provide any output variables.
+
+== How it Works
+
+The action follows these steps:
+
+. Input Processing:
+.. Reads the specified template file.
+.. Parses the YAML content of the template file to extract update definitions.
+
+. Update Resolution:
+.. For each defined update in the template, it determines the package ecosystem.
+.. If the ecosystem is gradle, it resolves updates for each target branch specified in `gradle-branches`.
+.. If the ecosystem is github-actions, it resolves updates for each target branch specified in `github-actions-branches`.
+
+. Update Template:
+.. Updates the template file with the resolved updates.
+.. Dumps the updated template as YAML.
+.. Writes the updated Dependabot template to `.github/dependabot.yml`.
+
+. Error Handling:
+.. If any errors occur during the process, the action fails and sets an error message.
+
+== Example Usage
+
+[source,yaml]
+----
+name: Update dependabot.yml
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *' # Once per day at midnight UTC
+
+permissions:
+  contents: read
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: spring-io/spring-security-release-tools/.github/actions/generate-dependabot-yml@actions-v1
+        name: Update dependabot.yml
+        with:
+          gradle-branches: 5.8.x,6.1.x,6.2.x,main
+          github-actions-branches: 5.8.x,6.1.x,6.2.x,main,docs-build
+          gh-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Update dependabot.yml
+----
+
+== Development
+
+Run `npm run bundle` to prepare the `dist` folder before pushing the changes.

@@ -1,0 +1,52 @@
+= Auto Merge Forward
+
+This action is used to automatically merge forward commits between branches.
+
+Consider the following workflow configuration:
+
+[source,yaml]
+----
+name: Auto Merge Forward Dependabot Commits
+
+jobs:
+  auto-merge-forward-dependabot:
+    name: Auto Merge Forward Dependabot Commits
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v4
+      - name: Setup GitHub User
+        id: setup-gh-user
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+      - name: Run Auto Merge Forward
+        id: run-auto-merge-forward
+        uses: spring-io/spring-security-release-tools/.github/actions/auto-merge-forward@actions-v1
+        with:
+          branches: 5.8.x,6.1.x,6.2.x,main
+          from-author: dependabot[bot]
+----
+
+The action will do the following:
+
+1. Verify if there is any commit in the previous branch that is not present in the current branch by running `git log 5.8.x ^6.1.x --format=%an --no-merges`
+2. If a commit is found, the author of the commit is compared with the `from-author` input, if they don't match, skip to the next branches.
+   1. If there are multiple commits, all the authors must match the `from-author` input.
+3. A merge is done into the current branch by running `git merge 5.8.x -s ours` and the branch is selected for push.
+4. Push all the branches that had a merge by running `git push --atomic origin 6.1.x 6.2.x main`
+
+== Inputs
+
+- *from-author*: Only merge if all commits match the author. Defaults to `dependabot[bot]`
+- *use-author-email*: Whether to use author email to check if the author matches. Defaults to author name.
+- *branches* (required): The branches to merge, from oldest to newest, separated by a comma.
+- *merge-strategy*: The merge strategy to use. Defaults to `ours`.
+- *dry-run*: Whether to push the changes. Defaults to `false`.
+
+== Development
+
+Run `npm run bundle` to prepare the `dist` folder before pushing the changes.
