@@ -138,6 +138,7 @@ jobs:
     needs: [perform-release]
     env:
       BRANCH: ${{ github.ref_name }}
+      TOKEN: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
