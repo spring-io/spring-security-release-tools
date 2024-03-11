@@ -1,0 +1,28 @@
+name: 'Get Workflow Run ID'
+description: 'Get the ID of the latest successful workflow run for a given workflow.'
+author: 'sjohnr'
+
+inputs:
+  repository:
+    description: 'The repository owner and name (e.g. spring-projects/spring-security).'
+    required: true
+  workflow-id:
+    description: 'The ID of the workflow or the workflow file name (e.g. build-and-deploy.yml).'
+    required: true
+
+outputs:
+  run-id:
+    description: 'The ID of the latest successful workflow run.'
+    value: ${{ steps.get-workflow-run-id.outputs.run-id }}
+
+runs:
+  using: 'composite'
+  steps:
+    - id: get-workflow-run-id
+      name: Get Workflow Run ID
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        runId=$(gh run list -R ${{ inputs.repository }} -w ${{ inputs.workflow-id }} -s success --json databaseId -q '.[0].databaseId')
+        echo "run-id=$runId" >> $GITHUB_OUTPUT
