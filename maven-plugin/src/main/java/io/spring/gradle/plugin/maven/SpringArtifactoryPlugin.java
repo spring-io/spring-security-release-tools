@@ -70,9 +70,12 @@ public class SpringArtifactoryPlugin implements Plugin<Project> {
 		// Gather Artifactory repository configuration
 		Map<String, String> env = System.getenv();
 		String artifactoryUrl = env.getOrDefault(ARTIFACTORY_URL_NAME, DEFAULT_ARTIFACTORY_URL);
-		String snapshotRepository = env.getOrDefault(ARTIFACTORY_SNAPSHOT_REPOSITORY, DEFAULT_ARTIFACTORY_SNAPSHOT_REPOSITORY);
-		String milestoneRepository = env.getOrDefault(ARTIFACTORY_MILESTONE_REPOSITORY, DEFAULT_ARTIFACTORY_MILESTONE_REPOSITORY);
-		String releaseRepository = env.getOrDefault(ARTIFACTORY_RELEASE_REPOSITORY, DEFAULT_ARTIFACTORY_RELEASE_REPOSITORY);
+		String snapshotRepository = env.getOrDefault(ARTIFACTORY_SNAPSHOT_REPOSITORY,
+				DEFAULT_ARTIFACTORY_SNAPSHOT_REPOSITORY);
+		String milestoneRepository = env.getOrDefault(ARTIFACTORY_MILESTONE_REPOSITORY,
+				DEFAULT_ARTIFACTORY_MILESTONE_REPOSITORY);
+		String releaseRepository = env.getOrDefault(ARTIFACTORY_RELEASE_REPOSITORY,
+				DEFAULT_ARTIFACTORY_RELEASE_REPOSITORY);
 		String projectKey = env.get(ARTIFACTORY_PROJECT_KEY);
 		String buildName = env.get(ARTIFACTORY_BUILD_NAME);
 		String buildNumber = env.get(ARTIFACTORY_BUILD_NUMBER);

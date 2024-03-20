@@ -89,7 +89,8 @@ public abstract class CreateGitHubReleaseTask extends DefaultTask {
 
 		if (createRelease) {
 			var springReleases = new SpringReleases(gitHubAccessToken);
-			springReleases.createGitHubRelease(repository.owner(), repository.name(), versionPrefix + version, branch, body);
+			springReleases.createGitHubRelease(repository.owner(), repository.name(), versionPrefix + version, branch,
+					body);
 		}
 	}
 
