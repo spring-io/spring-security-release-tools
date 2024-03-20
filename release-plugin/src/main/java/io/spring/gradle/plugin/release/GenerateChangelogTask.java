@@ -50,11 +50,7 @@ public abstract class GenerateChangelogTask extends JavaExec {
 
 	@Input
 	@Optional
-	public abstract Property<String> getUsername();
-
-	@Input
-	@Optional
-	public abstract Property<String> getPassword();
+	public abstract Property<String> getGitHubAccessToken();
 
 	@OutputFile
 	public abstract RegularFileProperty getReleaseNotesFile();
@@ -62,8 +58,7 @@ public abstract class GenerateChangelogTask extends JavaExec {
 	@Override
 	public void exec() {
 		var version = getVersion().get();
-		var username = getUsername().getOrNull();
-		var password = getPassword().getOrNull();
+		var gitHubAccessToken = getGitHubAccessToken().getOrNull();
 		var outputFile = getReleaseNotesFile().getAsFile().get();
 		var parent = outputFile.getParentFile();
 		if (!parent.exists() && !parent.mkdirs()) {
@@ -71,8 +66,8 @@ public abstract class GenerateChangelogTask extends JavaExec {
 		}
 
 		args("--spring.config.location=scripts/release/release-notes-sections.yml");
-		if (username != null && password != null) {
-			args("--github.username=" + username, "--github.password=" + password);
+		if (gitHubAccessToken != null) {
+			args("--github.token=" + gitHubAccessToken);
 		}
 		args(version, outputFile.toString());
 		super.exec();
@@ -96,17 +91,8 @@ public abstract class GenerateChangelogTask extends JavaExec {
 			// @formatter:on
 
 			task.getVersion().set(versionProvider);
-			if (project.hasProperty(SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY)) {
-				// @formatter:off
-				var usernameProvider = ProjectUtils.getProperty(project, SpringReleasePlugin.GITHUB_USER_NAME_PROPERTY)
-						.orElse(ProjectUtils.findTaskByType(project, GetGitHubUserNameTask.class)
-								.getUsernameFile()
-								.map(RegularFileUtils::readString));
-				// @formatter:on
-				task.getUsername().set(usernameProvider);
-				task.getPassword()
-					.set(ProjectUtils.getProperty(project, SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY));
-			}
+			task.getGitHubAccessToken()
+				.set(ProjectUtils.getProperty(project, SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY));
 			task.getReleaseNotesFile().set(project.getLayout().getBuildDirectory().file(GENERATE_CHANGELOG_PATH));
 		});
 	}
