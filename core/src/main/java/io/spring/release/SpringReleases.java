@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import com.github.api.GitHubApi;
 import com.github.api.Milestone;
@@ -323,13 +324,19 @@ public class SpringReleases {
 
 		var baseVersion = "%s.%s.%s".formatted(major, minor, patch);
 		var repository = new Repository(owner, repo);
-		if (this.gitHubApi.getMilestone(repository, baseVersion) != null) {
+		// @formatter:off
+		var existingMilestones = this.gitHubApi.getMilestones(repository).stream()
+				.map(Milestone::title)
+				.collect(Collectors.toSet());
+		// @formatter:on
+		if (existingMilestones.contains(baseVersion)) {
 			return;
 		}
 
+		var startDate = LocalDate.now();
 		// @formatter:off
 		var releaseTrainSpec = SpringReleaseTrainSpec.builder()
-				.nextTrain()
+				.nextTrain(startDate)
 				.version(baseVersion)
 				.weekOfMonth(weekOfMonth)
 				.dayOfWeek(dayOfWeek)
@@ -343,22 +350,27 @@ public class SpringReleases {
 		// train which can be manually updated to match the desired schedule.
 		if (baseVersion.endsWith(".0")) {
 			// Create M1, M2, M3, RC1 and GA milestones for release train
-			releaseTrain.getTrainDates().forEach((milestoneTitle, dueOn) -> {
+			releaseTrain.getTrainDates().forEach((milestoneTitle, releaseDate) -> {
+				// Skip existing versions and create only the gaps
+				if (existingMilestones.contains(milestoneTitle)) {
+					return;
+				}
+
 				// Note: GitHub seems to store full date/time as UTC then displays
 				// as a date (no time) in your timezone, which means the date will
 				// not always be the same date as we intend.
 				// For example, midnight UTC is actually 8pm CDT (the previous day).
 				// We use 12pm/noon UTC to be as far from anybody's midnight as we can.
-				var milestone = new Milestone(milestoneTitle, null,
-						dueOn.atTime(LocalTime.NOON).toInstant(ZoneOffset.UTC));
+				var dueOn = releaseDate.atTime(LocalTime.NOON).toInstant(ZoneOffset.UTC);
+				var milestone = new Milestone(milestoneTitle, null, dueOn);
 				this.gitHubApi.createMilestone(repository, milestone);
 			});
 		}
 		else {
 			// Create GA milestone for patch release on the next even month
-			var startDate = LocalDate.now();
-			var dueOn = releaseTrain.getNextReleaseDate(startDate);
-			var milestone = new Milestone(baseVersion, null, dueOn.atTime(LocalTime.NOON).toInstant(ZoneOffset.UTC));
+			var nextReleaseDate = releaseTrain.getNextReleaseDate(startDate);
+			var dueOn = nextReleaseDate.atTime(LocalTime.NOON).toInstant(ZoneOffset.UTC);
+			var milestone = new Milestone(baseVersion, null, dueOn);
 			this.gitHubApi.createMilestone(repository, milestone);
 		}
 	}

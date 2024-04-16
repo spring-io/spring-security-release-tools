@@ -463,19 +463,14 @@ public class SpringReleasesTests {
 		var version = "6.2.0";
 		this.springReleases.scheduleReleaseIfNotExists(OWNER, REPO, version, WEEK_OF_MONTH, DAY_OF_WEEK);
 
-		var repositoryCaptor = forClass(Repository.class);
+		var repository = new Repository(OWNER, REPO);
 		var milestoneCaptor = forClass(Milestone.class);
-		verify(this.gitHubApi).getMilestone(repositoryCaptor.capture(), eq(version));
-		verify(this.gitHubApi, times(5)).createMilestone(repositoryCaptor.capture(), milestoneCaptor.capture());
+		verify(this.gitHubApi).getMilestones(repository);
+		verify(this.gitHubApi, times(5)).createMilestone(eq(repository), milestoneCaptor.capture());
 		verifyNoMoreInteractions(this.gitHubApi);
 
-		var repository = repositoryCaptor.getValue();
-		assertThat(repository.owner()).isEqualTo(OWNER);
-		assertThat(repository.name()).isEqualTo(REPO);
-
-		var milestones = milestoneCaptor.getAllValues();
-		assertThat(milestones.stream().map(Milestone::title).toList()).containsExactly("6.2.0-M1", "6.2.0-M2",
-				"6.2.0-M3", "6.2.0-RC1", "6.2.0");
+		var milestonesCreated = milestoneCaptor.getAllValues().stream().map(Milestone::title).toList();
+		assertThat(milestonesCreated).containsExactly("6.2.0-M1", "6.2.0-M2", "6.2.0-M3", "6.2.0-RC1", "6.2.0");
 	}
 
 	@Test
@@ -483,53 +478,61 @@ public class SpringReleasesTests {
 		var version = "6.2.0-SNAPSHOT";
 		this.springReleases.scheduleReleaseIfNotExists(OWNER, REPO, version, WEEK_OF_MONTH, DAY_OF_WEEK);
 
-		var repositoryCaptor = forClass(Repository.class);
+		var repository = new Repository(OWNER, REPO);
 		var milestoneCaptor = forClass(Milestone.class);
-		verify(this.gitHubApi).getMilestone(repositoryCaptor.capture(), eq("6.2.0"));
-		verify(this.gitHubApi, times(5)).createMilestone(repositoryCaptor.capture(), milestoneCaptor.capture());
+		verify(this.gitHubApi).getMilestones(repository);
+		verify(this.gitHubApi, times(5)).createMilestone(eq(repository), milestoneCaptor.capture());
 		verifyNoMoreInteractions(this.gitHubApi);
 
-		var repository = repositoryCaptor.getValue();
-		assertThat(repository.owner()).isEqualTo(OWNER);
-		assertThat(repository.name()).isEqualTo(REPO);
-
-		var milestones = milestoneCaptor.getAllValues();
-		assertThat(milestones.stream().map(Milestone::title).toList()).containsExactly("6.2.0-M1", "6.2.0-M2",
-				"6.2.0-M3", "6.2.0-RC1", "6.2.0");
+		var milestonesCreated = milestoneCaptor.getAllValues().stream().map(Milestone::title).toList();
+		assertThat(milestonesCreated).containsExactly("6.2.0-M1", "6.2.0-M2", "6.2.0-M3", "6.2.0-RC1", "6.2.0");
 	}
 
 	@Test
 	public void scheduleReleaseIfNotExistsWhenMinorVersionExistsThenNotCreated() {
 		var version = "6.2.0";
 		var milestone = new Milestone(version, 1L, null);
-		when(this.gitHubApi.getMilestone(any(Repository.class), anyString())).thenReturn(milestone);
-
+		var repository = new Repository(OWNER, REPO);
+		when(this.gitHubApi.getMilestones(repository)).thenReturn(List.of(milestone));
 		this.springReleases.scheduleReleaseIfNotExists(OWNER, REPO, version, WEEK_OF_MONTH, DAY_OF_WEEK);
 
-		var repositoryCaptor = forClass(Repository.class);
-		verify(this.gitHubApi).getMilestone(repositoryCaptor.capture(), eq(version));
+		verify(this.gitHubApi).getMilestones(repository);
+		verifyNoMoreInteractions(this.gitHubApi);
+	}
+
+	@Test
+	public void scheduleReleaseIfNotExistsWhenMinorVersionAndGaVersionMissingFromReleaseTrainThenCreated() {
+		var version = "6.2.0";
+		var repository = new Repository(OWNER, REPO);
+		// @formatter:off
+		var existingMilestones = List.of(
+				new Milestone("6.2.0-M1", null, null),
+				new Milestone("6.2.0-M2", null, null),
+				new Milestone("6.2.0-M3", null, null),
+				new Milestone("6.2.0-RC1", null, null));
+		// @formatter:on
+		when(this.gitHubApi.getMilestones(repository)).thenReturn(existingMilestones);
+		this.springReleases.scheduleReleaseIfNotExists(OWNER, REPO, version, WEEK_OF_MONTH, DAY_OF_WEEK);
+
+		var milestoneCaptor = forClass(Milestone.class);
+		verify(this.gitHubApi).getMilestones(repository);
+		verify(this.gitHubApi).createMilestone(eq(repository), milestoneCaptor.capture());
 		verifyNoMoreInteractions(this.gitHubApi);
 
-		var repository = repositoryCaptor.getValue();
-		assertThat(repository.owner()).isEqualTo(OWNER);
-		assertThat(repository.name()).isEqualTo(REPO);
+		var milestone = milestoneCaptor.getValue();
+		assertThat(milestone.title()).isEqualTo(version);
 	}
 
 	@Test
 	public void scheduleReleaseIfNotExistsWhenMinorVersionIsSnapshotAndExistsThenNotCreated() {
 		var version = "6.2.0-SNAPSHOT";
-		var baseVersion = "6.2.0";
-		var milestone = new Milestone(baseVersion, 1L, null);
-		when(this.gitHubApi.getMilestone(any(Repository.class), anyString())).thenReturn(milestone);
+		var milestone = new Milestone("6.2.0", 1L, null);
+		var repository = new Repository(OWNER, REPO);
+		when(this.gitHubApi.getMilestones(repository)).thenReturn(List.of(milestone));
 		this.springReleases.scheduleReleaseIfNotExists(OWNER, REPO, version, WEEK_OF_MONTH, DAY_OF_WEEK);
 
-		var repositoryCaptor = forClass(Repository.class);
-		verify(this.gitHubApi).getMilestone(repositoryCaptor.capture(), eq(baseVersion));
+		verify(this.gitHubApi).getMilestones(repository);
 		verifyNoMoreInteractions(this.gitHubApi);
-
-		var repository = repositoryCaptor.getValue();
-		assertThat(repository.owner()).isEqualTo(OWNER);
-		assertThat(repository.name()).isEqualTo(REPO);
 	}
 
 	@Test
@@ -537,15 +540,11 @@ public class SpringReleasesTests {
 		var version = "6.2.1";
 		this.springReleases.scheduleReleaseIfNotExists(OWNER, REPO, version, WEEK_OF_MONTH, DAY_OF_WEEK);
 
-		var repositoryCaptor = forClass(Repository.class);
+		var repository = new Repository(OWNER, REPO);
 		var milestoneCaptor = forClass(Milestone.class);
-		verify(this.gitHubApi).getMilestone(repositoryCaptor.capture(), eq(version));
-		verify(this.gitHubApi).createMilestone(repositoryCaptor.capture(), milestoneCaptor.capture());
+		verify(this.gitHubApi).getMilestones(repository);
+		verify(this.gitHubApi).createMilestone(eq(repository), milestoneCaptor.capture());
 		verifyNoMoreInteractions(this.gitHubApi);
-
-		var repository = repositoryCaptor.getValue();
-		assertThat(repository.owner()).isEqualTo(OWNER);
-		assertThat(repository.name()).isEqualTo(REPO);
 
 		var milestone = milestoneCaptor.getValue();
 		assertThat(milestone.title()).isEqualTo("6.2.1");
@@ -556,15 +555,11 @@ public class SpringReleasesTests {
 		var version = "6.2.1-SNAPSHOT";
 		this.springReleases.scheduleReleaseIfNotExists(OWNER, REPO, version, WEEK_OF_MONTH, DAY_OF_WEEK);
 
-		var repositoryCaptor = forClass(Repository.class);
+		var repository = new Repository(OWNER, REPO);
 		var milestoneCaptor = forClass(Milestone.class);
-		verify(this.gitHubApi).getMilestone(repositoryCaptor.capture(), eq("6.2.1"));
-		verify(this.gitHubApi).createMilestone(repositoryCaptor.capture(), milestoneCaptor.capture());
+		verify(this.gitHubApi).getMilestones(repository);
+		verify(this.gitHubApi).createMilestone(eq(repository), milestoneCaptor.capture());
 		verifyNoMoreInteractions(this.gitHubApi);
-
-		var repository = repositoryCaptor.getValue();
-		assertThat(repository.owner()).isEqualTo(OWNER);
-		assertThat(repository.name()).isEqualTo(REPO);
 
 		var milestone = milestoneCaptor.getValue();
 		assertThat(milestone.title()).isEqualTo("6.2.1");
@@ -574,34 +569,24 @@ public class SpringReleasesTests {
 	public void scheduleReleaseIfNotExistsWhenPatchVersionExistsThenNotCreated() {
 		var version = "6.2.1";
 		var milestone = new Milestone(version, 1L, null);
-		when(this.gitHubApi.getMilestone(any(Repository.class), anyString())).thenReturn(milestone);
-
+		var repository = new Repository(OWNER, REPO);
+		when(this.gitHubApi.getMilestones(repository)).thenReturn(List.of(milestone));
 		this.springReleases.scheduleReleaseIfNotExists(OWNER, REPO, version, WEEK_OF_MONTH, DAY_OF_WEEK);
 
-		var repositoryCaptor = forClass(Repository.class);
-		verify(this.gitHubApi).getMilestone(repositoryCaptor.capture(), eq(version));
+		verify(this.gitHubApi).getMilestones(repository);
 		verifyNoMoreInteractions(this.gitHubApi);
-
-		var repository = repositoryCaptor.getValue();
-		assertThat(repository.owner()).isEqualTo(OWNER);
-		assertThat(repository.name()).isEqualTo(REPO);
 	}
 
 	@Test
 	public void scheduleReleaseIfNotExistsWhenPatchVersionIsSnapshotAndExistsThenNotCreated() {
 		var version = "6.2.1-SNAPSHOT";
-		var baseVersion = "6.2.1";
-		var milestone = new Milestone(baseVersion, 1L, null);
-		when(this.gitHubApi.getMilestone(any(Repository.class), anyString())).thenReturn(milestone);
+		var milestone = new Milestone("6.2.1", 1L, null);
+		var repository = new Repository(OWNER, REPO);
+		when(this.gitHubApi.getMilestones(repository)).thenReturn(List.of(milestone));
 		this.springReleases.scheduleReleaseIfNotExists(OWNER, REPO, version, WEEK_OF_MONTH, DAY_OF_WEEK);
 
-		var repositoryCaptor = forClass(Repository.class);
-		verify(this.gitHubApi).getMilestone(repositoryCaptor.capture(), eq(baseVersion));
+		verify(this.gitHubApi).getMilestones(repository);
 		verifyNoMoreInteractions(this.gitHubApi);
-
-		var repository = repositoryCaptor.getValue();
-		assertThat(repository.owner()).isEqualTo(OWNER);
-		assertThat(repository.name()).isEqualTo(REPO);
 	}
 
 	// gh-31
@@ -610,14 +595,11 @@ public class SpringReleasesTests {
 		var version = "6.1.9";
 		this.springReleases.scheduleReleaseIfNotExists(OWNER, REPO, version, WEEK_OF_MONTH, DAY_OF_WEEK);
 
-		var repositoryCaptor = forClass(Repository.class);
+		var repository = new Repository(OWNER, REPO);
 		var milestoneCaptor = forClass(Milestone.class);
-		verify(this.gitHubApi).getMilestone(repositoryCaptor.capture(), eq(version));
-
-		var repository = repositoryCaptor.getValue();
-		assertThat(repository.owner()).isEqualTo(OWNER);
-		assertThat(repository.name()).isEqualTo(REPO);
+		verify(this.gitHubApi).getMilestones(repository);
 		verify(this.gitHubApi).createMilestone(eq(repository), milestoneCaptor.capture());
+		verifyNoMoreInteractions(this.gitHubApi);
 
 		var releaseTrainSpec = SpringReleaseTrainSpec.builder()
 			.nextTrain()
