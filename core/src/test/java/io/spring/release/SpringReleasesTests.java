@@ -18,6 +18,7 @@ package io.spring.release;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -54,6 +55,10 @@ public class SpringReleasesTests {
 	private static final String OWNER = "spring-projects";
 
 	private static final String REPO = "spring-security";
+
+	private static final int WEEK_OF_MONTH = 3;
+
+	private static final int DAY_OF_WEEK = 1;
 
 	// @formatter:off
 	private static final List<Milestone> MILESTONES = List.of(new Milestone("6.0.4", 6L, toInstant("2023-06-19")),
@@ -556,6 +561,35 @@ public class SpringReleasesTests {
 		var repository = repositoryCaptor.getValue();
 		assertThat(repository.owner()).isEqualTo(OWNER);
 		assertThat(repository.name()).isEqualTo(REPO);
+	}
+
+	// gh-31
+	@Test
+	public void scheduleReleaseIfNotExistsWhenCreatedThenDueOnCorrectDate() {
+		var version = "6.1.9";
+		this.springReleases.scheduleReleaseIfNotExists(OWNER, REPO, version, WEEK_OF_MONTH, DAY_OF_WEEK);
+
+		var repositoryCaptor = forClass(Repository.class);
+		var milestoneCaptor = forClass(Milestone.class);
+		verify(this.gitHubApi).getMilestone(repositoryCaptor.capture(), eq(version));
+
+		var repository = repositoryCaptor.getValue();
+		assertThat(repository.owner()).isEqualTo(OWNER);
+		assertThat(repository.name()).isEqualTo(REPO);
+		verify(this.gitHubApi).createMilestone(eq(repository), milestoneCaptor.capture());
+
+		var releaseTrainSpec = SpringReleaseTrainSpec.builder()
+			.nextTrain()
+			.version(version)
+			.weekOfMonth(WEEK_OF_MONTH)
+			.dayOfWeek(DAY_OF_WEEK)
+			.build();
+		var releaseTrain = new SpringReleaseTrain(releaseTrainSpec);
+		var nextReleaseDate = releaseTrain.getNextReleaseDate(LocalDate.now());
+		var dueOn = nextReleaseDate.atTime(LocalTime.NOON).toInstant(ZoneOffset.UTC);
+		var milestone = milestoneCaptor.getValue();
+		assertThat(milestone.title()).isEqualTo(version);
+		assertThat(milestone.dueOn()).isEqualTo(dueOn);
 	}
 
 	private static Instant toInstant(String date) {

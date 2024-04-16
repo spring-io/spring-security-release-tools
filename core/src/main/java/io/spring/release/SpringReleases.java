@@ -331,8 +331,8 @@ public class SpringReleases {
 		var releaseTrainSpec = SpringReleaseTrainSpec.builder()
 				.nextTrain()
 				.version(baseVersion)
-				.weekOfMonth(dayOfWeek)
-				.dayOfWeek(weekOfMonth)
+				.weekOfMonth(weekOfMonth)
+				.dayOfWeek(dayOfWeek)
 				.build();
 		// @formatter:on
 
