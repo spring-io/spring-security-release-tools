@@ -61,7 +61,8 @@ public class SpringReleasesTests {
 	private static final int DAY_OF_WEEK = 1;
 
 	// @formatter:off
-	private static final List<Milestone> MILESTONES = List.of(new Milestone("6.0.4", 6L, toInstant("2023-06-19")),
+	private static final List<Milestone> MILESTONES = List.of(
+			new Milestone("6.0.4", 6L, toInstant("2023-06-19")),
 			new Milestone("6.1.x", 100L, null),
 			new Milestone("6.1.0-RC1", 4L, toInstant("2023-04-17")),
 			new Milestone("6.1.0-M3", 3L, toInstant("2023-03-20")),
@@ -217,7 +218,7 @@ public class SpringReleasesTests {
 	@Test
 	public void isDueTodayWhenPastDueThenTrue() {
 		var version = "6.1.0";
-		var milestone = new Milestone(version, 1L, Instant.now().minus(1, ChronoUnit.DAYS));
+		var milestone = new Milestone(version, 1L, Instant.now().minus(DAY_OF_WEEK, ChronoUnit.DAYS));
 		when(this.gitHubApi.getMilestone(any(Repository.class), anyString())).thenReturn(milestone);
 
 		var isDueToday = this.springReleases.isDueToday(OWNER, REPO, version);
@@ -235,7 +236,7 @@ public class SpringReleasesTests {
 	@Test
 	public void isDueTodayWhenDueTomorrowThenFalse() {
 		var version = "6.1.0";
-		var milestone = new Milestone(version, 1L, Instant.now().plus(1, ChronoUnit.DAYS));
+		var milestone = new Milestone(version, 1L, Instant.now().plus(DAY_OF_WEEK, ChronoUnit.DAYS));
 		when(this.gitHubApi.getMilestone(any(Repository.class), anyString())).thenReturn(milestone);
 
 		var isDueToday = this.springReleases.isDueToday(OWNER, REPO, version);
@@ -311,7 +312,7 @@ public class SpringReleasesTests {
 	public void hasOssSupportWhenInsideOssSupportWindowThenTrue() {
 		var version = "6.1.0";
 		var today = LocalDate.now();
-		var generation = new Generation(version, today.minusYears(1), today, today.plusYears(1));
+		var generation = new Generation(version, today.minusYears(DAY_OF_WEEK), today, today.plusYears(DAY_OF_WEEK));
 		when(this.saganApi.getGeneration(anyString(), anyString())).thenReturn(generation);
 
 		var hasOssSupport = this.springReleases.hasOssSupport(REPO, version);
@@ -325,7 +326,8 @@ public class SpringReleasesTests {
 	public void hasOssSupportWhenBeforeOssSupportWindowThenFalse() {
 		var version = "6.1.0";
 		var today = LocalDate.now();
-		var generation = new Generation(version, today.plusDays(1), today.plusYears(1), today.plusYears(2));
+		var generation = new Generation(version, today.plusDays(DAY_OF_WEEK), today.plusYears(DAY_OF_WEEK),
+				today.plusYears(2));
 		when(this.saganApi.getGeneration(anyString(), anyString())).thenReturn(generation);
 
 		var hasOssSupport = this.springReleases.hasOssSupport(REPO, version);
@@ -339,7 +341,8 @@ public class SpringReleasesTests {
 	public void hasOssSupportWhenAfterOssSupportWindowThenFalse() {
 		var version = "6.1.0";
 		var today = LocalDate.now();
-		var generation = new Generation(version, today.minusYears(1), today.minusDays(1), today.plusYears(1));
+		var generation = new Generation(version, today.minusYears(DAY_OF_WEEK), today.minusDays(DAY_OF_WEEK),
+				today.plusYears(DAY_OF_WEEK));
 		when(this.saganApi.getGeneration(anyString(), anyString())).thenReturn(generation);
 
 		var hasOssSupport = this.springReleases.hasOssSupport(REPO, version);
@@ -353,7 +356,8 @@ public class SpringReleasesTests {
 	public void hasCommercialSupportWhenInsideCommercialSupportWindowThenTrue() {
 		var version = "6.1.0";
 		var today = LocalDate.now();
-		var generation = new Generation(version, today.minusYears(1), today.minusDays(1), today.plusYears(1));
+		var generation = new Generation(version, today.minusYears(DAY_OF_WEEK), today.minusDays(DAY_OF_WEEK),
+				today.plusYears(DAY_OF_WEEK));
 		when(this.saganApi.getGeneration(anyString(), anyString())).thenReturn(generation);
 
 		var hasCommercialSupport = this.springReleases.hasCommercialSupport(REPO, version);
@@ -367,7 +371,8 @@ public class SpringReleasesTests {
 	public void hasCommercialSupportWhenBeforeCommercialSupportWindowThenFalse() {
 		var version = "6.1.0";
 		var today = LocalDate.now();
-		var generation = new Generation(version, today.minusYears(1), today.plusDays(1), today.plusYears(1));
+		var generation = new Generation(version, today.minusYears(DAY_OF_WEEK), today.plusDays(DAY_OF_WEEK),
+				today.plusYears(DAY_OF_WEEK));
 		when(this.saganApi.getGeneration(anyString(), anyString())).thenReturn(generation);
 
 		var hasCommercialSupport = this.springReleases.hasCommercialSupport(REPO, version);
@@ -381,7 +386,8 @@ public class SpringReleasesTests {
 	public void hasCommercialSupportWhenAfterCommercialSupportWindowThenFalse() {
 		var version = "6.1.0";
 		var today = LocalDate.now();
-		var generation = new Generation(version, today.minusYears(2), today.minusYears(1), today.minusDays(1));
+		var generation = new Generation(version, today.minusYears(2), today.minusYears(DAY_OF_WEEK),
+				today.minusDays(DAY_OF_WEEK));
 		when(this.saganApi.getGeneration(anyString(), anyString())).thenReturn(generation);
 
 		var hasCommercialSupport = this.springReleases.hasCommercialSupport(REPO, version);
@@ -455,7 +461,7 @@ public class SpringReleasesTests {
 	@Test
 	public void scheduleReleaseIfNotExistsWhenMinorVersionThenReleaseTrainCreated() {
 		var version = "6.2.0";
-		this.springReleases.scheduleReleaseIfNotExists(OWNER, REPO, version, 3, 1);
+		this.springReleases.scheduleReleaseIfNotExists(OWNER, REPO, version, WEEK_OF_MONTH, DAY_OF_WEEK);
 
 		var repositoryCaptor = forClass(Repository.class);
 		var milestoneCaptor = forClass(Milestone.class);
@@ -473,9 +479,9 @@ public class SpringReleasesTests {
 	}
 
 	@Test
-	public void scheduleReleaseIfNotExistsWhenMinorVersionAndSnapshotVersionThenReleaseTrainCreated() {
+	public void scheduleReleaseIfNotExistsWhenMinorVersionIsSnapshotThenReleaseTrainCreated() {
 		var version = "6.2.0-SNAPSHOT";
-		this.springReleases.scheduleReleaseIfNotExists(OWNER, REPO, version, 3, 1);
+		this.springReleases.scheduleReleaseIfNotExists(OWNER, REPO, version, WEEK_OF_MONTH, DAY_OF_WEEK);
 
 		var repositoryCaptor = forClass(Repository.class);
 		var milestoneCaptor = forClass(Milestone.class);
@@ -493,9 +499,43 @@ public class SpringReleasesTests {
 	}
 
 	@Test
+	public void scheduleReleaseIfNotExistsWhenMinorVersionExistsThenNotCreated() {
+		var version = "6.2.0";
+		var milestone = new Milestone(version, 1L, null);
+		when(this.gitHubApi.getMilestone(any(Repository.class), anyString())).thenReturn(milestone);
+
+		this.springReleases.scheduleReleaseIfNotExists(OWNER, REPO, version, WEEK_OF_MONTH, DAY_OF_WEEK);
+
+		var repositoryCaptor = forClass(Repository.class);
+		verify(this.gitHubApi).getMilestone(repositoryCaptor.capture(), eq(version));
+		verifyNoMoreInteractions(this.gitHubApi);
+
+		var repository = repositoryCaptor.getValue();
+		assertThat(repository.owner()).isEqualTo(OWNER);
+		assertThat(repository.name()).isEqualTo(REPO);
+	}
+
+	@Test
+	public void scheduleReleaseIfNotExistsWhenMinorVersionIsSnapshotAndExistsThenNotCreated() {
+		var version = "6.2.0-SNAPSHOT";
+		var baseVersion = "6.2.0";
+		var milestone = new Milestone(baseVersion, 1L, null);
+		when(this.gitHubApi.getMilestone(any(Repository.class), anyString())).thenReturn(milestone);
+		this.springReleases.scheduleReleaseIfNotExists(OWNER, REPO, version, WEEK_OF_MONTH, DAY_OF_WEEK);
+
+		var repositoryCaptor = forClass(Repository.class);
+		verify(this.gitHubApi).getMilestone(repositoryCaptor.capture(), eq(baseVersion));
+		verifyNoMoreInteractions(this.gitHubApi);
+
+		var repository = repositoryCaptor.getValue();
+		assertThat(repository.owner()).isEqualTo(OWNER);
+		assertThat(repository.name()).isEqualTo(REPO);
+	}
+
+	@Test
 	public void scheduleReleaseIfNotExistsWhenPatchVersionThenPatchReleaseCreated() {
 		var version = "6.2.1";
-		this.springReleases.scheduleReleaseIfNotExists(OWNER, REPO, version, 3, 1);
+		this.springReleases.scheduleReleaseIfNotExists(OWNER, REPO, version, WEEK_OF_MONTH, DAY_OF_WEEK);
 
 		var repositoryCaptor = forClass(Repository.class);
 		var milestoneCaptor = forClass(Milestone.class);
@@ -512,26 +552,9 @@ public class SpringReleasesTests {
 	}
 
 	@Test
-	public void scheduleReleaseIfNotExistsWhenMinorVersionExistsThenNotCreated() {
-		var version = "6.2.0";
-		var milestone = new Milestone(version, 1L, null);
-		when(this.gitHubApi.getMilestone(any(Repository.class), anyString())).thenReturn(milestone);
-
-		this.springReleases.scheduleReleaseIfNotExists(OWNER, REPO, version, 3, 1);
-
-		var repositoryCaptor = forClass(Repository.class);
-		verify(this.gitHubApi).getMilestone(repositoryCaptor.capture(), eq(version));
-		verifyNoMoreInteractions(this.gitHubApi);
-
-		var repository = repositoryCaptor.getValue();
-		assertThat(repository.owner()).isEqualTo(OWNER);
-		assertThat(repository.name()).isEqualTo(REPO);
-	}
-
-	@Test
-	public void scheduleReleaseIfNotExistsWhenSnapshotVersionThenCreated() {
+	public void scheduleReleaseIfNotExistsWhenPatchVersionIsSnapshotThenPatchReleaseCreated() {
 		var version = "6.2.1-SNAPSHOT";
-		this.springReleases.scheduleReleaseIfNotExists(OWNER, REPO, version, 3, 1);
+		this.springReleases.scheduleReleaseIfNotExists(OWNER, REPO, version, WEEK_OF_MONTH, DAY_OF_WEEK);
 
 		var repositoryCaptor = forClass(Repository.class);
 		var milestoneCaptor = forClass(Milestone.class);
@@ -548,14 +571,32 @@ public class SpringReleasesTests {
 	}
 
 	@Test
-	public void scheduleReleaseIfNotExistsWhenSnapshotVersionExistsThenNotCreated() {
-		var version = "6.2.0-SNAPSHOT";
+	public void scheduleReleaseIfNotExistsWhenPatchVersionExistsThenNotCreated() {
+		var version = "6.2.1";
 		var milestone = new Milestone(version, 1L, null);
 		when(this.gitHubApi.getMilestone(any(Repository.class), anyString())).thenReturn(milestone);
-		this.springReleases.scheduleReleaseIfNotExists(OWNER, REPO, version, 3, 1);
+
+		this.springReleases.scheduleReleaseIfNotExists(OWNER, REPO, version, WEEK_OF_MONTH, DAY_OF_WEEK);
 
 		var repositoryCaptor = forClass(Repository.class);
-		verify(this.gitHubApi).getMilestone(repositoryCaptor.capture(), eq("6.2.0"));
+		verify(this.gitHubApi).getMilestone(repositoryCaptor.capture(), eq(version));
+		verifyNoMoreInteractions(this.gitHubApi);
+
+		var repository = repositoryCaptor.getValue();
+		assertThat(repository.owner()).isEqualTo(OWNER);
+		assertThat(repository.name()).isEqualTo(REPO);
+	}
+
+	@Test
+	public void scheduleReleaseIfNotExistsWhenPatchVersionIsSnapshotAndExistsThenNotCreated() {
+		var version = "6.2.1-SNAPSHOT";
+		var baseVersion = "6.2.1";
+		var milestone = new Milestone(baseVersion, 1L, null);
+		when(this.gitHubApi.getMilestone(any(Repository.class), anyString())).thenReturn(milestone);
+		this.springReleases.scheduleReleaseIfNotExists(OWNER, REPO, version, WEEK_OF_MONTH, DAY_OF_WEEK);
+
+		var repositoryCaptor = forClass(Repository.class);
+		verify(this.gitHubApi).getMilestone(repositoryCaptor.capture(), eq(baseVersion));
 		verifyNoMoreInteractions(this.gitHubApi);
 
 		var repository = repositoryCaptor.getValue();
