@@ -25,6 +25,7 @@ import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.TaskAction;
 
 /**
@@ -50,7 +51,12 @@ public abstract class CreateSaganReleaseTask extends DefaultTask {
 	public abstract Property<String> getApiDocUrl();
 
 	@Input
+	@Optional
+	@Deprecated
 	public abstract Property<Boolean> getReplaceSnapshotVersionInReferenceDocUrl();
+
+	@Input
+	public abstract Property<Boolean> getReplaceVersionInReferenceDocUrl();
 
 	@TaskAction
 	public void createSaganRelease() {
@@ -60,13 +66,25 @@ public abstract class CreateSaganReleaseTask extends DefaultTask {
 		var referenceDocUrl = getReferenceDocUrl().get();
 		var apiDocUrl = getApiDocUrl().get();
 
-		// replace "-SNAPSHOT" in version numbers in referenceDocUrl for Antora
-		var replaceSnapshotVersion = getReplaceSnapshotVersionInReferenceDocUrl().get();
-		if (replaceSnapshotVersion && version.endsWith("-SNAPSHOT")) {
+		// replace version numbers in referenceDocUrl for Antora
+		var replaceVersion = getReplaceVersionInReferenceDocUrl().get();
+		var replaceSnapshotVersion = getReplaceSnapshotVersionInReferenceDocUrl().getOrNull();
+		if (replaceSnapshotVersion != null) {
+			replaceVersion = replaceSnapshotVersion;
+		}
+
+		if (replaceVersion) {
 			var versionMatcher = SpringReleases.versionMatcher(version);
 			var majorVersion = versionMatcher.group(1);
 			var minorVersion = versionMatcher.group(2);
-			var majorMinorVersion = "%s.%s-SNAPSHOT".formatted(majorVersion, minorVersion);
+			String majorMinorVersion;
+			if (version.endsWith("-SNAPSHOT")) {
+				majorMinorVersion = "%s.%s-SNAPSHOT".formatted(majorVersion, minorVersion);
+			}
+			else {
+				majorMinorVersion = "%s.%s".formatted(majorVersion, minorVersion);
+			}
+
 			referenceDocUrl = referenceDocUrl.replace("{version}", majorMinorVersion);
 		}
 
@@ -98,6 +116,7 @@ public abstract class CreateSaganReleaseTask extends DefaultTask {
 			task.getApiDocUrl().set(springRelease.getApiDocUrl());
 			task.getReplaceSnapshotVersionInReferenceDocUrl()
 				.set(springRelease.getReplaceSnapshotVersionInReferenceDocUrl());
+			task.getReplaceVersionInReferenceDocUrl().set(springRelease.getReplaceVersionInReferenceDocUrl());
 		});
 	}
 

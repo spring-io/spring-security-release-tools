@@ -59,7 +59,12 @@ public abstract class CreateReleaseTask extends DefaultTask {
 	public abstract Property<Boolean> getCreateRelease();
 
 	@Input
+	@Optional
+	@Deprecated
 	public abstract Property<Boolean> getReplaceSnapshotVersionInReferenceDocUrl();
+
+	@Input
+	public abstract Property<Boolean> getReplaceVersionInReferenceDocUrl();
 
 	@Input
 	@Optional
@@ -79,19 +84,32 @@ public abstract class CreateReleaseTask extends DefaultTask {
 			throw new MissingPropertyException("Please provide an access token with -PgitHubAccessToken=...");
 		}
 
-		// replace "-SNAPSHOT" in version numbers in referenceDocUrl for Antora
-		var replaceSnapshotVersion = getReplaceSnapshotVersionInReferenceDocUrl().get();
-		if (replaceSnapshotVersion && version.endsWith("-SNAPSHOT")) {
+		// replace version numbers in referenceDocUrl for Antora
+		var replaceVersion = getReplaceVersionInReferenceDocUrl().get();
+		var replaceSnapshotVersion = getReplaceSnapshotVersionInReferenceDocUrl().getOrNull();
+		if (replaceSnapshotVersion != null) {
+			replaceVersion = replaceSnapshotVersion;
+		}
+
+		if (replaceVersion) {
 			var versionMatcher = SpringReleases.versionMatcher(version);
 			var majorVersion = versionMatcher.group(1);
 			var minorVersion = versionMatcher.group(2);
-			var majorMinorVersion = "%s.%s-SNAPSHOT".formatted(majorVersion, minorVersion);
+			String majorMinorVersion;
+			if (version.endsWith("-SNAPSHOT")) {
+				majorMinorVersion = "%s.%s-SNAPSHOT".formatted(majorVersion, minorVersion);
+			}
+			else {
+				majorMinorVersion = "%s.%s".formatted(majorVersion, minorVersion);
+			}
+
 			referenceDocUrl = referenceDocUrl.replace("{version}", majorMinorVersion);
 		}
 
 		System.out.printf("%sCreating release for %s/%s@%s%n", createRelease ? "" : "[DRY RUN] ", repository.owner(),
 				repository.name(), version);
 		System.out.printf("%nRelease Notes:%n%n----%n%s%n----%n%n", body.trim());
+		System.out.printf("%nreferenceDocUrl=%s%napiDocUrl=%s%n", referenceDocUrl, apiDocUrl);
 
 		if (createRelease) {
 			var springReleases = new SpringReleases(gitHubAccessToken);
@@ -131,6 +149,7 @@ public abstract class CreateReleaseTask extends DefaultTask {
 			task.getApiDocUrl().set(springRelease.getApiDocUrl());
 			task.getReplaceSnapshotVersionInReferenceDocUrl()
 				.set(springRelease.getReplaceSnapshotVersionInReferenceDocUrl());
+			task.getReplaceVersionInReferenceDocUrl().set(springRelease.getReplaceVersionInReferenceDocUrl());
 			task.getCreateRelease().set(createReleaseProvider.orElse(false));
 			task.getGitHubAccessToken()
 				.set(ProjectUtils.getProperty(project, SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY));

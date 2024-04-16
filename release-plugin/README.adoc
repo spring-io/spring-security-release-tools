@@ -23,7 +23,7 @@ springRelease {
     dayOfWeek = 4
     referenceDocUrl = "https://docs.spring.io/spring-framework/reference/{version}/index.html"
     apiDocUrl = "https://docs.spring.io/spring-framework/docs/{version}/api/"
-    replaceSnapshotVersionInReferenceDocUrl = true
+    replaceVersionInReferenceDocUrl = true
     releaseVersionPrefix = "v"
 }
 ----
@@ -36,7 +36,7 @@ springRelease {
 * `dayOfWeek`: The day of the week when releases for this project are scheduled; valid values are 1 - 5 where 1 is Monday and 5 is Friday (required)
 * `referenceDocUrl`: The template URL for a version of the reference documentation; can contain the variable `{version}` which is automatically substituted based on the current version (required)
 * `apiDocUrl`: The template URL for a version of the API documentation; can contain the variable `{version}` which is automatically substituted based on the current version (required)
-* `replaceSnapshotVersionInReferenceDocUrl`: Flag controlling whether `{version}` should be replaced (`true`) or left as-is (`false`) in the `referenceDocUrl`; Useful for working with Antora (optional, defaults to `false`)
+* `replaceVersionInReferenceDocUrl`: Flag controlling whether `{version}` should be replaced (`true`) or left as-is (`false`) in the `referenceDocUrl`; Useful for working with Antora (optional, defaults to `false`)
 * `releaseVersionPrefix`: The prefix used to tag the release version; typically used to prefix with `v`, e.g. `v1.0.1` (optional, defaults to an empty string)
 
 == Tasks
@@ -197,7 +197,7 @@ The following command will close a release milestone (based on the current versi
 === `createRelease`
 
 Create a GitHub release with release notes using the GitHub API and a new release version for the current project on spring.io using the Sagan API.
-This task uses <<generateChangelog>> to generate the release notes and the configured `referenceDocUrl`, `apiDocUrl` and `replaceSnapshotVersionInReferenceDocUrl` values from the DSL.
+This task uses <<generateChangelog>> to generate the release notes and the configured `referenceDocUrl`, `apiDocUrl` and `replaceVersionInReferenceDocUrl` values from the DSL.
 
 NOTE: This task is a combination of <<createGitHubRelease>> and <<createSaganRelease>>, with the added benefit that the `createRelease` parameter (see *Task properties* below) determines whether both APIs are actually called.
 
@@ -253,7 +253,7 @@ The following command will perform a dry-run and provide output of what creating
 === `createSaganRelease`
 
 Create a new release version for the current project on spring.io using the Sagan API.
-This task uses the configured `referenceDocUrl`, `apiDocUrl` and `replaceSnapshotVersionInReferenceDocUrl` values from the DSL.
+This task uses the configured `referenceDocUrl`, `apiDocUrl` and `replaceVersionInReferenceDocUrl` values from the DSL.
 
 The following command will create a new release version:
 

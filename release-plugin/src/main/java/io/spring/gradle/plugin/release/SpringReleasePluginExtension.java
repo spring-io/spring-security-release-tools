@@ -35,7 +35,10 @@ public interface SpringReleasePluginExtension {
 
 	Property<String> getApiDocUrl();
 
+	@Deprecated
 	Property<Boolean> getReplaceSnapshotVersionInReferenceDocUrl();
+
+	Property<Boolean> getReplaceVersionInReferenceDocUrl();
 
 	Property<String> getReleaseVersionPrefix();
 
