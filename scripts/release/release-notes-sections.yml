@@ -13,6 +13,9 @@ changelog:
     - title: ":rewind: Non-passive"
       labels: ["type: breaks-passivity"]
       sort: "title"
+    - title: ":broom: Tasks"
+      labels: ["type: task"]
+      sort: "title"
   issues:
     exclude:
       labels: [ "status: duplicate" ]
