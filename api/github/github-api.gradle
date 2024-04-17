@@ -12,6 +12,7 @@ dependencies {
 
 	testImplementation "org.assertj:assertj-core"
 	testImplementation "org.mockito:mockito-core"
+	testImplementation "com.jayway.jsonpath:json-path-assert"
 	testImplementation "com.squareup.okhttp3:mockwebserver"
 }
 

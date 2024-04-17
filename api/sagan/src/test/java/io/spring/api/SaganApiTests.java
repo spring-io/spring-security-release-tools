@@ -25,6 +25,7 @@ import java.util.Base64;
 import java.util.Comparator;
 import java.util.Objects;
 
+import com.jayway.jsonassert.JsonAssert;
 import io.spring.api.Release.ReleaseStatus;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -33,6 +34,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.CoreMatchers.is;
 
 /**
  * @author Steve Riesenberg
@@ -154,8 +156,13 @@ public class SaganApiTests {
 		assertThat(recordedRequest.getHeader("Accept")).isNull();
 		assertThat(recordedRequest.getHeader("Content-Type")).isEqualTo("application/json");
 		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Basic %s".formatted(AUTH_TOKEN));
-		assertThat(recordedRequest.getBody().readString(Charset.defaultCharset()))
-			.isEqualTo(string("CreateReleaseRequest.json"));
+
+		var json = JsonAssert.with(recordedRequest.getBody().readString(Charset.defaultCharset()));
+		json.assertThat("$.version", is("6.1.0"));
+		json.assertThat("$.referenceDocUrl", is("https://docs.spring.io/spring-security/reference/{version}/index.html"));
+		json.assertThat("$.apiDocUrl", is("https://docs.spring.io/spring-security/site/docs/{version}/api/"));
+		json.assertThat("$.status", is("GENERAL_AVAILABILITY"));
+		json.assertThat("$.current", is(true));
 	}
 
 	@Test

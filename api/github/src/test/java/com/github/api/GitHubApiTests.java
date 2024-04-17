@@ -24,6 +24,7 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+import com.jayway.jsonassert.JsonAssert;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.AfterEach;
@@ -32,6 +33,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.hamcrest.CoreMatchers.is;
 
 public class GitHubApiTests {
 
@@ -102,8 +104,12 @@ public class GitHubApiTests {
 		assertThat(recordedRequest.getHeader("Accept")).isEqualTo("application/json");
 		assertThat(recordedRequest.getHeader("Content-Type")).isEqualTo("application/json");
 		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Bearer %s".formatted(AUTH_TOKEN));
-		assertThat(recordedRequest.getBody().readString(Charset.defaultCharset()))
-			.isEqualTo(string("CreateReleaseRequest.json"));
+
+		var json = JsonAssert.with(recordedRequest.getBody().readString(Charset.defaultCharset()));
+		json.assertThat("$.tag_name", is("1.0.0"));
+		json.assertThat("$.draft", is(false));
+		json.assertThat("$.prerelease", is(false));
+		json.assertThat("$.generate_release_notes", is(false));
 	}
 
 	@Test
@@ -120,8 +126,10 @@ public class GitHubApiTests {
 		assertThat(recordedRequest.getHeader("Accept")).isEqualTo("application/json");
 		assertThat(recordedRequest.getHeader("Content-Type")).isEqualTo("application/json");
 		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Bearer %s".formatted(AUTH_TOKEN));
-		assertThat(recordedRequest.getBody().readString(Charset.defaultCharset()))
-			.isEqualTo(string("CreateMilestoneRequest.json"));
+
+		var json = JsonAssert.with(recordedRequest.getBody().readString(Charset.defaultCharset()));
+		json.assertThat("$.title", is("1.0.0"));
+		json.assertThat("$.due_on", is("2022-05-04T12:00:00Z"));
 	}
 
 	@Test
@@ -212,8 +220,9 @@ public class GitHubApiTests {
 		assertThat(recordedRequest.getPath()).isEqualTo("/repos/spring-projects/spring-security/milestones/191");
 		assertThat(recordedRequest.getHeader("Accept")).isEqualTo("application/json");
 		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Bearer %s".formatted(AUTH_TOKEN));
-		assertThat(recordedRequest.getBody().readString(Charset.defaultCharset()))
-			.isEqualTo(string("UpdateMilestoneRequest.json"));
+
+		var json = JsonAssert.with(recordedRequest.getBody().readString(Charset.defaultCharset()));
+		json.assertThat("$.state", is("closed"));
 	}
 
 	private static MockResponse json(String path) throws IOException {
