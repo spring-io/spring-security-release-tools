@@ -133,6 +133,26 @@ public class GitHubApiTests {
 	}
 
 	@Test
+	public void createMilestoneWhenAlreadyExistsThenSuccessWithWarning() throws Exception {
+		this.server.enqueue(json("CreateMilestoneErrorResponse.json").setResponseCode(422));
+
+		var dueOn = Instant.parse("2022-05-04T12:00:00Z");
+		var milestone = new Milestone("1.0.0", null, dueOn);
+		this.githubApi.createMilestone(this.repository, milestone);
+
+		var recordedRequest = this.server.takeRequest();
+		assertThat(recordedRequest.getMethod()).isEqualTo("POST");
+		assertThat(recordedRequest.getPath()).isEqualTo("/repos/spring-projects/spring-security/milestones");
+		assertThat(recordedRequest.getHeader("Accept")).isEqualTo("application/json");
+		assertThat(recordedRequest.getHeader("Content-Type")).isEqualTo("application/json");
+		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Bearer %s".formatted(AUTH_TOKEN));
+
+		var json = JsonAssert.with(recordedRequest.getBody().readString(Charset.defaultCharset()));
+		json.assertThat("$.title", is("1.0.0"));
+		json.assertThat("$.due_on", is("2022-05-04T12:00:00Z"));
+	}
+
+	@Test
 	public void getMilestonesWhenExistsThenSuccess() throws Exception {
 		this.server.enqueue(json("MilestonesResponse.json"));
 

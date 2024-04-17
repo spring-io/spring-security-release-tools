@@ -159,7 +159,8 @@ public class SaganApiTests {
 
 		var json = JsonAssert.with(recordedRequest.getBody().readString(Charset.defaultCharset()));
 		json.assertThat("$.version", is("6.1.0"));
-		json.assertThat("$.referenceDocUrl", is("https://docs.spring.io/spring-security/reference/{version}/index.html"));
+		json.assertThat("$.referenceDocUrl",
+				is("https://docs.spring.io/spring-security/reference/{version}/index.html"));
 		json.assertThat("$.apiDocUrl", is("https://docs.spring.io/spring-security/site/docs/{version}/api/"));
 		json.assertThat("$.status", is("GENERAL_AVAILABILITY"));
 		json.assertThat("$.current", is(true));

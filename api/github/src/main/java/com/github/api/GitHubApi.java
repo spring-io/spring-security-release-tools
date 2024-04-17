@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -36,6 +37,8 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
  * @author Steve Riesenberg
  */
 public class GitHubApi {
+
+	private static final Logger LOGGER = Logger.getLogger(GitHubApi.class.getName());
 
 	private final HttpClient httpClient;
 
@@ -110,7 +113,18 @@ public class GitHubApi {
 			.POST(bodyValue(milestone))
 			.build();
 		// @formatter:on
-		performRequest(httpRequest, Void.class);
+		try {
+			performRequest(httpRequest, Void.class);
+		}
+		catch (HttpClientException ex) {
+			if (ex.getStatusCode() == 422) {
+				LOGGER.warning("Unable to create milestone %s: response=%s".formatted(milestone.title(),
+						ex.getResponseBody()));
+			}
+			else {
+				throw ex;
+			}
+		}
 	}
 
 	/**
