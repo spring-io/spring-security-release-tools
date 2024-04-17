@@ -31,7 +31,7 @@ repositories {
 
 dependencies {
 	management platform(project(":dependencies"))
-	implementation "io.github.gradle-nexus:publish-plugin:2.0.0-rc-2"
+	implementation "io.github.gradle-nexus:publish-plugin:2.0.0"
 	implementation "org.jfrog.buildinfo:build-info-extractor-gradle:5.1.14"
 
 	testImplementation "org.junit.jupiter:junit-jupiter"
