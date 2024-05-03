@@ -38,7 +38,7 @@ jobs:
         id: replace
         if: ${{ steps.current.outputs.result != steps.latest.outputs.latest_ui_bundle_url }}
         run: |
-          sed -i '' -e 's@${{ steps.current.outputs.result }}@${{ steps.latest.outputs.latest_ui_bundle_url }}@g' antora-playbook.yml
+          sed -i 's@${{ steps.current.outputs.result }}@${{ steps.latest.outputs.latest_ui_bundle_url }}@g' antora-playbook.yml
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
         with:
