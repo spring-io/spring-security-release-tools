@@ -27,6 +27,8 @@ jobs:
           echo latest_ui_bundle_url=$(gh api /repos/spring-io/antora-ui-spring/releases/latest | jq -r '.assets[] | select(.name == "ui-bundle.zip") | .browser_download_url') >> $GITHUB_OUTPUT
           echo tag_name=$(gh api /repos/spring-io/antora-ui-spring/releases/latest | jq -r '.tag_name') >> $GITHUB_OUTPUT
         shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Replace Version
         uses: mikefarah/yq@v4.43.1
         id: replace
