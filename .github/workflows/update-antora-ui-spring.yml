@@ -8,10 +8,6 @@ on:
         required: false
         default: 'docs-build'
         type: string
-    secrets:
-      token:
-        description: GitHub Token to Use to Open the PR
-        required: false
 
 jobs:
   update-antora-ui-spring:
@@ -40,7 +36,6 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
         with:
-          token: ${{ inputs.token }}
           title: Update Antora UI Spring to ${{ steps.latest.outputs.tag_name }}
           commit-message: Update Antora UI Spring to ${{ steps.latest.outputs.tag_name }}
           delete-branch: true
