@@ -53,7 +53,7 @@ Top-level tasks:
 * <<checkBranchHasCommercialSupport>>
 * <<checkBranchHasOssSupport>>
 * <<checkMilestoneIsDueToday>>
-* <<checkMilestoneHasNoOpenIssues>>
+* <<checkMilestoneHasOpenIssues>>
 * <<closeMilestone>>
 * <<createRelease>>
 * <<createGitHubRelease>>
@@ -145,16 +145,16 @@ The following command will determine if there are no open issues (based on the c
 ./gradlew checkMilestoneIsDueToday -PnextVersion=1.0.0 -PgitHubAccessToken=$GITHUB_ACCESS_TOKEN
 ----
 
-[[checkMilestoneHasNoOpenIssues]]
-=== `checkMilestoneHasNoOpenIssues`
+[[checkMilestoneHasOpenIssues]]
+=== `checkMilestoneHasOpenIssues`
 
-Checks if there are no open issues for the next release milestone and outputs `true` or `false`.
+Checks if there are open issues for the next release milestone and outputs `true` or `false`.
 
-The following command will determine if there are no open issues (based on the current version):
+The following command will determine if there are open issues (based on the current version):
 
 [source,bash]
 ----
-./gradlew checkMilestoneHasNoOpenIssues
+./gradlew checkMilestoneHasOpenIssues
 ----
 
 *Task properties:*
@@ -166,7 +166,7 @@ The following command will determine if there are no open issues (based on the c
 
 [source,bash]
 ----
-./gradlew checkMilestoneHasNoOpenIssues -PnextVersion=1.0.0 -PgitHubAccessToken=$GITHUB_ACCESS_TOKEN
+./gradlew checkMilestoneHasOpenIssues -PnextVersion=1.0.0 -PgitHubAccessToken=$GITHUB_ACCESS_TOKEN
 ----
 
 [[closeMilestone]]
