@@ -33,12 +33,11 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.token }}
-      - name: Replace Version
-        uses: mikefarah/yq@v4.43.1
+      - name: Replace Current with Latest
         id: replace
         if: ${{ steps.current.outputs.result != steps.latest.outputs.latest_ui_bundle_url }}
-        with:
-          cmd: yq -i '.ui.bundle.url = "${{ steps.latest.outputs.latest_ui_bundle_url }}"' antora-playbook.yml
+        run: |
+          sed -i '' -e 's@${{ steps.current.outputs.result }}@${{ steps.latest.outputs.latest_ui_bundle_url }}@g' antora-playbook.yml
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
         with:
