@@ -1,0 +1,44 @@
+name: Build Pull Request
+
+on:
+  workflow_call:
+    inputs:
+      java-version:
+        description: Version of the JDK to use to run the Gradle command.
+        required: false
+        default: '17'
+        type: string
+      distribution:
+        description: Distribution of the JDK to use to run the Gradle command.
+        required: false
+        default: 'temurin'
+        type: string
+    secrets:
+      GRADLE_ENTERPRISE_CACHE_USER:
+        required: false
+      GRADLE_ENTERPRISE_CACHE_PASSWORD:
+        required: false
+      GRADLE_ENTERPRISE_SECRET_ACCESS_KEY:
+        required: false
+      DEVELOCITY_ACCESS_KEY:
+        required: false
+
+env:
+  GRADLE_ENTERPRISE_CACHE_USERNAME: ${{ secrets.GRADLE_ENTERPRISE_CACHE_USER }}
+  GRADLE_ENTERPRISE_CACHE_PASSWORD: ${{ secrets.GRADLE_ENTERPRISE_CACHE_PASSWORD }}
+  GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_SECRET_ACCESS_KEY }}
+  DEVELOCITY_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_SECRET_ACCESS_KEY }}
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK ${{ inputs.java-version }}
+        uses: spring-io/spring-gradle-build-action@v2
+        with:
+          java-version: ${{ inputs.java-version }}
+          distribution: ${{ inputs.distribution }}
+      - name: Build with Gradle
+        run: ./gradlew clean build --continue
