@@ -1,0 +1,44 @@
+name: Dispatch Deploy Docs
+
+on:
+  workflow_call:
+    inputs:
+      should-deploy-docs:
+        description: Whether docs should be deployed.
+        required: false
+        default: 'true'
+        type: string
+      branch-name:
+        description: The name of the target branch (e.g. `docs-build`).
+        required: false
+        default: docs-build
+        type: string
+      build-type:
+        description: The type of build to perform (`full` or `partial`).
+        required: false
+        default: partial
+        type: string
+    secrets:
+      GITHUB_TOKEN:
+        required: true
+
+jobs:
+  dispatch-deploy-docs:
+    name: Dispatch Deploy Docs
+    if: ${{ inputs.should-deploy-docs == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch-name }}
+          fetch-depth: 1
+      - name: Dispatch (partial build)
+        if: ${{ inputs.build-type == 'partial' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run deploy-docs.yml -r $(git rev-parse --abbrev-ref HEAD) -f build-refname=${{ github.ref_name }}
+      - name: Dispatch (full build)
+        if: ${{ inputs.build-type == 'full' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run deploy-docs.yml -r $(git rev-parse --abbrev-ref HEAD)
