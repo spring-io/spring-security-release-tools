@@ -2,7 +2,7 @@ name: Build and Deploy
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -16,14 +16,14 @@ jobs:
     secrets: inherit
   deploy-artifacts:
     name: Deploy Artifacts
-    needs: [build, test]
+    needs: [ build, test ]
     uses: ./.github/workflows/deploy-artifacts.yml
     with:
       should-deploy-artifacts: ${{ needs.build.outputs.should-deploy-artifacts }}
     secrets: inherit
   publish-plugins:
     name: Publish Plugins
-    needs: [deploy-artifacts]
+    needs: [ deploy-artifacts ]
     uses: ./.github/workflows/publish-plugins.yml
     with:
       should-publish-plugins: ${{ needs.deploy-artifacts.outputs.artifacts-deployed }}
