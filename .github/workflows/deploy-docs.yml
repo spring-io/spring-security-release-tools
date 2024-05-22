@@ -18,6 +18,8 @@ on:
         required: false
       GRADLE_ENTERPRISE_SECRET_ACCESS_KEY:
         required: false
+      DEVELOCITY_ACCESS_KEY:
+        required: false
       DOCS_USERNAME:
         required: false
       DOCS_SSH_KEY:

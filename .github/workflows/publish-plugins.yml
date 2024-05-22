@@ -25,6 +25,8 @@ on:
         required: false
       GRADLE_ENTERPRISE_SECRET_ACCESS_KEY:
         required: false
+      DEVELOCITY_ACCESS_KEY:
+        required: false
       GRADLE_PUBLISH_KEY_CREDENTIAL:
         required: false
       GRADLE_PUBLISH_SECRET_CREDENTIAL:
