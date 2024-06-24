@@ -1,0 +1,42 @@
+plugins {
+	id "io.spring.convention.spring-gradle-plugin"
+	id "com.gradle.plugin-publish" version "1.2.1"
+}
+
+gradlePlugin {
+	website = "https://github.com/spring-io/spring-security-release-tools/tree/main/project-plugin"
+	vcsUrl = "https://github.com/spring-io/spring-security-release-tools.git"
+	plugins {
+		springSecurityProjectPlugin {
+			id = "io.spring.security.project"
+			displayName = "Spring Security Project Plugin"
+			description = "Spring Security Project Plugin is a Gradle plugin that applies common configuration conventions to Java, Kotlin or Groovy modules."
+			tags.addAll("spring", "project", "java", "kotlin", "groovy")
+			implementationClass = "io.spring.gradle.plugin.module.SpringProjectPlugin"
+		}
+	}
+}
+
+artifactory {
+	publish {
+		defaults {
+			publications("pluginMaven", "springSecurityProjectPluginPluginMarkerMaven")
+		}
+	}
+}
+
+repositories {
+	gradlePluginPortal()
+}
+
+dependencies {
+	management platform(project(":dependencies"))
+	implementation "io.spring.javaformat:spring-javaformat-gradle-plugin:0.0.42"
+	implementation "io.spring.nohttp:nohttp-gradle:0.0.11"
+
+	testImplementation "org.junit.jupiter:junit-jupiter"
+	testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+
+	testImplementation "org.assertj:assertj-core"
+	testImplementation "org.mockito:mockito-core"
+}
