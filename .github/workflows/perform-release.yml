@@ -39,8 +39,6 @@ on:
         required: false
       GH_ACTIONS_REPO_TOKEN:
         required: true
-      SPRING_RELEASE_SLACK_WEBHOOK_URL:
-        required: true
 
 env:
   GRADLE_ENTERPRISE_CACHE_USERNAME: ${{ secrets.GRADLE_ENTERPRISE_CACHE_USER }}
@@ -114,27 +112,7 @@ jobs:
         env:
           VERSION: ${{ steps.project-version.outputs.version }}
         run: ./gradlew closeMilestone -PnextVersion=$VERSION -PgitHubAccessToken=$TOKEN
-      - name: Announce Release on Slack
-        uses: slackapi/slack-github-action@v1.19.0
-        env:
-          VERSION: ${{ steps.project-version.outputs.version }}
-          SLACK_ANNOUNCING_ID: ${{ inputs.slack-announcing-id }}
-          SLACK_WEBHOOK_URL: ${{ secrets.SPRING_RELEASE_SLACK_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
-        with:
-          payload: |
-            {
-              "text": "${{ env.SLACK_ANNOUNCING_ID }} `${{ env.VERSION }}` is available now",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "${{ env.SLACK_ANNOUNCING_ID }} `${{ env.VERSION }}` is available now"
-                  }
-                }
-              ]
-            }
+      # TODO: Add integration with GChat for #spring-release channel.
   next-development-version:
     name: Next Development Version
     runs-on: ubuntu-latest
