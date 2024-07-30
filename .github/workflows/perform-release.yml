@@ -39,6 +39,8 @@ on:
         required: false
       GH_ACTIONS_REPO_TOKEN:
         required: true
+      SPRING_RELEASE_GCHAT_WEBHOOK_URL:
+        required: true
 
 env:
   GRADLE_ENTERPRISE_CACHE_USERNAME: ${{ secrets.GRADLE_ENTERPRISE_CACHE_USER }}
@@ -112,7 +114,13 @@ jobs:
         env:
           VERSION: ${{ steps.project-version.outputs.version }}
         run: ./gradlew closeMilestone -PnextVersion=$VERSION -PgitHubAccessToken=$TOKEN
-      # TODO: Add integration with GChat for #spring-release channel.
+      - name: Announce Release on GChat
+        env:
+          VERSION: ${{ steps.project-version.outputs.version }}
+          ANNOUNCING_ID: ${{ inputs.slack-announcing-id }}
+          WEBHOOK_URL: ${{ secrets.SPRING_RELEASE_GCHAT_WEBHOOK_URL }}
+        run: |
+          curl -X POST '$WEBHOOK_URL' -H 'Content-Type: application/json' -d '{ text: "$ANNOUNCING_ID `$VERSION` is available now" }' || true
   next-development-version:
     name: Next Development Version
     runs-on: ubuntu-latest
