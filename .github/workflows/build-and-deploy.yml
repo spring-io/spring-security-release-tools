@@ -36,7 +36,7 @@ jobs:
     steps:
       - name: Send Notification
         uses: spring-io/spring-security-release-tools/.github/actions/send-notification@v1
-        if: always()
+        if: ${{ failure() || cancelled() }}
         with:
           webhook-url: ${{ secrets.GOOGLE_CHAT_WEBHOOK_URL }}
           status: ${{ job.status }}
