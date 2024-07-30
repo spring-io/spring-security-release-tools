@@ -31,7 +31,7 @@ jobs:
     secrets: inherit
   send-notification:
     name: Send Notification
-    needs: [ publish-plugins ]
+    needs: [ deploy-artifacts ]
     runs-on: ubuntu-latest
     steps:
       - name: Send Notification
