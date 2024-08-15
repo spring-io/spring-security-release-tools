@@ -31,7 +31,7 @@ jobs:
     secrets: inherit
   send-notification:
     name: Send Notification
-    needs: [ deploy-artifacts ]
+    needs: [ publish-plugins ]
     if: ${{ failure() || cancelled() }}
     runs-on: ubuntu-latest
     steps:
