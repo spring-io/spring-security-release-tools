@@ -120,7 +120,7 @@ jobs:
           ANNOUNCING_ID: ${{ inputs.slack-announcing-id }}
           WEBHOOK_URL: ${{ secrets.SPRING_RELEASE_GCHAT_WEBHOOK_URL }}
         run: |
-          curl -X POST '$WEBHOOK_URL' -H 'Content-Type: application/json' -d '{ text: "$ANNOUNCING_ID `$VERSION` is available now" }' || true
+          curl -X POST '${{ env.WEBHOOK_URL }}' -H 'Content-Type: application/json' -d '{ "text": "${{ env.ANNOUNCING_ID }} `${{ env.VERSION }}` is available now" }' || true
   next-development-version:
     name: Next Development Version
     runs-on: ubuntu-latest
