@@ -15,7 +15,7 @@ runs:
         # Gather vars only available from github context
         commitUrl="${{ github.event.head_commit.url }}"
         author="${{ github.event.sender.login }}"
-        authorUrl=${{ github.event.sender.html_url }}
+        authorUrl="${{ github.event.sender.html_url }}"
         # Pull additional details from GitHub API
         json=$(gh run view ${{ github.run_id }} -R ${{ github.repository }} --json name,number,displayTitle,url,headSha,jobs)
         # Determine overall run status (based on all jobs preceding this one)
@@ -31,7 +31,7 @@ runs:
         # Get workflow name from GitHub API (also available as "github.workflow")
         workflowName=$(echo $json | jq -r .name)
         # Parse 7-digit commit id from head sha
-        shaId=$(echo $json | jq -r .headSha | awk '{print substr($0, 0, 7)}')
+        shaId=$(echo $json | jq -r .headSha | awk '{ print substr($0, 0, 7) }')
         # Get workflow run URL from GitHub API
         runUrl=$(echo $json | jq -r .url)
         # Get workflow run number from GitHub API (also available as "github.run_number")
