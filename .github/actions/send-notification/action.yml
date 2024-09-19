@@ -30,25 +30,28 @@ runs:
         runNumber=$(echo $json | jq -r .number)
         # Determine overall run status (based on all jobs preceding this one)
         runStatus=$(echo $json | jq -r '.jobs | map(select(.conclusion != "")) | if all(.conclusion == "success" or .conclusion == "skipped") then "succeeded" elif any(.conclusion == "failure") then "failed" elif any(.conclusion == "cancelled") then "cancelled" else "unsuccessful" end')
-        # Gather author info
-        author="${{ github.event.sender.login }}"
-        authorUrl="${{ github.event.sender.html_url }}"
         # **** Templates ****
         # Workflow status with link to workflow run
         workflowStatus="<${runUrl}|${displayTitle}> ${runStatus}"
         # Workflow info with link to all workflow runs for this branch
         workflowInfo="<${workflowUrl}|${workflowName}> #${runNumber}"
         # Determine run info, with either pull request, commit or manual run info
-        if [ ! -z "${{ github.event.pull_request.html_url }}" ] ; then
-          prNumber="${{ github.event.pull_request.number }}"
-          prUrl="${{ github.event.pull_request.html_url }}"
-          runInfo="Pull request #<${prUrl}|${prNumber}> opened by <${authorUrl}|${author}>"
-        elif [ ! -z "${{ github.event.head_commit.url }}" ] ; then
-          commitUrl="${{ github.event.head_commit.url }}"
-          shaId=$(echo $json | jq -r .headSha | awk '{ print substr($0, 0, 7) }')
-          runInfo="Commit <${commitUrl}|${shaId}> pushed by <${authorUrl}|${author}>"
+        if [ ! -z "${{ github.event.sender.login }}" ] ; then
+          author="${{ github.event.sender.login }}"
+          authorUrl="${{ github.event.sender.html_url }}"
+          if [ ! -z "${{ github.event.pull_request.html_url }}" ] ; then
+            prNumber="${{ github.event.pull_request.number }}"
+            prUrl="${{ github.event.pull_request.html_url }}"
+            runInfo="Pull request #<${prUrl}|${prNumber}> opened by <${authorUrl}|${author}>"
+          elif [ ! -z "${{ github.event.head_commit.url }}" ] ; then
+            commitUrl="${{ github.event.head_commit.url }}"
+            shaId=$(echo $json | jq -r .headSha | awk '{ print substr($0, 0, 7) }')
+            runInfo="Commit <${commitUrl}|${shaId}> pushed by <${authorUrl}|${author}>"
+          else
+            runInfo="Manually run by <${authorUrl}|${author}>"
+          fi
         else
-          runInfo="Manually run by <${authorUrl}|${author}>"
+          runInfo="Run via scheduled workflow"
         fi
         # Build job info messages, joined in single line (multiline breaks GITHUB_ENV)
         jobInfo=$(echo $json | jq -r '.jobs | map(select(.conclusion != "")) | map("* <" + .url + "|" + .name + "> was " + .conclusion) | join("\\n")')
