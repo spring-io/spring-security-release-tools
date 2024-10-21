@@ -51,10 +51,6 @@ jobs:
     outputs:
       should-deploy-artifacts: ${{ steps.should-deploy-artifacts.outputs.result }}
     steps:
-      - name: Prepare Windows runner
-        if: ${{ runner.os == 'Windows' }}
-        run: |
-          git config --global core.autocrlf true
       - uses: actions/checkout@v4
       - name: Set up JDK ${{ inputs.java-version }}
         uses: spring-io/spring-gradle-build-action@v2
