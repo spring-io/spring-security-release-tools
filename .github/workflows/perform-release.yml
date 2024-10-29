@@ -68,6 +68,29 @@ jobs:
       - id: project-version
         name: Extract Project Version
         run: echo "version=$(cat gradle.properties | grep 'version=' | awk -F'=' '{print $2}')" >> $GITHUB_OUTPUT
+      - id: next-snapshot-version
+        name: Calculate Next Snapshot Version
+        env:
+          VERSION: ${{ steps.project-version.outputs.version }}
+        run: echo "version=$(./gradlew -q getNextSnapshotVersion -PcurrentVersion=$VERSION)" >> $GITHUB_OUTPUT
+      - id: previous-release-milestone
+        name: Get Previous Release Milestone
+        env:
+          VERSION: ${{ steps.project-version.outputs.version }}
+        run: echo "version=$(./gradlew -q getPreviousReleaseMilestone -PcurrentVersion=$VERSION -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
+      - id: previous-snapshot-version
+        name: Get Previous Snapshot Version
+        env:
+          VERSION: ${{ steps.next-snapshot-version.outputs.version }}
+        run: echo "version=$(./gradlew -q getPreviousReleaseMilestone -PcurrentVersion=$VERSION -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
+      - id: next-release-milestone
+        name: Get Next Release Milestone
+        env:
+          VERSION: ${{ steps.next-snapshot-version.outputs.version }}
+        run: echo "version=$(./gradlew -q getNextReleaseMilestone -PcurrentVersion=$VERSION -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
+      - id: has-oss-support
+        name: Check OSS Support (for current branch)
+        run: echo "result=$(./gradlew -q checkBranchHasOssSupport -Pbranch=$BRANCH -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
       - name: Wait for Milestone Artifacts
         if: ${{ contains(steps.project-version.outputs.version, '-RC') || contains(steps.project-version.outputs.version, '-M') }}
         env:
@@ -96,11 +119,22 @@ jobs:
         env:
           VERSION: ${{ steps.project-version.outputs.version }}
         run: ./gradlew createGitHubRelease -PnextVersion=$VERSION -Pbranch=$BRANCH -PcreateRelease=true -PgitHubAccessToken=$TOKEN
-      - id: previous-release-milestone
-        name: Get Previous Release Milestone
+      - name: Update Version
+        env:
+          VERSION: ${{ steps.next-snapshot-version.outputs.version }}
+        run: |
+          sed -ie "s/^version=.*/version=$VERSION/" gradle.properties
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git commit -am "Next development version"
+          git push
+      - name: Announce Release on GChat
         env:
           VERSION: ${{ steps.project-version.outputs.version }}
-        run: echo "version=$(./gradlew -q getPreviousReleaseMilestone -PcurrentVersion=$VERSION -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
+          ANNOUNCING_ID: ${{ inputs.slack-announcing-id }}
+          WEBHOOK_URL: ${{ secrets.SPRING_RELEASE_GCHAT_WEBHOOK_URL }}
+        run: |
+          curl -X POST '${{ env.WEBHOOK_URL }}' -H 'Content-Type: application/json' -d '{ "text": "${{ env.ANNOUNCING_ID }} `${{ env.VERSION }}` is available now" }' || true
       - name: Delete Previous Version
         if: ${{ steps.previous-release-milestone.outputs.version != '' }}
         env:
@@ -114,48 +148,6 @@ jobs:
         env:
           VERSION: ${{ steps.project-version.outputs.version }}
         run: ./gradlew closeMilestone -PnextVersion=$VERSION -PgitHubAccessToken=$TOKEN
-      - name: Announce Release on GChat
-        env:
-          VERSION: ${{ steps.project-version.outputs.version }}
-          ANNOUNCING_ID: ${{ inputs.slack-announcing-id }}
-          WEBHOOK_URL: ${{ secrets.SPRING_RELEASE_GCHAT_WEBHOOK_URL }}
-        run: |
-          curl -X POST '${{ env.WEBHOOK_URL }}' -H 'Content-Type: application/json' -d '{ "text": "${{ env.ANNOUNCING_ID }} `${{ env.VERSION }}` is available now" }' || true
-  next-development-version:
-    name: Next Development Version
-    runs-on: ubuntu-latest
-    needs: [ perform-release ]
-    env:
-      BRANCH: ${{ github.ref_name }}
-      TOKEN: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
-      - name: Set up JDK 17
-        uses: spring-io/spring-gradle-build-action@v2
-      - id: project-version
-        name: Extract Project Version
-        run: echo "version=$(cat gradle.properties | grep 'version=' | awk -F'=' '{print $2}')" >> $GITHUB_OUTPUT
-      - id: next-snapshot-version
-        name: Calculate Next Snapshot Version
-        env:
-          VERSION: ${{ steps.project-version.outputs.version }}
-        run: echo "version=$(./gradlew -q getNextSnapshotVersion -PcurrentVersion=$VERSION)" >> $GITHUB_OUTPUT
-      - name: Update Version
-        env:
-          VERSION: ${{ steps.next-snapshot-version.outputs.version }}
-        run: |
-          sed -ie "s/^version=.*/version=$VERSION/" gradle.properties
-          git config user.name 'github-actions[bot]'
-          git config user.email 'github-actions[bot]@users.noreply.github.com'
-          git commit -am "Next development version"
-          git push
-      - id: previous-snapshot-version
-        name: Get Previous Snapshot Version
-        env:
-          VERSION: ${{ steps.next-snapshot-version.outputs.version }}
-        run: echo "version=$(./gradlew -q getPreviousReleaseMilestone -PcurrentVersion=$VERSION -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
       - name: Delete Previous Snapshot Version
         if: ${{ steps.previous-snapshot-version.outputs.version != '' }}
         env:
@@ -165,14 +157,6 @@ jobs:
         env:
           VERSION: ${{ steps.next-snapshot-version.outputs.version }}
         run: ./gradlew createSaganRelease -PnextVersion=$VERSION -PgitHubAccessToken=$TOKEN
-      - id: next-release-milestone
-        name: Get Next Release Milestone
-        env:
-          VERSION: ${{ steps.next-snapshot-version.outputs.version }}
-        run: echo "version=$(./gradlew -q getNextReleaseMilestone -PcurrentVersion=$VERSION -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
-      - id: has-oss-support
-        name: Check OSS Support (for current branch)
-        run: echo "result=$(./gradlew -q checkBranchHasOssSupport -Pbranch=$BRANCH -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
       - name: Schedule Next Release (if not already scheduled)
         if: ${{ steps.has-oss-support.outputs.result == 'true' }}
         env:
