@@ -77,8 +77,12 @@ public class SpringPropDepsPlugin implements Plugin<Project> {
 
 		JavaPluginExtension java = project.getExtensions().getByType(JavaPluginExtension.class);
 		java.getSourceSets().all((sourceSet) -> {
-			sourceSet.setCompileClasspath(sourceSet.getCompileClasspath().plus(configuration));
-			sourceSet.setRuntimeClasspath(sourceSet.getRuntimeClasspath().plus(configuration));
+			project.getConfigurations()
+				.getByName(sourceSet.getCompileClasspathConfigurationName())
+				.extendsFrom(configuration);
+			project.getConfigurations()
+				.getByName(sourceSet.getRuntimeClasspathConfigurationName())
+				.extendsFrom(configuration);
 		});
 
 		return configuration;
