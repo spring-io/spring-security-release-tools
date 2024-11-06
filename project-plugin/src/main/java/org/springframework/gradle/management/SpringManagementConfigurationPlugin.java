@@ -28,13 +28,15 @@ import org.gradle.api.publish.maven.MavenPublication;
 import org.gradle.api.publish.maven.plugins.MavenPublishPlugin;
 
 /**
- * Creates a Management configuration that is appropriate for adding a platform to that is not exposed externally. If
- * the JavaPlugin is applied, the compileClasspath, runtimeClasspath, testCompileClasspath, and testRuntimeClasspath
- * will extend from it.
+ * Creates a Management configuration that is appropriate for adding a platform to that is
+ * not exposed externally. If the JavaPlugin is applied, the compileClasspath,
+ * runtimeClasspath, testCompileClasspath, and testRuntimeClasspath will extend from it.
+ *
  * @author Rob Winch
  * @author Steve Riesenberg
  */
 public class SpringManagementConfigurationPlugin implements Plugin<Project> {
+
 	public static final String MANAGEMENT_CONFIGURATION_NAME = "management";
 
 	@Override
@@ -58,10 +60,11 @@ public class SpringManagementConfigurationPlugin implements Plugin<Project> {
 			});
 			plugins.withType(MavenPublishPlugin.class, (mavenPublish) -> {
 				PublishingExtension publishing = project.getExtensions().getByType(PublishingExtension.class);
-				publishing.getPublications().withType(MavenPublication.class, (mavenPublication) ->
-						mavenPublication.versionMapping((versions) ->
-								versions.allVariants(VariantVersionMappingStrategy::fromResolutionResult)));
+				publishing.getPublications()
+					.withType(MavenPublication.class, (mavenPublication) -> mavenPublication.versionMapping(
+							(versions) -> versions.allVariants(VariantVersionMappingStrategy::fromResolutionResult)));
 			});
 		});
 	}
+
 }

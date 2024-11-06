@@ -27,6 +27,7 @@ import org.gradle.api.Project;
  * @author Steve Riesenberg
  */
 public class SpringNoHttpPlugin implements Plugin<Project> {
+
 	@Override
 	public void apply(Project project) {
 		// Apply nohttp plugin
@@ -38,4 +39,5 @@ public class SpringNoHttpPlugin implements Plugin<Project> {
 		nohttp.setAllowlistFile(allowlistFile);
 		nohttp.getSource().exclude("**/build/**");
 	}
+
 }

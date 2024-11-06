@@ -23,6 +23,7 @@ import org.gradle.api.Project;
  * @author Steve Riesenberg
  */
 public class SpringCopyPropertiesPlugin implements Plugin<Project> {
+
 	@Override
 	public void apply(Project project) {
 		copyPropertyFromRootProjectTo("group", project);
@@ -37,4 +38,5 @@ public class SpringCopyPropertiesPlugin implements Plugin<Project> {
 			project.setProperty(propertyName, property);
 		}
 	}
+
 }

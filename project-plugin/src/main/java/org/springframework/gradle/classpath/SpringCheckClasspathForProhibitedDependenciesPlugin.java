@@ -34,8 +34,8 @@ public class SpringCheckClasspathForProhibitedDependenciesPlugin implements Plug
 	@Override
 	public void apply(Project project) {
 		project.getPlugins().apply(SpringCheckProhibitedDependenciesLifecyclePlugin.class);
-		project.getPlugins().withType(JavaBasePlugin.class, (javaBasePlugin) ->
-				configureProhibitedDependencyChecks(project));
+		project.getPlugins()
+			.withType(JavaBasePlugin.class, (javaBasePlugin) -> configureProhibitedDependencyChecks(project));
 	}
 
 	private void configureProhibitedDependencyChecks(Project project) {
@@ -54,16 +54,19 @@ public class SpringCheckClasspathForProhibitedDependenciesPlugin implements Plug
 
 	private void createProhibitedDependenciesCheck(Configuration classpath, Project project) {
 		String taskName = "check" + capitalize(classpath.getName() + "ForProhibitedDependencies");
-		TaskProvider<CheckClasspathForProhibitedDependencies> checkClasspathTask = project.getTasks().register(taskName,
-				CheckClasspathForProhibitedDependencies.class, (checkClasspath) -> {
-					checkClasspath.setGroup(LifecycleBasePlugin.CHECK_TASK_NAME);
-					checkClasspath.setDescription("Checks " + classpath.getName() + " for prohibited dependencies");
-					checkClasspath.setClasspath(classpath);
-				});
-		project.getTasks().named(SpringCheckProhibitedDependenciesLifecyclePlugin.CHECK_PROHIBITED_DEPENDENCIES_TASK_NAME, (checkProhibitedTask) -> checkProhibitedTask.dependsOn(checkClasspathTask));
+		TaskProvider<CheckClasspathForProhibitedDependencies> checkClasspathTask = project.getTasks()
+			.register(taskName, CheckClasspathForProhibitedDependencies.class, (checkClasspath) -> {
+				checkClasspath.setGroup(LifecycleBasePlugin.CHECK_TASK_NAME);
+				checkClasspath.setDescription("Checks " + classpath.getName() + " for prohibited dependencies");
+				checkClasspath.setClasspath(classpath);
+			});
+		project.getTasks()
+			.named(SpringCheckProhibitedDependenciesLifecyclePlugin.CHECK_PROHIBITED_DEPENDENCIES_TASK_NAME,
+					(checkProhibitedTask) -> checkProhibitedTask.dependsOn(checkClasspathTask));
 	}
 
 	private static String capitalize(String s) {
 		return s.substring(0, 1).toUpperCase() + s.substring(1);
 	}
+
 }

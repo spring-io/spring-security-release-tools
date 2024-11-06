@@ -33,6 +33,7 @@ import org.gradle.plugins.ide.idea.model.IdeaModel;
  * @link https://youtrack.jetbrains.com/issue/IDEA-117668
  */
 public class SpringPropDepsIdeaPlugin implements Plugin<Project> {
+
 	@Override
 	public void apply(Project project) {
 		PluginManager pluginManager = project.getPluginManager();
@@ -47,4 +48,5 @@ public class SpringPropDepsIdeaPlugin implements Plugin<Project> {
 			idea.getScopes().get("PROVIDED").get("plus").add(project.getConfigurations().getByName("optional"));
 		});
 	}
+
 }

@@ -29,8 +29,8 @@ import org.springframework.gradle.management.SpringManagementConfigurationPlugin
 /**
  * Plugin to allow 'optional' and 'provided' dependency configurations
  *
- * As stated in the maven documentation, provided scope "is only available on the compilation and test classpath,
- * and is not transitive".
+ * As stated in the maven documentation, provided scope "is only available on the
+ * compilation and test classpath, and is not transitive".
  *
  * This plugin creates two new configurations, and each one:
  * <ul>
@@ -43,13 +43,17 @@ import org.springframework.gradle.management.SpringManagementConfigurationPlugin
  * @author Brian Clozel
  * @author Rob Winch
  * @author Steve Riesenberg
- *
- * @see <a href="https://www.gradle.org/docs/current/userguide/java_plugin.html#N121CF">Maven documentation</a>
- * @see <a href="https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html#Dependency_Scope">Gradle configurations</a>
+ * @see <a href=
+ * "https://www.gradle.org/docs/current/userguide/java_plugin.html#N121CF">Maven
+ * documentation</a>
+ * @see <a href=
+ * "https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html#Dependency_Scope">Gradle
+ * configurations</a>
  * @see SpringPropDepsEclipsePlugin
  * @see SpringPropDepsIdeaPlugin
  */
 public class SpringPropDepsPlugin implements Plugin<Project> {
+
 	@Override
 	public void apply(Project project) {
 		project.getPlugins().withType(JavaPlugin.class, (javaPlugin) -> {
@@ -64,10 +68,12 @@ public class SpringPropDepsPlugin implements Plugin<Project> {
 	private Configuration addConfiguration(Project project, String name) {
 		Configuration configuration = project.getConfigurations().create(name);
 		configuration.extendsFrom(project.getConfigurations().getByName("implementation"));
-		project.getPlugins().withType(JavaLibraryPlugin.class, (javaLibraryPlugin) ->
-				configuration.extendsFrom(project.getConfigurations().getByName("api")));
-		project.getPlugins().withType(SpringManagementConfigurationPlugin.class, (springManagementConfigurationPlugin) ->
-				configuration.extendsFrom(project.getConfigurations().getByName("management")));
+		project.getPlugins()
+			.withType(JavaLibraryPlugin.class,
+					(javaLibraryPlugin) -> configuration.extendsFrom(project.getConfigurations().getByName("api")));
+		project.getPlugins()
+			.withType(SpringManagementConfigurationPlugin.class, (springManagementConfigurationPlugin) -> configuration
+				.extendsFrom(project.getConfigurations().getByName("management")));
 
 		JavaPluginExtension java = project.getExtensions().getByType(JavaPluginExtension.class);
 		java.getSourceSets().all((sourceSet) -> {
@@ -77,4 +83,5 @@ public class SpringPropDepsPlugin implements Plugin<Project> {
 
 		return configuration;
 	}
+
 }

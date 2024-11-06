@@ -44,22 +44,20 @@ import org.springframework.gradle.repository.SpringRepositoryPlugin;
  * @author Steve Riesenberg
  */
 public class SpringJavaPlugin implements Plugin<Project> {
+
 	@Override
 	public void apply(Project project) {
 		// Apply default plugins
 		PluginManager pluginManager = project.getPluginManager();
-		if (project.file("src/main/java").exists()
-				|| project.file("src/test/java").exists()
+		if (project.file("src/main/java").exists() || project.file("src/test/java").exists()
 				|| project.file("src/integration-test/java").exists()) {
 			pluginManager.apply("org.gradle.java");
 		}
-		if (project.file("src/main/groovy").exists()
-				|| project.file("src/test/groovy").exists()
+		if (project.file("src/main/groovy").exists() || project.file("src/test/groovy").exists()
 				|| project.file("src/integration-test/groovy").exists()) {
 			pluginManager.apply("org.gradle.groovy");
 		}
-		if (project.file("src/main/kotlin").exists()
-				|| project.file("src/test/kotlin").exists()
+		if (project.file("src/main/kotlin").exists() || project.file("src/test/kotlin").exists()
 				|| project.file("src/integration-test/kotlin").exists()
 				|| project.getBuildFile().getName().endsWith(".kts")) {
 			pluginManager.apply("org.jetbrains.kotlin.jvm");
@@ -89,7 +87,8 @@ public class SpringJavaPlugin implements Plugin<Project> {
 		// Configure jar task
 		project.getTasks().withType(Jar.class, (jar) -> jar.manifest((manifest) -> {
 			Map<String, String> attributes = new HashMap<>();
-			attributes.put("Created-By", String.format("%s (%s)", System.getProperty("java.version"), System.getProperty("java.specification.vendor")));
+			attributes.put("Created-By", String.format("%s (%s)", System.getProperty("java.version"),
+					System.getProperty("java.specification.vendor")));
 			attributes.put("Implementation-Title", project.getName());
 			attributes.put("Implementation-Version", project.getVersion().toString());
 			attributes.put("Automatic-Module-Name", project.getName().replace("-", "."));
@@ -99,4 +98,5 @@ public class SpringJavaPlugin implements Plugin<Project> {
 		// Configure JUnit 5
 		project.getTasks().withType(Test.class, Test::useJUnitPlatform);
 	}
+
 }

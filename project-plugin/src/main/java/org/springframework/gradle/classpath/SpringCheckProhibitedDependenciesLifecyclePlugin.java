@@ -26,16 +26,21 @@ import org.gradle.api.tasks.TaskProvider;
  * @author Rob Winch
  */
 public class SpringCheckProhibitedDependenciesLifecyclePlugin implements Plugin<Project> {
+
 	public static final String CHECK_PROHIBITED_DEPENDENCIES_TASK_NAME = "checkForProhibitedDependencies";
 
 	@Override
 	public void apply(Project project) {
-		TaskProvider<Task> checkProhibitedDependencies = project.getTasks().register(SpringCheckProhibitedDependenciesLifecyclePlugin.CHECK_PROHIBITED_DEPENDENCIES_TASK_NAME, (task) -> {
-			task.setGroup(JavaBasePlugin.VERIFICATION_GROUP);
-			task.setDescription("Checks both the compile/runtime classpath of every SourceSet for prohibited dependencies");
-		});
+		TaskProvider<Task> checkProhibitedDependencies = project.getTasks()
+			.register(SpringCheckProhibitedDependenciesLifecyclePlugin.CHECK_PROHIBITED_DEPENDENCIES_TASK_NAME,
+					(task) -> {
+						task.setGroup(JavaBasePlugin.VERIFICATION_GROUP);
+						task.setDescription(
+								"Checks both the compile/runtime classpath of every SourceSet for prohibited dependencies");
+					});
 		project.getTasks().named(JavaBasePlugin.CHECK_TASK_NAME, (checkTask) -> {
 			checkTask.dependsOn(checkProhibitedDependencies);
 		});
 	}
+
 }

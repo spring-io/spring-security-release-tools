@@ -31,7 +31,9 @@ import org.gradle.testing.jacoco.plugins.JacocoPluginExtension;
  * @author Steve Riesenberg
  */
 public class SpringJacocoPlugin implements Plugin<Project> {
+
 	private static final String JACOCO_TOOL_VERSION_PROPERTY = "jacocoToolVersion";
+
 	private static final String DEFAULT_JACOCO_TOOL_VERSION = "0.8.7";
 
 	@Override
@@ -53,4 +55,5 @@ public class SpringJacocoPlugin implements Plugin<Project> {
 		}
 		return jacocoToolVersion;
 	}
+
 }

@@ -57,15 +57,15 @@ public abstract class SpringRepositoryPlugin implements Plugin<Project> {
 
 			List<String> forceMavenRepositories = Collections.emptyList();
 			if (project.hasProperty(FORCE_MAVEN_REPOSITORIES)) {
-				forceMavenRepositories = List.of(Objects.requireNonNull(project.findProperty(FORCE_MAVEN_REPOSITORIES))
-					.toString().split(","));
+				forceMavenRepositories = List
+					.of(Objects.requireNonNull(project.findProperty(FORCE_MAVEN_REPOSITORIES)).toString().split(","));
 			}
 
 			String version = project.getVersion().toString();
 			boolean isSnapshot = version.endsWith("-SNAPSHOT") && forceMavenRepositories.isEmpty()
-				|| forceMavenRepositories.contains("snapshot");
+					|| forceMavenRepositories.contains("snapshot");
 			boolean isMilestone = (version.contains("-RC") || version.contains("-M"))
-				&& forceMavenRepositories.isEmpty() || forceMavenRepositories.contains("milestone");
+					&& forceMavenRepositories.isEmpty() || forceMavenRepositories.contains("milestone");
 
 			RepositoryHandler repositories = project.getRepositories();
 			if (forceMavenRepositories.contains("local")) {

@@ -30,13 +30,14 @@ import org.springframework.gradle.classpath.SpringCheckProhibitedDependenciesLif
  * @author Steve Riesenberg
  */
 public class SpringProjectPlugin implements Plugin<Project> {
+
 	@Override
 	public void apply(Project project) {
 		// Apply default plugins
 		PluginManager pluginManager = project.getPluginManager();
 		if (project.getRootProject().equals(project)) {
 			pluginManager.apply(BasePlugin.class);
-//			pluginManager.apply(SpringNoHttpPlugin.class);
+			// pluginManager.apply(SpringNoHttpPlugin.class);
 			pluginManager.apply(SpringCheckProhibitedDependenciesLifecyclePlugin.class);
 		}
 		else {
@@ -45,4 +46,5 @@ public class SpringProjectPlugin implements Plugin<Project> {
 			pluginManager.apply(SpringCheckClasspathForProhibitedDependenciesPlugin.class);
 		}
 	}
+
 }

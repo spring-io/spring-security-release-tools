@@ -25,6 +25,7 @@ import org.gradle.external.javadoc.StandardJavadocDocletOptions;
  * @author Steve Riesenberg
  */
 public class SpringJavadocOptionsPlugin implements Plugin<Project> {
+
 	@Override
 	public void apply(Project project) {
 		project.getTasks().withType(Javadoc.class, (javadoc) -> {
@@ -32,4 +33,5 @@ public class SpringJavadocOptionsPlugin implements Plugin<Project> {
 			options.addStringOption("Xdoclint:none", "-quiet");
 		});
 	}
+
 }

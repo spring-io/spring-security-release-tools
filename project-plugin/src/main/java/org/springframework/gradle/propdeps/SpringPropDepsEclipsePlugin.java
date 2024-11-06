@@ -31,6 +31,7 @@ import org.gradle.plugins.ide.eclipse.model.EclipseModel;
  * @author Steve Riesenberg
  */
 public class SpringPropDepsEclipsePlugin implements Plugin<Project> {
+
 	@Override
 	public void apply(Project project) {
 		PluginManager pluginManager = project.getPluginManager();
@@ -44,4 +45,5 @@ public class SpringPropDepsEclipsePlugin implements Plugin<Project> {
 			classpath.getPlusConfigurations().add(project.getConfigurations().getByName("optional"));
 		});
 	}
+
 }
