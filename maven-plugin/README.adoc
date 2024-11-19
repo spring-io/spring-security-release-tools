@@ -7,7 +7,7 @@ To use the plugin, apply the plugin in your project's root `build.gradle` and in
 [source,gradle]
 ----
 plugins {
-	id "io.spring.security.maven" version "1.0.1"
+	id "io.spring.security.maven" version "1.0.3"
 }
 ----
 
