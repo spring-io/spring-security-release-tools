@@ -29,12 +29,6 @@ on:
         required: true
         type: string
     secrets:
-      GRADLE_ENTERPRISE_CACHE_USER:
-        required: false
-      GRADLE_ENTERPRISE_CACHE_PASSWORD:
-        required: false
-      GRADLE_ENTERPRISE_SECRET_ACCESS_KEY:
-        required: false
       DEVELOCITY_ACCESS_KEY:
         required: false
       GH_ACTIONS_REPO_TOKEN:
@@ -43,10 +37,7 @@ on:
         required: true
 
 env:
-  GRADLE_ENTERPRISE_CACHE_USERNAME: ${{ secrets.GRADLE_ENTERPRISE_CACHE_USER }}
-  GRADLE_ENTERPRISE_CACHE_PASSWORD: ${{ secrets.GRADLE_ENTERPRISE_CACHE_PASSWORD }}
-  GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_SECRET_ACCESS_KEY }}
-  DEVELOCITY_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_SECRET_ACCESS_KEY }}
+  DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
 
 jobs:
   perform-release:

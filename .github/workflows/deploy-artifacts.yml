@@ -15,12 +15,6 @@ on:
         description: The project version extracted from the current branch/tag.
         value: ${{ jobs.deploy-artifacts.outputs.project-version }}
     secrets:
-      GRADLE_ENTERPRISE_CACHE_USER:
-        required: false
-      GRADLE_ENTERPRISE_CACHE_PASSWORD:
-        required: false
-      GRADLE_ENTERPRISE_SECRET_ACCESS_KEY:
-        required: false
       DEVELOCITY_ACCESS_KEY:
         required: false
       ARTIFACTORY_USERNAME:
@@ -37,10 +31,7 @@ on:
         required: false
 
 env:
-  GRADLE_ENTERPRISE_CACHE_USERNAME: ${{ secrets.GRADLE_ENTERPRISE_CACHE_USER }}
-  GRADLE_ENTERPRISE_CACHE_PASSWORD: ${{ secrets.GRADLE_ENTERPRISE_CACHE_PASSWORD }}
-  GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_SECRET_ACCESS_KEY }}
-  DEVELOCITY_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_SECRET_ACCESS_KEY }}
+  DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
   ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
   ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
   OSSRH_TOKEN_USERNAME: ${{ secrets.OSSRH_S01_TOKEN_USERNAME }}

@@ -12,12 +12,6 @@ on:
         description: Whether docs were actually deployed.
         value: ${{ jobs.deploy-docs.outputs.docs-deployed }}
     secrets:
-      GRADLE_ENTERPRISE_CACHE_USER:
-        required: false
-      GRADLE_ENTERPRISE_CACHE_PASSWORD:
-        required: false
-      GRADLE_ENTERPRISE_SECRET_ACCESS_KEY:
-        required: false
       DEVELOCITY_ACCESS_KEY:
         required: false
       DOCS_USERNAME:
@@ -28,10 +22,7 @@ on:
         required: false
 
 env:
-  GRADLE_ENTERPRISE_CACHE_USERNAME: ${{ secrets.GRADLE_ENTERPRISE_CACHE_USER }}
-  GRADLE_ENTERPRISE_CACHE_PASSWORD: ${{ secrets.GRADLE_ENTERPRISE_CACHE_PASSWORD }}
-  GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_SECRET_ACCESS_KEY }}
-  DEVELOCITY_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_SECRET_ACCESS_KEY }}
+  DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
   DOCS_USERNAME: ${{ secrets.DOCS_USERNAME }}
   DOCS_SSH_KEY: ${{ secrets.DOCS_SSH_KEY }}
   DOCS_HOST: ${{ secrets.DOCS_HOST }}
