@@ -63,5 +63,6 @@ runs:
         # Output status
         echo "result=$runStatus" >> $GITHUB_OUTPUT
     - shell: bash
+      if: ${{ contains(fromJSON('["failed", "cancelled", "unsuccessful"]'), steps.run-info.outputs.result) }}
       run: |
         curl -X POST '${{ inputs.webhook-url }}' -H 'Content-Type: application/json' -d '{ "text": "${{ env.WORKFLOW_STATUS }}\n${{ env.WORKFLOW_INFO }}: ${{ env.RUN_INFO }}\n\n${{ env.JOB_INFO }}" }' || true
