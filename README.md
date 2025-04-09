@@ -1,7 +1,16 @@
 Spring Security Release Tools
 ==
 
-Libraries and plugins for managing automated releases of Spring projects.
+Shared workflows, Libraries and plugins for managing automated releases of Spring projects.
+
+Shared Workflows
+===
+
+The shared workflows in this repository use the following secrets:
+
+* `GH_ACTIONS_REPO_TOKEN`: A GitHub PAT (personal access token) used for updating the repository, including accessing repository contents, opening and closing milestones and creating GitHub releases. The token must belong to a user that is part of the `spring-projects` GitHub organization, and requires the following permissions for [fine-grained personal access tokens](https://docs.github.com/rest/overview/permissions-required-for-fine-grained-personal-access-tokens):
+  * Contents: Read and write
+  * Issues: Read and write
 
 Plugins
 ===
