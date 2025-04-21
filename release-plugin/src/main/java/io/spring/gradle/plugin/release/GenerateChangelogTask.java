@@ -37,7 +37,7 @@ public abstract class GenerateChangelogTask extends JavaExec {
 
 	private static final String GENERATE_CHANGELOG_PATH = "changelog/release-notes.md";
 
-	private static final String GENERATE_CHANGELOG_DEPENDENCY = "spring-io:github-changelog-generator:0.0.10";
+	private static final String GENERATE_CHANGELOG_DEPENDENCY = "spring-io:github-changelog-generator:0.0.12";
 
 	private static final String GENERATE_CHANGELOG_REPO_LAYOUT = "[organization]/[artifact]/releases/download/v[revision]/[artifact].[ext]";
 
