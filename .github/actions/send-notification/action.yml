@@ -13,15 +13,25 @@ runs:
       shell: bash
       env:
         GH_TOKEN: ${{ github.token }}
+        GITHUB_RUN_ID: ${{ github.run_id }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_WORKFLOW_REF: ${{ github.workflow_ref }}
+        GITHUB_SERVER_URL: ${{ github.server_url }}
+        GITHUB_REF_NAME: ${{ github.ref_name }}
+        GITHUB_EVENT_SENDER_LOGIN: ${{ github.event.sender.login }}
+        GITHUB_EVENT_SENDER_HTML_URL: ${{ github.event.sender.html_url }}
+        GITHUB_EVENT_PULL_REQUEST_HTML_URL: ${{ github.event.pull_request.html_url }}
+        GITHUB_EVENT_PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}
+        GITHUB_EVENT_HEAD_COMMIT_URL: ${{ github.event.head_commit.url }}
       run: |
         # Pull additional details from GitHub API
-        json=$(gh run view ${{ github.run_id }} -R ${{ github.repository }} --json name,number,displayTitle,url,headSha,jobs)
+        json=$(gh run view "$GITHUB_RUN_ID" -R "$GITHUB_REPOSITORY" --json name,number,displayTitle,url,headSha,jobs)
         # Get sanitized display title (usually a commit message or PR title) from GitHub API
         displayTitle=$(echo $json | jq -r .displayTitle | sed 's/"/\\"/g')
         # Parse workflow yaml file name from full ref name
-        workflow=$(echo ${{ github.workflow_ref }} | awk -F'/|@' '{ print $5 }')
+        workflow=$(echo "$GITHUB_WORKFLOW_REF" | awk -F'/|@' '{ print $5 }')
         # Build workflow URL with branch name
-        workflowUrl="${{ github.server_url }}/${{ github.repository }}/actions/workflows/${workflow}?query=branch%3A${{ github.ref_name }}"
+        workflowUrl="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/workflows/${workflow}?query=branch%3A${GITHUB_REF_NAME}"
         # Get workflow name from GitHub API (also available as "github.workflow")
         workflowName=$(echo $json | jq -r .name | sed 's/"/\\"/g')
         # Get workflow run URL from GitHub API
@@ -36,15 +46,15 @@ runs:
         # Workflow info with link to all workflow runs for this branch
         workflowInfo="<${workflowUrl}|${workflowName}> #${runNumber}"
         # Determine run info, with either pull request, commit or manual run info
-        if [ ! -z "${{ github.event.sender.login }}" ] ; then
-          author="${{ github.event.sender.login }}"
-          authorUrl="${{ github.event.sender.html_url }}"
-          if [ ! -z "${{ github.event.pull_request.html_url }}" ] ; then
-            prNumber="${{ github.event.pull_request.number }}"
-            prUrl="${{ github.event.pull_request.html_url }}"
+        if [ ! -z "${GITHUB_EVENT_SENDER_LOGIN}" ] ; then
+          author="${GITHUB_EVENT_SENDER_LOGIN}"
+          authorUrl="${GITHUB_EVENT_SENDER_HTML_URL}"
+          if [ ! -z "${GITHUB_EVENT_PULL_REQUEST_HTML_URL}" ] ; then
+            prNumber="${GITHUB_EVENT_PULL_REQUEST_NUMBER}"
+            prUrl="${GITHUB_EVENT_PULL_REQUEST_HTML_URL}"
             runInfo="Pull request #<${prUrl}|${prNumber}> opened by <${authorUrl}|${author}>"
-          elif [ ! -z "${{ github.event.head_commit.url }}" ] ; then
-            commitUrl="${{ github.event.head_commit.url }}"
+          elif [ ! -z "${GITHUB_EVENT_HEAD_COMMIT_URL}" ] ; then
+            commitUrl="${GITHUB_EVENT_HEAD_COMMIT_URL}"
             shaId=$(echo $json | jq -r .headSha | awk '{ print substr($0, 0, 7) }')
             runInfo="Commit <${commitUrl}|${shaId}> pushed by <${authorUrl}|${author}>"
           else
@@ -65,4 +75,6 @@ runs:
     - shell: bash
       if: ${{ contains(fromJSON('["failed", "cancelled", "unsuccessful"]'), steps.run-info.outputs.result) }}
       run: |
-        curl -X POST '${{ inputs.webhook-url }}' -H 'Content-Type: application/json' -d '{ "text": "${{ env.WORKFLOW_STATUS }}\n${{ env.WORKFLOW_INFO }}: ${{ env.RUN_INFO }}\n\n${{ env.JOB_INFO }}" }' || true
+        curl -X POST "$WEBHOOK_URL" -H 'Content-Type: application/json' -d "{ \"text\": \"${WORKFLOW_STATUS}\n${WORKFLOW_INFO}: ${RUN_INFO}\n\n${JOB_INFO}\" }" || true
+      env:
+        WEBHOOK_URL: ${{ inputs.webhook-url }}
