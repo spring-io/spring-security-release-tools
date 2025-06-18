@@ -107,7 +107,11 @@ jobs:
         env:
           ORG_GRADLE_PROJECT_signingKey: ${{ secrets.GPG_PRIVATE_KEY }}
           ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSPHRASE }}
-        run: ./gradlew publishAllPublicationsToLocalRepository --stacktrace
+        run: |
+          ./gradlew publishAllPublicationsToLocalRepository --stacktrace
+          # rm checksums to work around https://github.com/spring-io/central-publish-action/issues/11
+          find -name "*.md5" | xargs rm -f
+          find -name "*.sha*" | xargs rm -f
       - name: Publish Staged Artifacts to Central
         if: ${{ steps.deploy-location.outputs.deploy_location == 'central' }}
         uses: spring-io/central-publish-action@0cdd90d12e6876341e82860d951e1bcddc1e51b6 # v0.2.0
