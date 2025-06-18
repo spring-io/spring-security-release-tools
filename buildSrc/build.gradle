@@ -16,7 +16,6 @@ repositories {
 }
 
 dependencies {
-	implementation "io.github.gradle-nexus:publish-plugin:2.0.0"
 	implementation "io.spring.javaformat:spring-javaformat-gradle-plugin:0.0.41"
 	implementation "io.spring.nohttp:nohttp-gradle:0.0.11"
 	implementation "org.jfrog.buildinfo:build-info-extractor-gradle:5.2.0"

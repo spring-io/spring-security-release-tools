@@ -27,27 +27,9 @@ public class SpringMavenPlugin implements Plugin<Project> {
 
 	@Override
 	public void apply(Project project) {
-		// Create publish task
-		project.getTasks().register("publishArtifacts", (task) -> {
-			task.setGroup("Publishing");
-			task.setDescription("Publish the artifacts to either Artifactory or Maven Central based on the version");
-		});
-
-		// Create finalize task to run after publish task
-		project.getTasks().register("finalizeDeployArtifacts", (task) -> {
-			task.setGroup("Publishing");
-			task.setDescription(
-					"Automatically close and release staging repositories when required based on the version");
-		});
-
 		PluginManager pluginManager = project.getPluginManager();
-		if (project.getRootProject().equals(project)) {
-			pluginManager.apply(SpringNexusPlugin.class);
-		}
-		else {
-			pluginManager.apply(SpringMavenPublishPlugin.class);
-			pluginManager.apply(SpringArtifactoryPlugin.class);
-		}
+		pluginManager.apply(SpringMavenPublishPlugin.class);
+		pluginManager.apply(SpringArtifactoryPlugin.class);
 	}
 
 }

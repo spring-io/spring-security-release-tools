@@ -21,7 +21,6 @@ import org.gradle.api.Project;
 import org.gradle.api.plugins.BasePlugin;
 import org.gradle.api.plugins.PluginManager;
 
-import org.springframework.gradle.maven.SpringNexusPlugin;
 import org.springframework.gradle.nohttp.SpringNoHttpPlugin;
 
 /**
@@ -34,7 +33,6 @@ public class SpringRootProjectPlugin implements Plugin<Project> {
 		PluginManager pluginManager = project.getPluginManager();
 		pluginManager.apply(BasePlugin.class);
 		pluginManager.apply(SpringNoHttpPlugin.class);
-		pluginManager.apply(SpringNexusPlugin.class);
 
 		// Apply default repositories
 		project.getRepositories().mavenCentral();

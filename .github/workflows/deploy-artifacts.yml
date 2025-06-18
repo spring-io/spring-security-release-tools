@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       should-deploy-artifacts:
-        description: Whether artifacts should be deployed.
+        description: Whether artifacts should be deployed (true|false|central|artifactory).
         required: true
         type: string
     outputs:
@@ -21,9 +21,9 @@ on:
         required: false
       ARTIFACTORY_PASSWORD:
         required: false
-      OSSRH_S01_TOKEN_USERNAME:
+      CENTRAL_TOKEN_USERNAME:
         required: false
-      OSSRH_S01_TOKEN_PASSWORD:
+      CENTRAL_TOKEN_PASSWORD:
         required: false
       GPG_PRIVATE_KEY:
         required: false
@@ -40,7 +40,7 @@ env:
 jobs:
   deploy-artifacts:
     name: Deploy Artifacts
-    if: ${{ inputs.should-deploy-artifacts == 'true' }}
+    if: ${{ inputs.should-deploy-artifacts != 'false' }}
     runs-on: ubuntu-latest
     outputs:
       artifacts-deployed: ${{ steps.artifacts-deployed.outputs.result }}
@@ -63,7 +63,25 @@ jobs:
             branch="${VERSION%.*}.x"
           fi
           echo "branch=$branch" >> $GITHUB_OUTPUT
-      - name: Deploy Artifacts
+      - id: deploy-location
+        name: Default the Deploy Location
+        env:
+          SHOULD_DEPLOY_ARTIFACTS: ${{ inputs.should-deploy-artifacts }}
+          VERSION: ${{ steps.project-version.outputs.version }}
+        run: |
+          deploy_location="$SHOULD_DEPLOY_ARTIFACTS"
+          if [[ "$deploy_location" = "true" ]] ; then
+            if [[ "$VERSION" =~ "-" ]] ; then
+              # -SNAPSHOT, -M\d+, and -RC\d+ all go to artifactory by default to remain passive
+              # Newer generations will only deploy -SNAPSHOT to artifactory, but they must opt into central explicitly
+              deploy_location=artifactory
+            else
+              deploy_location=central
+            fi
+          fi
+          echo "deploy_location=$deploy_location" >> $GITHUB_OUTPUT
+      - name: Deploy to Artifactory
+        if: ${{ steps.deploy-location.outputs.deploy_location == 'artifactory' }}
         env:
           ORG_GRADLE_PROJECT_signingKey: ${{ secrets.GPG_PRIVATE_KEY }}
           ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSPHRASE }}
@@ -73,7 +91,19 @@ jobs:
           ARTIFACTORY_USER_AGENT_NAME: GitHub Actions
           ARTIFACTORY_USER_AGENT_VERSION: Unknown
           ARTIFACTORY_VCS_REVISION: ${{ github.sha }}
-        run: ./gradlew publishArtifacts finalizeDeployArtifacts -PossrhUsername="$OSSRH_TOKEN_USERNAME" -PossrhPassword="$OSSRH_TOKEN_PASSWORD" -PartifactoryUsername="$ARTIFACTORY_USERNAME" -PartifactoryPassword="$ARTIFACTORY_PASSWORD" --stacktrace
+        run: ./gradlew publishArtifacts -PartifactoryUsername="$ARTIFACTORY_USERNAME" -PartifactoryPassword="$ARTIFACTORY_PASSWORD" --stacktrace
+      - name: Stage Local Artifacts for Publishing to Central
+        if: ${{ steps.deploy-location.outputs.deploy_location == 'central' }}
+        env:
+          ORG_GRADLE_PROJECT_signingKey: ${{ secrets.GPG_PRIVATE_KEY }}
+          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSPHRASE }}
+        run: ./gradlew publishAllPublicationsToLocalRepository --stacktrace
+      - name: Publish Staged Artifacts to Central
+        uses: spring-io/central-publish-action@0cdd90d12e6876341e82860d951e1bcddc1e51b6 # v0.2.0
+        with:
+          token-name: ${{ secrets.CENTRAL_TOKEN_USERNAME }}
+          token: ${{ secrets.CENTRAL_TOKEN_PASSWORD }}
+          dir: build/publications/repos
       - id: artifacts-deployed
         name: Artifacts Deployed
         run: echo "result=true" >> $GITHUB_OUTPUT
