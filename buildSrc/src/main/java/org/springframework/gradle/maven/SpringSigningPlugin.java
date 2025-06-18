@@ -46,12 +46,13 @@ public class SpringSigningPlugin implements Plugin<Project> {
 	}
 
 	private void sign(Project project) {
-		SigningExtension signing = project.getExtensions().getByType(SigningExtension.class);
-		signing.setRequired((Callable<Boolean>) () -> project.getGradle().getTaskGraph().hasTask("publishArtifacts"));
-
 		String signingKeyId = (String) project.findProperty("signingKeyId");
 		String signingKey = (String) project.findProperty("signingKey");
 		String signingPassword = (String) project.findProperty("signingPassword");
+
+		SigningExtension signing = project.getExtensions().getByType(SigningExtension.class);
+		signing.setRequired((Callable<Boolean>) () -> signingKeyId != null || signingKey != null || signingPassword != null);
+
 		if (signingKeyId != null) {
 			signing.useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword);
 		} else {

@@ -24,7 +24,6 @@ import org.gradle.api.publish.maven.plugins.MavenPublishPlugin;
 import org.springframework.gradle.maven.SpringArtifactoryPlugin;
 import org.springframework.gradle.maven.SpringMavenPublishingConventionsPlugin;
 import org.springframework.gradle.maven.SpringPublishAllJavaComponentsPlugin;
-import org.springframework.gradle.maven.SpringPublishArtifactsPlugin;
 import org.springframework.gradle.maven.SpringPublishLocalPlugin;
 import org.springframework.gradle.maven.SpringSigningPlugin;
 
@@ -43,6 +42,5 @@ public class SpringMavenPlugin implements Plugin<Project> {
 		pluginManager.apply(SpringArtifactoryPlugin.class);
 		pluginManager.apply(SpringMavenPublishingConventionsPlugin.class);
 		pluginManager.apply(SpringPublishLocalPlugin.class);
-		pluginManager.apply(SpringPublishArtifactsPlugin.class);
 	}
 }

@@ -34,8 +34,6 @@ env:
   DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
   ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
   ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
-  OSSRH_TOKEN_USERNAME: ${{ secrets.OSSRH_S01_TOKEN_USERNAME }}
-  OSSRH_TOKEN_PASSWORD: ${{ secrets.OSSRH_S01_TOKEN_PASSWORD }}
 
 jobs:
   deploy-artifacts:
@@ -91,7 +89,7 @@ jobs:
           ARTIFACTORY_USER_AGENT_NAME: GitHub Actions
           ARTIFACTORY_USER_AGENT_VERSION: Unknown
           ARTIFACTORY_VCS_REVISION: ${{ github.sha }}
-        run: ./gradlew publishArtifacts -PartifactoryUsername="$ARTIFACTORY_USERNAME" -PartifactoryPassword="$ARTIFACTORY_PASSWORD" --stacktrace
+        run: ./gradlew artifactoryPublish -PartifactoryUsername="$ARTIFACTORY_USERNAME" -PartifactoryPassword="$ARTIFACTORY_PASSWORD" --stacktrace
       - name: Stage Local Artifacts for Publishing to Central
         if: ${{ steps.deploy-location.outputs.deploy_location == 'central' }}
         env:

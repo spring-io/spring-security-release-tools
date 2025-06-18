@@ -140,13 +140,6 @@ public class SpringArtifactoryPlugin implements Plugin<Project> {
 				buildInfo.setVcsRevision(vcsRevision);
 			}
 		});
-
-		// Publish snapshots, milestones, and release candidates to Artifactory
-		project.getTasks().named("publishArtifacts", (publishArtifacts) -> {
-			if (!ProjectUtils.isRelease(project)) {
-				publishArtifacts.dependsOn("artifactoryPublish");
-			}
-		});
 	}
 
 }
