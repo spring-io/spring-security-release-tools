@@ -7,6 +7,11 @@ on:
         description: Whether artifacts should be deployed (true|false|central|artifactory).
         required: true
         type: string
+      default-publish-milestones-central:
+        description: Whether the default for milestones & RCs should be deployed to Central
+        required: false
+        default: false
+        type: boolean
     outputs:
       artifacts-deployed:
         description: Whether artifacts were actually deployed.
@@ -66,12 +71,19 @@ jobs:
         env:
           SHOULD_DEPLOY_ARTIFACTS: ${{ inputs.should-deploy-artifacts }}
           VERSION: ${{ steps.project-version.outputs.version }}
+          DEFAULT_PUBLISH_MILESTONE_CENTRAL: ${{ inputs.default-publish-milestones-central }}
         run: |
           deploy_location="$SHOULD_DEPLOY_ARTIFACTS"
           if [[ "$deploy_location" = "true" ]] ; then
-            if [[ "$VERSION" =~ "-" ]] ; then
-              # -SNAPSHOT, -M\d+, and -RC\d+ all go to artifactory by default to remain passive
-              # Newer generations will only deploy -SNAPSHOT to artifactory, but they must opt into central explicitly
+            if [[ "$VERSION" =~ "-SNAPSHOT" ]] ; then
+              # always default -SNAPSHOT to artifactory
+              deploy_location=artifactory
+            elif [[ "$DEFAULT_PUBLISH_MILESTONE_CENTRAL" = "true" ]] ; then
+              # if configured, non -SNAPSHOT go to central
+              deploy_location=central
+            elif [[ "$VERSION" =~ "-" ]] ; then
+              # -M\d+, and -RC\d+ all go to artifactory by default to remain passive
+              # Newer generations will only deploy -SNAPSHOT to artifactory, but they must specify default-publish-milestone-central=true
               deploy_location=artifactory
             else
               deploy_location=central
