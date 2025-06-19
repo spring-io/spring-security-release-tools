@@ -127,31 +127,31 @@ jobs:
           ANNOUNCING_ID: ${{ inputs.slack-announcing-id }}
           WEBHOOK_URL: ${{ secrets.SPRING_RELEASE_GCHAT_WEBHOOK_URL }}
         run: |
-          curl -X POST '${{ env.WEBHOOK_URL }}' -H 'Content-Type: application/json' -d '{ "text": "${{ env.ANNOUNCING_ID }} `${{ env.VERSION }}` is available now" }' || true
+          curl -X POST "${WEBHOOK_URL}" -H 'Content-Type: application/json' -d "{ \"text\": \"${ANNOUNCING_ID}\" `${VERSION}` is available now\" }" || true
       - name: Delete Previous Version
         if: ${{ steps.previous-release-milestone.outputs.version != '' }}
         env:
           VERSION: ${{ steps.previous-release-milestone.outputs.version }}
-        run: ./gradlew deleteSaganRelease -PpreviousVersion=$VERSION -PgitHubAccessToken=$TOKEN
+        run: ./gradlew deleteSaganRelease -PpreviousVersion="$VERSION" -PgitHubAccessToken="$TOKEN"
       - name: Create Released Version
         env:
           VERSION: ${{ steps.project-version.outputs.version }}
-        run: ./gradlew createSaganRelease -PnextVersion=$VERSION -PgitHubAccessToken=$TOKEN
+        run: ./gradlew createSaganRelease -PnextVersion="$VERSION" -PgitHubAccessToken="$TOKEN"
       - name: Close Release Milestone
         env:
           VERSION: ${{ steps.project-version.outputs.version }}
-        run: ./gradlew closeMilestone -PnextVersion=$VERSION -PgitHubAccessToken=$TOKEN
+        run: ./gradlew closeMilestone -PnextVersion="$VERSION" -PgitHubAccessToken="$TOKEN"
       - name: Delete Previous Snapshot Version
         if: ${{ steps.previous-snapshot-version.outputs.version != '' }}
         env:
           VERSION: ${{ steps.previous-snapshot-version.outputs.version }}
-        run: ./gradlew deleteSaganRelease -PpreviousVersion=$VERSION -PgitHubAccessToken=$TOKEN
+        run: ./gradlew deleteSaganRelease -PpreviousVersion="$VERSION" -PgitHubAccessToken="$TOKEN"
       - name: Create Next Snapshot Version
         env:
           VERSION: ${{ steps.next-snapshot-version.outputs.version }}
-        run: ./gradlew createSaganRelease -PnextVersion=$VERSION -PgitHubAccessToken=$TOKEN
+        run: ./gradlew createSaganRelease -PnextVersion="$VERSION" -PgitHubAccessToken="$TOKEN"
       - name: Schedule Next Release (if not already scheduled)
         if: ${{ steps.has-oss-support.outputs.result == 'true' }}
         env:
           VERSION: ${{ steps.next-release-milestone.outputs.version }}
-        run: ./gradlew scheduleNextRelease -PnextVersion=$VERSION -PgitHubAccessToken=$TOKEN
+        run: ./gradlew scheduleNextRelease -PnextVersion="$VERSION" -PgitHubAccessToken="$TOKEN"

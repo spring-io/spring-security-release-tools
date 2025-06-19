@@ -30,20 +30,25 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       supported_versions: ${{ steps.get-supported-versions.outputs.supported_versions }}
+    env:
+      PROJECT: ${{ inputs.project }}
+      REPOSITORY_NAME: ${{ inputs.repository_name }}
+      TYPE: ${{ inputs.type }}
+
     steps:
       - id: get-supported-versions
         shell: bash
         run: |
-          if [ "${{ inputs.type }}" = "commercial" ]; then
-            response=$(curl https://api.spring.io/projects/${{ inputs.project }}/generations | jq --arg current "$(date +%F)" -c '.["_embedded"]["generations"] | map(select((.commercialSupportEndDate + "T00:00:00") > $current and (.ossSupportEndDate + "T00:00:00") < $current)) | sort_by(.initialReleaseDate) | .[].name' -r ${{ inputs.additional_curl_args }})
+          if [ "$TYPE" = "commercial" ]; then
+            response=$(curl "https://api.spring.io/projects/$PROJECT/generations" | jq --arg current "$(date +%F)" -c '.["_embedded"]["generations"] | map(select((.commercialSupportEndDate + "T00:00:00") > $current and (.ossSupportEndDate + "T00:00:00") < $current)) | sort_by(.initialReleaseDate) | .[].name' -r ${{ inputs.additional_curl_args }})
           else
-            response=$(curl -s https://api.spring.io/projects/${{ inputs.project }}/generations | jq --arg current "$(date +%F)" -c '.["_embedded"]["generations"] | map(select((.ossSupportEndDate + "T00:00:00") > $current)) | sort_by(.initialReleaseDate) | .[].name' -r ${{ inputs.additional_curl_args }})
+            response=$(curl -s "https://api.spring.io/projects/$PROJECT/generations" | jq --arg current "$(date +%F)" -c '.["_embedded"]["generations"] | map(select((.ossSupportEndDate + "T00:00:00") > $current)) | sort_by(.initialReleaseDate) | .[].name' -r ${{ inputs.additional_curl_args }})
           fi
           
           versions=""
           
           for version in $(echo "$response" | tr '\n' ' '); do
-            status_code=$(curl -s -o /dev/null -w "%{http_code}" "https://github.com/${{ inputs.repository_name }}/tree/$version")
+            status_code=$(curl -s -o /dev/null -w "%{http_code}" "https://github.com/$REPOSITORY_NAME/tree/$version")
             if [ "$status_code" -eq 200 ]; then
               if [ -z "$versions" ]; then
                 versions="$version"
