@@ -38,9 +38,7 @@ public class SpringSigningPlugin implements Plugin<Project> {
 			project.getPluginManager().apply(SigningPlugin.class);
 			project.getPlugins().withType(SigningPlugin.class, (signingPlugin) -> {
 				boolean hasSigningKey = project.hasProperty("signing.keyId") || project.hasProperty("signingKey");
-				if (hasSigningKey) {
-					sign(project);
-				}
+				sign(project);
 			});
 		});
 	}
