@@ -26,18 +26,24 @@ jobs:
         uses: spring-io/spring-gradle-build-action@v2
       - id: next-release-milestone
         name: Get Next Release Milestone
-        run: echo "version=$(./gradlew -q getNextReleaseMilestone -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
+        run: |
+          output=$(./gradlew -q getNextReleaseMilestone -PgitHubAccessToken=$TOKEN)
+          echo "version=output" >> $GITHUB_OUTPUT
       - id: is-due-today
         name: Check Release Due Date
         env:
           VERSION: ${{ steps.next-release-milestone.outputs.version }}
-        run: echo "result=$(./gradlew -q checkMilestoneIsDueToday -PnextVersion=$VERSION -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
+        run: |
+          output=$(./gradlew -q checkMilestoneIsDueToday -PnextVersion=$VERSION -PgitHubAccessToken=$TOKEN)
+          echo "result=output" >> $GITHUB_OUTPUT
       - id: has-open-issues
         name: Check for Open Issues
         if: steps.is-due-today.outputs.result == 'true'
         env:
           VERSION: ${{ steps.next-release-milestone.outputs.version }}
-        run: echo "result=$(./gradlew -q checkMilestoneHasOpenIssues -PnextVersion=$VERSION -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
+        run: |
+          output=$(./gradlew -q checkMilestoneHasOpenIssues -PnextVersion=$VERSION -PgitHubAccessToken=$TOKEN)
+          echo "result=output" >> $GITHUB_OUTPUT
       - name: Validate State of Release
         if: steps.is-due-today.outputs.result == 'true' && steps.has-open-issues.outputs.result == 'true'
         run: echo "The release is due today but there are open issues" && exit 1
