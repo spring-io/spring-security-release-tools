@@ -127,7 +127,7 @@ jobs:
           ANNOUNCING_ID: ${{ inputs.slack-announcing-id }}
           WEBHOOK_URL: ${{ secrets.SPRING_RELEASE_GCHAT_WEBHOOK_URL }}
         run: |
-          curl -X POST "${WEBHOOK_URL}" -H 'Content-Type: application/json' -d "{ \"text\": \"${ANNOUNCING_ID}\" `${VERSION}` is available now\" }" || true
+          FORMATTED_VERSION='`'"${VERSION}"'`' curl -X POST "${WEBHOOK_URL}" -H 'Content-Type: application/json' -d "{ \"text\": \"${ANNOUNCING_ID} ${FORMATTED_VERSION} is available now\" }" || true
       - name: Delete Previous Version
         if: ${{ steps.previous-release-milestone.outputs.version != '' }}
         env:
