@@ -25,6 +25,10 @@ jobs:
     if: ${{ inputs.should-deploy-docs == 'true' }}
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch-name }}
+          fetch-depth: 1
       - name: Dispatch (partial build)
         if: ${{ inputs.build-type == 'partial' }}
         env:
