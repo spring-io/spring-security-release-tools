@@ -58,18 +58,15 @@ jobs:
           token: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
       - name: Set up JDK 17
         uses: spring-io/spring-gradle-build-action@v2
-      - id: project-version
-        name: Extract Project Version
-        run: echo "version=$(cat gradle.properties | grep 'version=' | awk -F'=' '{print $2}')" >> $GITHUB_OUTPUT
       - id: next-snapshot-version
         name: Calculate Next Snapshot Version
         env:
-          VERSION: ${{ steps.project-version.outputs.version }}
+          VERSION: ${{ inputs.project-version }}
         run: echo "version=$(./gradlew -q getNextSnapshotVersion -PcurrentVersion=$VERSION)" >> $GITHUB_OUTPUT
       - id: previous-release-milestone
         name: Get Previous Release Milestone
         env:
-          VERSION: ${{ steps.project-version.outputs.version }}
+          VERSION: ${{ inputs.project-version }}
         run: echo "version=$(./gradlew -q getPreviousReleaseMilestone -PcurrentVersion=$VERSION -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
       - id: previous-snapshot-version
         name: Get Previous Snapshot Version
@@ -85,9 +82,9 @@ jobs:
         name: Check OSS Support (for current branch)
         run: echo "result=$(./gradlew -q checkBranchHasOssSupport -Pbranch=$BRANCH -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
       - name: Wait for Milestone Artifacts
-        if: ${{ contains(steps.project-version.outputs.version, '-RC') || contains(steps.project-version.outputs.version, '-M') }}
+        if: ${{ contains(inputs.project-version, '-RC') || contains(inputs.project-version, '-M') }}
         env:
-          VERSION: ${{ steps.project-version.outputs.version }}
+          VERSION: ${{ inputs.project-version }}
         run: |
           echo "Wait for artifacts of $REPO@$VERSION to appear on milestone repository ($MILESTONE_REPO)."
           until curl -f -s $MILESTONE_REPO/$ARTIFACT_PATH/$VERSION/ > /dev/null
@@ -97,9 +94,9 @@ jobs:
           done
           echo "Artifacts for $REPO@$VERSION have been released to milestone repository ($MILESTONE_REPO)."
       - name: Wait for Release Artifacts
-        if: ${{ !contains(steps.project-version.outputs.version, '-RC') && !contains(steps.project-version.outputs.version, '-M') }}
+        if: ${{ !contains(inputs.project-version, '-RC') && !contains(inputs.project-version, '-M') }}
         env:
-          VERSION: ${{ steps.project-version.outputs.version }}
+          VERSION: ${{ inputs.project-version }}
         run: |
           echo "Wait for artifacts of $REPO@$VERSION to appear on release repository ($RELEASE_REPO)."
           until curl -f -s $RELEASE_REPO/$ARTIFACT_PATH/$VERSION/ > /dev/null
@@ -110,7 +107,7 @@ jobs:
           echo "Artifacts for $REPO@$VERSION have been released to release repository ($RELEASE_REPO)."
       - name: Create GitHub Release
         env:
-          VERSION: ${{ steps.project-version.outputs.version }}
+          VERSION: ${{ inputs.project-version }}
         run: ./gradlew createGitHubRelease -PnextVersion=$VERSION -Pbranch=$BRANCH -PcreateRelease=true -PgitHubAccessToken=$TOKEN
       - name: Update Version
         env:
@@ -123,7 +120,7 @@ jobs:
           git push
       - name: Announce Release on GChat
         env:
-          VERSION: ${{ steps.project-version.outputs.version }}
+          VERSION: ${{ inputs.project-version }}
           ANNOUNCING_ID: ${{ inputs.slack-announcing-id }}
           WEBHOOK_URL: ${{ secrets.SPRING_RELEASE_GCHAT_WEBHOOK_URL }}
         run: |
@@ -135,11 +132,11 @@ jobs:
         run: ./gradlew deleteSaganRelease -PpreviousVersion="$VERSION" -PgitHubAccessToken="$TOKEN"
       - name: Create Released Version
         env:
-          VERSION: ${{ steps.project-version.outputs.version }}
+          VERSION: ${{ inputs.project-version }}
         run: ./gradlew createSaganRelease -PnextVersion="$VERSION" -PgitHubAccessToken="$TOKEN"
       - name: Close Release Milestone
         env:
-          VERSION: ${{ steps.project-version.outputs.version }}
+          VERSION: ${{ inputs.project-version }}
         run: ./gradlew closeMilestone -PnextVersion="$VERSION" -PgitHubAccessToken="$TOKEN"
       - name: Delete Previous Snapshot Version
         if: ${{ steps.previous-snapshot-version.outputs.version != '' }}
