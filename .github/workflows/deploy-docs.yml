@@ -38,6 +38,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Set up JDK 17
         uses: spring-io/spring-gradle-build-action@v2
+      - name: Get IP
+        run: curl https://api.ipify.org
       - name: Deploy Docs
         run: ./gradlew deployDocs -PdeployDocsSshKey="$DOCS_SSH_KEY" -PdeployDocsSshUsername="$DOCS_USERNAME" -PdeployDocsHost="$DOCS_HOST" --stacktrace
       - id: docs-deployed
