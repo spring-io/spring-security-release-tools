@@ -105,7 +105,7 @@ public class GitHubApi {
 	 * @param repository The repository owner/name
 	 * @param milestone The milestone containing a title and due date
 	 */
-	public void createMilestone(Repository repository, Milestone milestone) {
+	public Milestone createMilestone(Repository repository, Milestone milestone) {
 		var uri = "/repos/%s/%s/milestones".formatted(repository.owner(), repository.name());
 		// @formatter:off
 		var httpRequest = requestBuilder(uri)
@@ -114,12 +114,13 @@ public class GitHubApi {
 			.build();
 		// @formatter:on
 		try {
-			performRequest(httpRequest, Void.class);
+			return performRequest(httpRequest, Milestone.class);
 		}
 		catch (HttpClientException ex) {
 			if (ex.getStatusCode() == 422) {
 				LOGGER.warning("Unable to create milestone %s: response=%s".formatted(milestone.title(),
 						ex.getResponseBody()));
+				return null;
 			}
 			else {
 				throw ex;
@@ -180,6 +181,26 @@ public class GitHubApi {
 		var httpRequest = requestBuilder(uri).GET().build();
 		var issues = performRequest(httpRequest, Issue[].class);
 		return (issues.length > 0);
+	}
+
+	public Issue createReleaseIssue(Repository repository, Milestone milestone) {
+		var uri = "/repos/%s/%s/issues".formatted(repository.owner(), repository.name());
+		Map<String, Object> releaseIssue = Map.of("title", "Release " + milestone.title(), "milestone",
+				milestone.number(), "labels", List.of("in: build", "type: dependency-upgrade"));
+		var httpRequest = requestBuilder(uri).POST(bodyValue(releaseIssue)).build();
+		try {
+			return performRequest(httpRequest, Issue.class);
+		}
+		catch (HttpClientException ex) {
+			if (ex.getStatusCode() == 422) {
+				LOGGER.warning("Unable to create milestone %s: response=%s".formatted(milestone.title(),
+						ex.getResponseBody()));
+				return null;
+			}
+			else {
+				throw ex;
+			}
+		}
 	}
 
 	private HttpRequest.Builder requestBuilder(String uri) {

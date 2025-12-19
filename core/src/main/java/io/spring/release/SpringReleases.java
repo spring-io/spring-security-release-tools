@@ -363,7 +363,8 @@ public class SpringReleases {
 				// We use 12pm/noon UTC to be as far from anybody's midnight as we can.
 				var dueOn = releaseDate.atTime(LocalTime.NOON).toInstant(ZoneOffset.UTC);
 				var milestone = new Milestone(milestoneTitle, null, dueOn);
-				this.gitHubApi.createMilestone(repository, milestone);
+				Milestone created = this.gitHubApi.createMilestone(repository, milestone);
+				this.gitHubApi.createReleaseIssue(repository, created);
 			});
 		}
 		else {
@@ -371,7 +372,8 @@ public class SpringReleases {
 			var nextReleaseDate = releaseTrain.getNextReleaseDate(startDate);
 			var dueOn = nextReleaseDate.atTime(LocalTime.NOON).toInstant(ZoneOffset.UTC);
 			var milestone = new Milestone(baseVersion, null, dueOn);
-			this.gitHubApi.createMilestone(repository, milestone);
+			Milestone created = this.gitHubApi.createMilestone(repository, milestone);
+			this.gitHubApi.createReleaseIssue(repository, created);
 		}
 	}
 
