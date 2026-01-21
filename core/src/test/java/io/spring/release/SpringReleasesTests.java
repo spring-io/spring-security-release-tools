@@ -467,7 +467,6 @@ public class SpringReleasesTests {
 		var milestoneCaptor = forClass(Milestone.class);
 		verify(this.gitHubApi).getMilestones(repository);
 		verify(this.gitHubApi, times(5)).createMilestone(eq(repository), milestoneCaptor.capture());
-		verifyNoMoreInteractions(this.gitHubApi);
 
 		var milestonesCreated = milestoneCaptor.getAllValues().stream().map(Milestone::title).toList();
 		assertThat(milestonesCreated).containsExactly("6.2.0-M1", "6.2.0-M2", "6.2.0-M3", "6.2.0-RC1", "6.2.0");
@@ -482,7 +481,6 @@ public class SpringReleasesTests {
 		var milestoneCaptor = forClass(Milestone.class);
 		verify(this.gitHubApi).getMilestones(repository);
 		verify(this.gitHubApi, times(5)).createMilestone(eq(repository), milestoneCaptor.capture());
-		verifyNoMoreInteractions(this.gitHubApi);
 
 		var milestonesCreated = milestoneCaptor.getAllValues().stream().map(Milestone::title).toList();
 		assertThat(milestonesCreated).containsExactly("6.2.0-M1", "6.2.0-M2", "6.2.0-M3", "6.2.0-RC1", "6.2.0");
@@ -517,7 +515,6 @@ public class SpringReleasesTests {
 		var milestoneCaptor = forClass(Milestone.class);
 		verify(this.gitHubApi).getMilestones(repository);
 		verify(this.gitHubApi).createMilestone(eq(repository), milestoneCaptor.capture());
-		verifyNoMoreInteractions(this.gitHubApi);
 
 		var milestone = milestoneCaptor.getValue();
 		assertThat(milestone.title()).isEqualTo(version);
@@ -544,7 +541,6 @@ public class SpringReleasesTests {
 		var milestoneCaptor = forClass(Milestone.class);
 		verify(this.gitHubApi).getMilestones(repository);
 		verify(this.gitHubApi).createMilestone(eq(repository), milestoneCaptor.capture());
-		verifyNoMoreInteractions(this.gitHubApi);
 
 		var milestone = milestoneCaptor.getValue();
 		assertThat(milestone.title()).isEqualTo("6.2.1");
@@ -559,7 +555,6 @@ public class SpringReleasesTests {
 		var milestoneCaptor = forClass(Milestone.class);
 		verify(this.gitHubApi).getMilestones(repository);
 		verify(this.gitHubApi).createMilestone(eq(repository), milestoneCaptor.capture());
-		verifyNoMoreInteractions(this.gitHubApi);
 
 		var milestone = milestoneCaptor.getValue();
 		assertThat(milestone.title()).isEqualTo("6.2.1");
@@ -599,7 +594,6 @@ public class SpringReleasesTests {
 		var milestoneCaptor = forClass(Milestone.class);
 		verify(this.gitHubApi).getMilestones(repository);
 		verify(this.gitHubApi).createMilestone(eq(repository), milestoneCaptor.capture());
-		verifyNoMoreInteractions(this.gitHubApi);
 
 		var releaseTrainSpec = SpringReleaseTrainSpec.builder()
 			.nextTrain()
@@ -613,6 +607,18 @@ public class SpringReleasesTests {
 		var milestone = milestoneCaptor.getValue();
 		assertThat(milestone.title()).isEqualTo(version);
 		assertThat(milestone.dueOn()).isEqualTo(dueOn);
+	}
+
+	@Test
+	public void scheduleReleaseIfNotExistsWhenSchedulesThenIncludesReleaseIssue() {
+		var version = "6.1.9";
+		this.springReleases.scheduleReleaseIfNotExists(OWNER, REPO, version, WEEK_OF_MONTH, DAY_OF_WEEK);
+
+		var repository = new Repository(OWNER, REPO);
+		var milestoneCaptor = forClass(Milestone.class);
+		verify(this.gitHubApi).getMilestones(repository);
+		verify(this.gitHubApi).createMilestone(eq(repository), milestoneCaptor.capture());
+		verify(this.gitHubApi).createReleaseIssue(eq(repository), any());
 	}
 
 	private static Instant toInstant(String date) {

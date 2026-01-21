@@ -105,7 +105,7 @@ public final class SpringReleaseTrain {
 					this.releaseTrainSpec.getWeekOfMonth().getDayOffset());
 			currentDate = currentDate.plusMonths(1);
 		}
-		while (!trainDate.isAfter(startDate) || trainDate.getMonthValue() % 2 != 0);
+		while (!isEligibleDate(startDate, trainDate));
 
 		return trainDate;
 	}
@@ -126,6 +126,11 @@ public final class SpringReleaseTrain {
 		LocalDate firstMondayOfMonth = firstDayOfMonth.with(nextMonday);
 
 		return firstMondayOfMonth.with(nextDayOfWeek).plusDays(dayOffset);
+	}
+
+	private static boolean isEligibleDate(LocalDate startDate, LocalDate trainDate) {
+		return trainDate.isAfter(startDate) && !trainDate.getMonth().equals(startDate.getMonth())
+				&& trainDate.getMonthValue() % 2 == 0;
 	}
 
 }

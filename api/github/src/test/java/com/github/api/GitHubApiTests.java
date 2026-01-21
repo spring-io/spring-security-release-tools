@@ -245,6 +245,22 @@ public class GitHubApiTests {
 		json.assertThat("$.state", is("closed"));
 	}
 
+	@Test
+	public void createReleaseIssueWhenMilestoneThenAssignedToMilestone() throws Exception {
+		this.server.enqueue(json("CreateReleaseIssueResponse.json"));
+
+		this.githubApi.createReleaseIssue(this.repository, new Milestone("6.1.9", 12L, Instant.now()));
+
+		var recordedRequest = this.server.takeRequest();
+		assertThat(recordedRequest.getMethod()).isEqualTo("POST");
+		assertThat(recordedRequest.getPath()).isEqualTo("/repos/spring-projects/spring-security/issues");
+		assertThat(recordedRequest.getHeader("Accept")).isEqualTo("application/json");
+		assertThat(recordedRequest.getHeader("Authorization")).isEqualTo("Bearer %s".formatted(AUTH_TOKEN));
+
+		var json = JsonAssert.with(recordedRequest.getBody().readString(Charset.defaultCharset()));
+		json.assertThat("$.title", is("Release 6.1.9"));
+	}
+
 	private static MockResponse json(String path) throws IOException {
 		return new MockResponse().addHeader("Content-Type", "application/json").setBody(string(path));
 	}

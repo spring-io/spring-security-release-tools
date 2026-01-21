@@ -236,22 +236,16 @@ public class SpringReleaseTrainTests {
 	// @formatter:off
 	@CsvSource({
 			"2022-01-01, 2022-02-21",
-			"2022-02-01, 2022-02-21",
 			"2022-02-21, 2022-04-18",
 			"2022-03-01, 2022-04-18",
-			"2022-04-01, 2022-04-18",
 			"2022-04-18, 2022-06-20",
 			"2022-05-01, 2022-06-20",
-			"2022-06-01, 2022-06-20",
 			"2022-06-20, 2022-08-15",
 			"2022-07-01, 2022-08-15",
-			"2022-08-01, 2022-08-15",
 			"2022-08-15, 2022-10-17",
 			"2022-09-01, 2022-10-17",
-			"2022-10-01, 2022-10-17",
 			"2022-10-17, 2022-12-19",
 			"2022-11-01, 2022-12-19",
-			"2022-12-01, 2022-12-19",
 			"2022-12-19, 2023-02-20"
 	})
 	// @formatter:on
@@ -265,6 +259,33 @@ public class SpringReleaseTrainTests {
 						.dayOfWeek(1)
 						.year(2022)
 						.build();
+		// @formatter:on
+
+		SpringReleaseTrain releaseTrain = new SpringReleaseTrain(releaseTrainSpec);
+		assertThat(releaseTrain.getNextReleaseDate(startDate)).isEqualTo(expectedDate);
+	}
+
+	// https://github.com/spring-io/spring-security-release-tools/issues/84
+	@ParameterizedTest
+	// @formatter:off
+	@CsvSource({
+		"2022-02-01, 2022-04-18",
+		"2022-04-01, 2022-06-20",
+		"2022-06-01, 2022-08-15",
+		"2022-08-01, 2022-10-17",
+		"2022-10-01, 2022-12-19",
+		"2022-12-01, 2023-02-20"
+	})
+	public void getNextReleaseDateWhenEarlyReleaseThenDoesNotRescheduleSameRelease(LocalDate startDate, LocalDate expectedDate) {
+		// @formatter:off
+		SpringReleaseTrainSpec releaseTrainSpec =
+			SpringReleaseTrainSpec.builder()
+				.train(1)
+				.version("1.0.0")
+				.weekOfMonth(3)
+				.dayOfWeek(1)
+				.year(2022)
+				.build();
 		// @formatter:on
 
 		SpringReleaseTrain releaseTrain = new SpringReleaseTrain(releaseTrainSpec);
