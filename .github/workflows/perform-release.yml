@@ -119,12 +119,10 @@ jobs:
           git commit -am "Next development version"
           git push
       - name: Announce Release on GChat
-        env:
-          VERSION: ${{ inputs.project-version }}
-          ANNOUNCING_ID: ${{ inputs.slack-announcing-id }}
-          WEBHOOK_URL: ${{ secrets.SPRING_RELEASE_GCHAT_WEBHOOK_URL }}
-        run: |
-          curl -X POST "${WEBHOOK_URL}" -H 'Content-Type: application/json' -d "{ \"text\": \"${ANNOUNCING_ID} $(echo '`')${VERSION}$(echo '`') is available now\" }" || true
+        uses: spring-io/spring-release-actions/announce-on-gchat@0.0.1
+        with:
+          version: ${{ inputs.project-version }}
+          gchat-webhook-url: ${{ secrets.SPRING_RELEASE_GCHAT_WEBHOOK_URL }}
       - name: Delete Previous Version
         if: ${{ steps.previous-release-milestone.outputs.version != '' }}
         env:
