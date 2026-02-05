@@ -1,0 +1,7 @@
+= Release Guidelines
+
+A release happens on the appropriate `releases/vX` branch.
+That is, when releasing `v1`, release from `releases/v1` using the "Build and Deploy" action.
+
+Then forward-merge using `-s ours` from `releases/vX` to each subsequent `releases/vY` branch and finally `main`.
+When complete, merge the `releases/vX` branch into the `v1` branch.

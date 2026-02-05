@@ -1,0 +1,10 @@
+= Contribution Guidelines
+
+Development work for a given generation happens on the appropriate `releases/vX` branch.
+That is, if you are working on a maintenance release for the `1.0.x` generation, then make your commits on the `releases/v1` branch.
+Following that, perform a forward-merge to any subsequent `releases/vY` branches and finally to `main`.
+
+If you are working on the next major, commit your changes to `main`.
+
+When a version is released, it is merged from `releases/vX` to `vX`.
+This allows consumers of actions and workflows to use the `@v1` syntax whlie still having a stable usage experience.
