@@ -54,7 +54,7 @@ jobs:
         uses: spring-io/spring-gradle-build-action@v2
       - id: project-version
         name: Extract Project Version
-        uses: spring-io/spring-release-actions/compute-version@0.0.1
+        run: echo "version=$(cat gradle.properties | grep 'version=' | awk -F'=' '{print $2}')" >> $GITHUB_OUTPUT
       - id: branch-name
         name: Extract Branch Name
         env:
