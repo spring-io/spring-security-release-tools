@@ -26,7 +26,7 @@ import org.gradle.api.Project;
 import org.gradle.api.artifacts.dsl.RepositoryHandler;
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository;
 import org.gradle.api.artifacts.repositories.PasswordCredentials;
-import org.gradle.internal.credentials.DefaultPasswordCredentials;
+import org.gradle.api.model.ObjectFactory;
 
 /**
  * @author Steve Riesenberg
@@ -95,12 +95,15 @@ public abstract class SpringRepositoryPlugin implements Plugin<Project> {
 	}
 
 	private PasswordCredentials getArtifactoryCredentials(Project project) {
+		ObjectFactory objectFactory = project.getObjects();
+		PasswordCredentials credentials = objectFactory.newInstance(PasswordCredentials.class);
 		if (project.hasProperty(ARTIFACTORY_USERNAME) && project.hasProperty(ARTIFACTORY_PASSWORD)) {
 			String artifactoryUsername = Objects.requireNonNull(project.property(ARTIFACTORY_USERNAME)).toString();
 			String artifactoryPassword = Objects.requireNonNull(project.property(ARTIFACTORY_PASSWORD)).toString();
-			return new DefaultPasswordCredentials(artifactoryUsername, artifactoryPassword);
+			credentials.setUsername(artifactoryUsername);
+			credentials.setPassword(artifactoryPassword);
 		}
-		return new DefaultPasswordCredentials();
+		return credentials;
 	}
 
 }
