@@ -81,6 +81,30 @@ jobs:
       - id: has-oss-support
         name: Check OSS Support (for current branch)
         run: echo "result=$(./gradlew -q checkBranchHasOssSupport -Pbranch=$BRANCH -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
+      - name: Wait for Milestone Artifacts
+        if: ${{ contains(inputs.project-version, '-RC') || contains(inputs.project-version, '-M') }}
+        env:
+          VERSION: ${{ inputs.project-version }}
+        run: |
+          echo "Wait for artifacts of $REPO@$VERSION to appear on milestone repository ($MILESTONE_REPO)."
+          until curl -f -s $MILESTONE_REPO/$ARTIFACT_PATH/$VERSION/ > /dev/null
+          do
+            sleep 30
+            echo "."
+          done
+          echo "Artifacts for $REPO@$VERSION have been released to milestone repository ($MILESTONE_REPO)."
+      - name: Wait for Release Artifacts
+        if: ${{ !contains(inputs.project-version, '-RC') && !contains(inputs.project-version, '-M') }}
+        env:
+          VERSION: ${{ inputs.project-version }}
+        run: |
+          echo "Wait for artifacts of $REPO@$VERSION to appear on release repository ($RELEASE_REPO)."
+          until curl -f -s $RELEASE_REPO/$ARTIFACT_PATH/$VERSION/ > /dev/null
+          do
+            sleep 30
+            echo "."
+          done
+          echo "Artifacts for $REPO@$VERSION have been released to release repository ($RELEASE_REPO)."
       - name: Create GitHub Release
         env:
           VERSION: ${{ inputs.project-version }}
