@@ -3,6 +3,11 @@ permissions: {}
 on:
   workflow_call:
     inputs:
+      java-version:
+        description: The JDK version to use
+        required: false
+        default: '17'
+        type: string
       should-deploy-artifacts:
         description: Whether artifacts should be deployed (true|false|central|artifactory).
         required: true
@@ -50,8 +55,10 @@ jobs:
       project-version: ${{ steps.project-version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
-      - name: Set up JDK 17
+      - name: Set up JDK ${{ inputs.java-version }}
         uses: spring-io/spring-gradle-build-action@v2
+        with:
+          java-version: ${{ inputs.java-version }}
       - id: project-version
         name: Extract Project Version
         uses: spring-io/spring-release-actions/compute-version@0.0.1
