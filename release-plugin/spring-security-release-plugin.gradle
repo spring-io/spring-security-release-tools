@@ -1,7 +1,7 @@
 plugins {
 	id "io.spring.convention.spring-gradle-plugin"
 	id "com.gradle.plugin-publish" version "1.2.1"
-	id "com.github.johnrengelman.shadow" version "8.1.1"
+	id "com.gradleup.shadow" version "9.3.1"
 }
 
 gradlePlugin {
