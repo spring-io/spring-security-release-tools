@@ -61,7 +61,7 @@ jobs:
           java-version: ${{ inputs.java-version }}
       - id: project-version
         name: Extract Project Version
-        uses: spring-io/spring-release-actions/compute-version@0.0.1
+        uses: spring-io/spring-release-actions/compute-version@0.0.2
       - id: branch-name
         name: Extract Branch Name
         env:
