@@ -116,7 +116,7 @@ jobs:
           uri: "https://repo.spring.io"
           repository: ${{ steps.deploy-location.outputs.deploy_location }}
           build-name: ${{ github.event.repository.name }}-${{ steps.branch-name.outputs.branch }}
-          build-number: ${{ github.run_id }}
+          build-number: ${{ fromJSON(github.run_id) }}
           build-uri: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           username: ${{ secrets.ARTIFACTORY_USERNAME }}
           password: ${{ secrets.ARTIFACTORY_PASSWORD }}
