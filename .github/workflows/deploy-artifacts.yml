@@ -97,34 +97,12 @@ jobs:
             fi
           fi
           echo "deploy_location=$deploy_location" >> $GITHUB_OUTPUT
-<<<<<<< HEAD
-      - name: Deploy to Artifactory
-        if: ${{ steps.deploy-location.outputs.deploy_location == 'artifactory' }}
-        env:
-          ORG_GRADLE_PROJECT_signingKey: ${{ secrets.GPG_PRIVATE_KEY }}
-          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSPHRASE }}
-          ARTIFACTORY_BUILD_NAME: ${{ github.event.repository.name }}-${{ steps.branch-name.outputs.branch }}
-          ARTIFACTORY_BUILD_NUMBER: ${{ github.run_id }}
-          ARTIFACTORY_BUILD_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          ARTIFACTORY_USER_AGENT_NAME: GitHub Actions
-          ARTIFACTORY_USER_AGENT_VERSION: Unknown
-          ARTIFACTORY_VCS_REVISION: ${{ github.sha }}
-        run: ./gradlew artifactoryPublish -PartifactoryUsername="$ARTIFACTORY_USERNAME" -PartifactoryPassword="$ARTIFACTORY_PASSWORD" --stacktrace
-      - name: Stage Local Artifacts for Publishing to Central
-        if: ${{ steps.deploy-location.outputs.deploy_location == 'central' }}
-=======
       - name: Stage Local Artifacts for Publishing
->>>>>>> releases/v1
         env:
           ORG_GRADLE_PROJECT_signingKey: ${{ secrets.GPG_PRIVATE_KEY }}
           ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           ./gradlew publishAllPublicationsToLocalRepository --stacktrace
-<<<<<<< HEAD
-          # rm checksums to work around https://github.com/spring-io/central-publish-action/issues/11
-          find -name "*.md5" | xargs rm -f
-          find -name "*.sha*" | xargs rm -f
-=======
       - name: Remove Checksums
         if: ${{ steps.deploy-location.outputs.deploy_location == 'central' }}
         run: |
@@ -143,7 +121,6 @@ jobs:
           password: ${{ secrets.ARTIFACTORY_PASSWORD }}
           vcs-revision: ${{ github.sha }}
           folder: build/publications/repos
->>>>>>> releases/v1
       - name: Publish Staged Artifacts to Central
         if: ${{ steps.deploy-location.outputs.deploy_location == 'central' }}
         uses: spring-io/central-publish-action@v0.3.0
