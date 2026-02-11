@@ -3,6 +3,11 @@ permissions: {}
 on:
   workflow_call:
     inputs:
+      java-version:
+        description: The JDK version to use
+        required: false
+        default: '17'
+        type: string
       should-deploy-artifacts:
         description: Whether artifacts should be deployed (true|false|central|artifactory).
         required: true
@@ -50,11 +55,13 @@ jobs:
       project-version: ${{ steps.project-version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
-      - name: Set up JDK 17
+      - name: Set up JDK ${{ inputs.java-version }}
         uses: spring-io/spring-gradle-build-action@v2
+        with:
+          java-version: ${{ inputs.java-version }}
       - id: project-version
         name: Extract Project Version
-        run: echo "version=$(cat gradle.properties | grep 'version=' | awk -F'=' '{print $2}')" >> $GITHUB_OUTPUT
+        uses: spring-io/spring-release-actions/compute-version@0.0.2
       - id: branch-name
         name: Extract Branch Name
         env:
@@ -90,6 +97,7 @@ jobs:
             fi
           fi
           echo "deploy_location=$deploy_location" >> $GITHUB_OUTPUT
+<<<<<<< HEAD
       - name: Deploy to Artifactory
         if: ${{ steps.deploy-location.outputs.deploy_location == 'artifactory' }}
         env:
@@ -104,14 +112,38 @@ jobs:
         run: ./gradlew artifactoryPublish -PartifactoryUsername="$ARTIFACTORY_USERNAME" -PartifactoryPassword="$ARTIFACTORY_PASSWORD" --stacktrace
       - name: Stage Local Artifacts for Publishing to Central
         if: ${{ steps.deploy-location.outputs.deploy_location == 'central' }}
+=======
+      - name: Stage Local Artifacts for Publishing
+>>>>>>> releases/v1
         env:
           ORG_GRADLE_PROJECT_signingKey: ${{ secrets.GPG_PRIVATE_KEY }}
           ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           ./gradlew publishAllPublicationsToLocalRepository --stacktrace
+<<<<<<< HEAD
           # rm checksums to work around https://github.com/spring-io/central-publish-action/issues/11
           find -name "*.md5" | xargs rm -f
           find -name "*.sha*" | xargs rm -f
+=======
+      - name: Remove Checksums
+        if: ${{ steps.deploy-location.outputs.deploy_location == 'central' }}
+        run: |
+          # rm checksums to work around https://github.com/spring-io/central-publish-action/issues/11
+          find -name "*.md5" | xargs rm -f
+          find -name "*.sha*" | xargs rm -f
+      - name: Deploy to Artifactory
+        if: ${{ steps.deploy-location.outputs.deploy_location != 'central' }}
+        uses: spring-io/artifactory-deploy-action@v0.0.4
+        with:
+          uri: "https://repo.spring.io"
+          repository: ${{ steps.deploy-location.outputs.deploy_location }}
+          build-name: ${{ github.event.repository.name }}-${{ steps.branch-name.outputs.branch }}
+          build-uri: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          username: ${{ secrets.ARTIFACTORY_USERNAME }}
+          password: ${{ secrets.ARTIFACTORY_PASSWORD }}
+          vcs-revision: ${{ github.sha }}
+          folder: build/publications/repos
+>>>>>>> releases/v1
       - name: Publish Staged Artifacts to Central
         if: ${{ steps.deploy-location.outputs.deploy_location == 'central' }}
         uses: spring-io/central-publish-action@v0.3.0
