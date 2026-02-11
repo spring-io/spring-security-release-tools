@@ -97,12 +97,15 @@ jobs:
             fi
           fi
           echo "deploy_location=$deploy_location" >> $GITHUB_OUTPUT
-      - name: Stage Local Artifacts for Publishing to Central
+      - name: Stage Local Artifacts for Publishing
         env:
           ORG_GRADLE_PROJECT_signingKey: ${{ secrets.GPG_PRIVATE_KEY }}
           ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           ./gradlew publishAllPublicationsToLocalRepository --stacktrace
+      - name: Remove Checksums
+        if: ${{ steps.deploy-location.outputs.deploy_location == 'central' }}
+        run: |
           # rm checksums to work around https://github.com/spring-io/central-publish-action/issues/11
           find -name "*.md5" | xargs rm -f
           find -name "*.sha*" | xargs rm -f
