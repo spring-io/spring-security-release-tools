@@ -103,6 +103,9 @@ jobs:
           ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           ./gradlew publishAllPublicationsToLocalRepository --stacktrace
+          # rm checksums to work around https://github.com/spring-io/central-publish-action/issues/11
+          find -name "*.md5" | xargs rm -f
+          find -name "*.sha*" | xargs rm -f
       - name: Deploy to Artifactory
         if: ${{ steps.deploy-location.outputs.deploy_location != 'central' }}
         uses: spring-io/artifactory-deploy-action@v0.0.4
@@ -122,7 +125,6 @@ jobs:
           token-name: ${{ secrets.CENTRAL_TOKEN_USERNAME }}
           token: ${{ secrets.CENTRAL_TOKEN_PASSWORD }}
           dir: build/publications/repos
-          fail-on-existing-checksums: false
       - id: artifacts-deployed
         name: Artifacts Deployed
         run: echo "result=true" >> $GITHUB_OUTPUT
