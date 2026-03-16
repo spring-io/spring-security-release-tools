@@ -82,9 +82,10 @@ jobs:
         run: echo "version=$(./gradlew -q getPreviousReleaseMilestone -PcurrentVersion=$VERSION -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
       - id: next-release-milestone
         name: Get Next Release Milestone
-        env:
-          VERSION: ${{ steps.next-snapshot-version.outputs.version }}
-        run: echo "version=$(./gradlew -q getNextReleaseMilestone -PcurrentVersion=$VERSION -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
+        uses: spring-io/spring-release-actions/compute-next-version@0.0.3
+        with:
+          version: ${{ inputs.project-version }}
+          token: ${{ github.token }}
       - id: has-oss-support
         name: Check OSS Support (for current branch)
         run: echo "result=$(./gradlew -q checkBranchHasOssSupport -Pbranch=$BRANCH -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
