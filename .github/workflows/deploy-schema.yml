@@ -15,7 +15,7 @@ on:
     outputs:
       schema-deployed:
         description: Whether schema files were actually deployed.
-        value: ${{ jobs.deploy-schema.outputs.docs-deployed }}
+        value: ${{ jobs.deploy-schema.outputs.schema-deployed }}
     secrets:
       DEVELOCITY_ACCESS_KEY:
         required: false

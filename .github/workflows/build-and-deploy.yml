@@ -8,7 +8,7 @@ on:
 jobs:
   build:
     name: Build
-    uses: ./.github/workflows/build.yml
+    uses: ./.github/workflows/build-publish.yml
     secrets: inherit
   test:
     name: Test
@@ -18,15 +18,13 @@ jobs:
     name: Deploy Artifacts
     needs: [ build, test ]
     uses: ./.github/workflows/deploy-artifacts.yml
-    with:
-      should-deploy-artifacts: ${{ needs.build.outputs.should-deploy-artifacts }}
     secrets: inherit
   publish-plugins:
     name: Publish Plugins
     needs: [ deploy-artifacts ]
     uses: ./.github/workflows/publish-plugins.yml
     with:
-      should-publish-plugins: ${{ needs.deploy-artifacts.outputs.artifacts-deployed }}
+      should-publish-plugins: 'true'
       project-version: ${{ needs.deploy-artifacts.outputs.project-version }}
     secrets: inherit
   send-notification:
@@ -36,6 +34,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Send Notification
-        uses: spring-io/spring-security-release-tools/.github/actions/send-notification@v1
+        uses: spring-io/spring-release-tools/status-on-gchat@0.0.3
         with:
-          webhook-url: ${{ secrets.SPRING_SECURITY_CI_GCHAT_WEBHOOK_URL }}
+          gchat-webhook-url: ${{ secrets.SPRING_SECURITY_CI_GCHAT_WEBHOOK_URL }}

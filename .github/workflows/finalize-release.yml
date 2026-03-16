@@ -1,0 +1,96 @@
+name: Finalize Release
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: Version to release.
+        required: true
+        type: string
+      runs-on:
+        description: GitHub Actions runner to run the release task on.
+        required: false
+        default: 'ubuntu-latest'
+        type: string
+    secrets:
+      GH_WEBSITE_COMMERCIAL_CONTENT_TOKEN:
+        required: true
+      SPRING_RELEASE_GCHAT_WEBHOOK_URL:
+        required: true
+
+jobs:
+  compute-release:
+    name: Compute Release Coordinates
+    runs-on: ${{ inputs.runs-on }}
+    outputs:
+      next-snapshot-version: ${{ steps.next-snapshot-version.outputs.version }}
+      next-milestone-version: ${{ steps.next-release-milestone.outputs.version }}
+      next-milestone-version-date: ${{ steps.next-release-milestone.outputs.version-date }}
+      next-milestone-version-type: ${{ steps.next-release-milestone.outputs.version-type }}
+    steps:
+      - id: next-snapshot-version
+        name: Calculate Next Snapshot Version
+        uses: spring-io/spring-release-actions/compute-next-snapshot@708379dd0580adcd6dddf4e3754c8accec4801d4  # 0.0.3
+        with:
+          version: ${{ inputs.version }}
+      - id: next-release-milestone
+        name: Get Next Release Milestone
+        uses: spring-io/spring-release-actions/compute-next-version@708379dd0580adcd6dddf4e3754c8accec4801d4  # 0.0.3
+        with:
+          version: ${{ inputs.version }}
+          token: ${{ github.token }}
+  publish-release:
+    name: Publish Release
+    needs: [ compute-release ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+      - name: Generate Release Notes
+        uses: spring-io/github-changelog-generator@c247eb874a8bbc2c7b91ed7227d8eb66eb639d38  # v0.0.13
+        with:
+          milestone: ${{ inputs.version }}
+          token: ${{ github.token }}
+          config-file: etc/release-notes-sections.yml
+      - name: Create GitHub Release
+        uses: spring-io/spring-release-actions/publish-release-notes@708379dd0580adcd6dddf4e3754c8accec4801d4  # 0.0.3
+        with:
+          tag: ${{ inputs.version }}
+      - name: Push Next Release Version
+        uses: spring-io/spring-release-actions/push-next-development-version@708379dd0580adcd6dddf4e3754c8accec4801d4 # 0.0.3
+        with:
+          version: ${{ needs.compute-release.outputs.next-snapshot-version }}
+  update-website:
+    name: Update Website Content
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update Learn Page
+        uses: spring-io/spring-release-actions/update-learn-page@708379dd0580adcd6dddf4e3754c8accec4801d4  # 0.0.3
+        with:
+          version: ${{ inputs.version }}
+          website-token: ${{ secrets.GH_WEBSITE_COMMERCIAL_CONTENT_TOKEN }}
+          is-antora: true
+  update-milestones:
+    name: Update Milestones
+    needs: [ compute-release ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close Milestone
+        uses: spring-io/spring-release-actions/close-milestone@708379dd0580adcd6dddf4e3754c8accec4801d4  # 0.0.3
+        with:
+          version: ${{ inputs.version }}
+      - name: Schedule Next Release (if not already scheduled)
+        if: ${{ needs.compute-release.outputs.next-milestone-version-type == 'oss' }}
+        uses: spring-io/spring-release-actions/schedule-milestone@708379dd0580adcd6dddf4e3754c8accec4801d4  # 0.0.3
+        with:
+          version: ${{ needs.compute-release.outputs.next-milestone-version }}
+          version-date: ${{ needs.compute-release.outputs.next-milestone-version-date }}
+  announcements:
+    name: Announcements
+    needs: [ publish-release, update-website, update-milestones ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Announce Release on GChat
+        uses: spring-io/spring-release-actions/announce-on-gchat@708379dd0580adcd6dddf4e3754c8accec4801d4  # 0.0.3
+        with:
+          version: ${{ inputs.version }}
+          gchat-webhook-url: ${{ secrets.SPRING_RELEASE_GCHAT_WEBHOOK_URL }}

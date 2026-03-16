@@ -3,33 +3,21 @@ permissions: {}
 on:
   workflow_call:
     inputs:
-      java-version:
-        description: The JDK version to use
+      runs-on:
+        description: GitHub Actions runner to run the deploy task on.
         required: false
-        default: '17'
+        default: 'ubuntu-latest'
         type: string
-      should-deploy-artifacts:
-        description: Whether artifacts should be deployed (true|false|central|artifactory).
-        required: true
-        type: string
-      default-publish-milestones-central:
-        description: Whether the default for milestones & RCs should be deployed to Central
-        required: false
-        default: false
-        type: boolean
-    outputs:
-      artifacts-deployed:
-        description: Whether artifacts were actually deployed.
-        value: ${{ jobs.deploy-artifacts.outputs.artifacts-deployed }}
-      project-version:
-        description: The project version extracted from the current branch/tag.
-        value: ${{ jobs.deploy-artifacts.outputs.project-version }}
     secrets:
       DEVELOCITY_ACCESS_KEY:
         required: false
       ARTIFACTORY_USERNAME:
         required: false
       ARTIFACTORY_PASSWORD:
+        required: false
+      COMMERCIAL_ARTIFACTORY_USERNAME:
+        required: false
+      COMMERCIAL_ARTIFACTORY_PASSWORD:
         required: false
       CENTRAL_TOKEN_USERNAME:
         required: false
@@ -42,92 +30,39 @@ on:
 
 env:
   DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
-  ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
-  ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+  ARTIFACTORY_USERNAME: ${{ secrets.COMMERCIAL_ARTIFACTORY_USERNAME || secrets.ARTIFACTORY_USERNAME }}
+  ARTIFACTORY_PASSWORD: ${{ secrets.COMMERCIAL_ARTIFACTORY_PASSWORD || secrets.ARTIFACTORY_PASSWORD }}
 
 jobs:
   deploy-artifacts:
     name: Deploy Artifacts
-    if: ${{ inputs.should-deploy-artifacts != 'false' }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     outputs:
-      artifacts-deployed: ${{ steps.artifacts-deployed.outputs.result }}
       project-version: ${{ steps.project-version.outputs.version }}
+      project-snapshot: ${{ steps.project-version.outputs.snapshot }}
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK ${{ inputs.java-version }}
-        uses: spring-io/spring-gradle-build-action@v2
+      - name: Download local Maven repository
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4.3.0
         with:
-          java-version: ${{ inputs.java-version }}
+          name: local-maven-repository
+          path: local-maven-repository
       - id: project-version
         name: Extract Project Version
-        uses: spring-io/spring-release-actions/compute-version@0.0.2
-      - id: branch-name
-        name: Extract Branch Name
-        env:
-          BRANCH: ${{ github.ref_name }}
-          VERSION: ${{ steps.project-version.outputs.version }}
-        run: |
-          branch=$BRANCH
-          if [[ "$branch" = "main" ]] ; then
-            branch="${VERSION%.*}.x"
-          fi
-          echo "branch=$branch" >> $GITHUB_OUTPUT
+        uses: spring-io/spring-release-actions/compute-version@708379dd0580adcd6dddf4e3754c8accec4801d4
+        with:
+          artifact-path: local-maven-repository/org/springframework/security/spring-security-core
       - id: deploy-location
-        name: Default the Deploy Location
-        env:
-          SHOULD_DEPLOY_ARTIFACTS: ${{ inputs.should-deploy-artifacts }}
-          VERSION: ${{ steps.project-version.outputs.version }}
-          DEFAULT_PUBLISH_MILESTONE_CENTRAL: ${{ inputs.default-publish-milestones-central }}
-        run: |
-          deploy_location="$SHOULD_DEPLOY_ARTIFACTS"
-          if [[ "$deploy_location" = "true" ]] ; then
-            if [[ "$VERSION" =~ "-SNAPSHOT" ]] ; then
-              # always default -SNAPSHOT to artifactory
-              deploy_location=libs-snapshot-local
-            elif [[ "$DEFAULT_PUBLISH_MILESTONE_CENTRAL" = "true" ]] ; then
-              # if configured, non -SNAPSHOT go to central
-              deploy_location=central
-            elif [[ "$VERSION" =~ "-" ]] ; then
-              # -M\d+, and -RC\d+ all go to artifactory by default to remain passive
-              # Newer generations will only deploy -SNAPSHOT to artifactory, but they must specify default-publish-milestone-central=true
-              deploy_location=libs-milestone-local
-            else
-              deploy_location=central
-            fi
-          fi
-          echo "deploy_location=$deploy_location" >> $GITHUB_OUTPUT
-      - name: Stage Local Artifacts for Publishing
-        env:
-          ORG_GRADLE_PROJECT_signingKey: ${{ secrets.GPG_PRIVATE_KEY }}
-          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSPHRASE }}
-        run: |
-          ./gradlew publishAllPublicationsToLocalRepository --stacktrace
-      - name: Remove Checksums
-        if: ${{ steps.deploy-location.outputs.deploy_location == 'central' }}
-        run: |
-          # rm checksums to work around https://github.com/spring-io/central-publish-action/issues/11
-          find -name "*.md5" | xargs rm -f
-          find -name "*.sha*" | xargs rm -f
-      - name: Deploy to Artifactory
-        if: ${{ steps.deploy-location.outputs.deploy_location != 'central' }}
-        uses: spring-io/artifactory-deploy-action@v0.0.4
+        name: Compute Deploy Location
+        uses: spring-io/spring-release-actions/compute-artifact-repository@708379dd0580adcd6dddf4e3754c8accec4801d4
         with:
-          uri: "https://repo.spring.io"
-          repository: ${{ steps.deploy-location.outputs.deploy_location }}
-          build-name: ${{ github.event.repository.name }}-${{ steps.branch-name.outputs.branch }}
-          build-uri: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          username: ${{ secrets.ARTIFACTORY_USERNAME }}
-          password: ${{ secrets.ARTIFACTORY_PASSWORD }}
-          vcs-revision: ${{ github.sha }}
-          folder: build/publications/repos
-      - name: Publish Staged Artifacts to Central
-        if: ${{ steps.deploy-location.outputs.deploy_location == 'central' }}
-        uses: spring-io/central-publish-action@v0.3.0
+          version: ${{ steps.project-version.outputs.version }}
+      - name: Deploy Artifacts
+        uses: spring-io/spring-security-actions/ensure-artifacts@0536cabc33626611bc907d4d3dc9fae3444bc859
         with:
-          token-name: ${{ secrets.CENTRAL_TOKEN_USERNAME }}
-          token: ${{ secrets.CENTRAL_TOKEN_PASSWORD }}
-          dir: build/publications/repos
-      - id: artifacts-deployed
-        name: Artifacts Deployed
-        run: echo "result=true" >> $GITHUB_OUTPUT
+          version: ${{ steps.project-version.outputs.version }}
+          username: ${{ steps.deploy-location.outputs.name == 'maven2' && secrets.CENTRAL_TOKEN_USERNAME || secrets.ARTIFACTORY_USERNAME }}
+          password: ${{ steps.deploy-location.outputs.name == 'maven2' && secrets.CENTRAL_TOKEN_PASSWORD || secrets.ARTIFACTORY_PASSWORD }}
+          repository-uri: ${{ steps.deploy-location.outputs.uri }}
+          repository-name: ${{ steps.deploy-location.outputs.name }}
+          local-repository: local-maven-repository
+          artifact-path: org/springframework/security/spring-security-core

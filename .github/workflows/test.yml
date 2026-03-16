@@ -31,12 +31,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set up JDK ${{ inputs.java-version }}
-        uses: spring-io/spring-gradle-build-action@v2
+      - name: Build and Publish to Local Repository
+        uses: spring-io/spring-security-actions/run-gradle@main
         with:
           java-version: ${{ inputs.java-version }}
           distribution: ${{ inputs.distribution }}
-      - name: Run Tests
-        env:
-          TEST_ARGS: ${{ inputs.test-args }}
-        run: ./gradlew test $TEST_ARGS
+          artifactory-url: ${{ env.ARTIFACTORY_URL }}
+          username: ${{ secrets.COMMERCIAL_ARTIFACTORY_USERNAME || secrets.ARTIFACTORY_USERNAME }}
+          password: ${{ secrets.COMMERCIAL_ARTIFACTORY_PASSWORD || secrets.ARTIFACTORY_PASSWORD }}
+          gradle-args: test ${{ inputs.test-args }}

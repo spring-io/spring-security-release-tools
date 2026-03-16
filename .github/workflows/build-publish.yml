@@ -1,8 +1,11 @@
-name: Build Pull Request
-
+name: Build
+permissions: {}
 on:
   workflow_call:
     inputs:
+      artifactory-url:
+        description: Artifactory URL for build dependencies
+        required: false
       java-version:
         description: Version of the JDK to use to run the Gradle command.
         required: false
@@ -13,12 +16,12 @@ on:
         required: false
         default: 'temurin'
         type: string
-      artifactory-url:
-        description: Artifactory URL for build dependencies
+      runs-on:
+        description: GitHub Actions runner to run the build task on.
         required: false
+        default: 'ubuntu-latest'
+        type: string
     secrets:
-      DEVELOCITY_ACCESS_KEY:
-        required: false
       ARTIFACTORY_USERNAME:
         required: false
       ARTIFACTORY_PASSWORD:
@@ -27,6 +30,8 @@ on:
         required: false
       COMMERCIAL_ARTIFACTORY_PASSWORD:
         required: false
+      DEVELOCITY_ACCESS_KEY:
+        required: false
 
 env:
   DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
@@ -34,14 +39,20 @@ env:
 jobs:
   build:
     name: Build
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     steps:
       - uses: actions/checkout@v4
-      - name: Build
+      - name: Build and Publish to Local Repository
         uses: spring-io/spring-security-actions/run-gradle@main
         with:
           java-version: ${{ inputs.java-version }}
           distribution: ${{ inputs.distribution }}
-          artifactory-url: ${{ inputs.artifactory-url }}
+          artifactory-url: ${{ env.ARTIFACTORY_URL }}
           username: ${{ secrets.COMMERCIAL_ARTIFACTORY_USERNAME || secrets.ARTIFACTORY_USERNAME }}
           password: ${{ secrets.COMMERCIAL_ARTIFACTORY_PASSWORD || secrets.ARTIFACTORY_PASSWORD }}
+          gradle-args: build publishAllPublicationsToLocalRepository --continue
+      - name: Upload local Maven repository
+        uses: actions/upload-artifact@v4
+        with:
+          name: local-maven-repository
+          path: build/publications/repos
