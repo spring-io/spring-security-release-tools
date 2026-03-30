@@ -89,10 +89,10 @@ jobs:
       - id: has-oss-support
         name: Check OSS Support (for current branch)
         run: echo "result=$(./gradlew -q checkBranchHasOssSupport -Pbranch=$BRANCH -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
-      - name: Create GitHub Release
-        env:
-          VERSION: ${{ inputs.project-version }}
-        run: ./gradlew createGitHubRelease -PnextVersion=$VERSION -Pbranch=$BRANCH -PcreateRelease=true -PgitHubAccessToken=$TOKEN
+      - name: Publish Release Notes
+        uses: spring-io/spring-release-actions/publish-release-notes@0.0.3
+        with:
+          tag: ${{ inputs.project-version }}
       - name: Update Version
         env:
           VERSION: ${{ steps.next-snapshot-version.outputs.version }}
