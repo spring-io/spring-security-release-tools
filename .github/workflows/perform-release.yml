@@ -67,6 +67,12 @@ jobs:
         with:
           version: ${{ inputs.project-version }}
           token: ${{ github.token }}
+      - name: Generate Changelog
+        uses: spring-io/github-changelog-generator@v0.0.13
+        with:
+          milestone: ${{ inputs.project-version }}
+          token: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
+          config-file: scripts/release/release-notes-sections.yml
       - name: Publish Release Notes
         uses: spring-io/spring-release-actions/publish-release-notes@0.0.3
         with:
