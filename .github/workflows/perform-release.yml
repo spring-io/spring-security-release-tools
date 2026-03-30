@@ -25,46 +25,46 @@ jobs:
     timeout-minutes: 90
     if: ${{ inputs.should-perform-release == 'true' && !endsWith(inputs.project-version, '-SNAPSHOT') }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           token: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
       - id: next-release-milestone
         name: Get Next Release Milestone
-        uses: spring-io/spring-release-actions/compute-next-version@0.0.3
+        uses: spring-io/spring-release-actions/compute-next-version@708379dd0580adcd6dddf4e3754c8accec4801d4 # 0.0.3
         with:
           version: ${{ inputs.project-version }}
           token: ${{ github.token }}
       - name: Generate Changelog
-        uses: spring-io/github-changelog-generator@v0.0.13
+        uses: spring-io/github-changelog-generator@f7d7a87a3e7c627ecb8c26cf086c38ac5a939721 # v0.0.14
         with:
           milestone: ${{ inputs.project-version }}
           token: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
           config-file: scripts/release/release-notes-sections.yml
       - name: Publish Release Notes
-        uses: spring-io/spring-release-actions/publish-release-notes@0.0.3
+        uses: spring-io/spring-release-actions/publish-release-notes@708379dd0580adcd6dddf4e3754c8accec4801d4 # 0.0.3
         with:
           tag: ${{ inputs.project-version }}
       - name: Push Next Development Version
-        uses: spring-io/spring-release-actions/push-next-development-version@0.0.3
+        uses: spring-io/spring-release-actions/push-next-development-version@708379dd0580adcd6dddf4e3754c8accec4801d4 # 0.0.3
         with:
           version: ${{ inputs.project-version }}
       - name: Announce Release on GChat
-        uses: spring-io/spring-release-actions/announce-on-gchat@0.0.2
+        uses: spring-io/spring-release-actions/announce-on-gchat@708379dd0580adcd6dddf4e3754c8accec4801d4 # 0.0.3
         with:
           version: ${{ inputs.project-version }}
           gchat-webhook-url: ${{ secrets.SPRING_RELEASE_GCHAT_WEBHOOK_URL }}
       - name: Update Learn Page
-        uses: spring-io/spring-release-actions/update-learn-page@0.0.3
+        uses: spring-io/spring-release-actions/update-learn-page@708379dd0580adcd6dddf4e3754c8accec4801d4 # 0.0.3
         with:
           version: ${{ inputs.project-version }}
       - name: Close Release Milestone
-        uses: spring-io/spring-release-actions/close-milestone@0.0.3
+        uses: spring-io/spring-release-actions/close-milestone@708379dd0580adcd6dddf4e3754c8accec4801d4 # 0.0.3
         with:
           version: ${{ inputs.project-version }}
           token: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
       - name: Schedule Next Release (if not already scheduled)
         if: ${{ steps.next-release-milestone.outputs.version-type == 'oss' }}
-        uses: spring-io/spring-release-actions/schedule-milestone@0.0.3
+        uses: spring-io/spring-release-actions/schedule-milestone@708379dd0580adcd6dddf4e3754c8accec4801d4 # 0.0.3
         with:
           version: ${{ steps.next-release-milestone.outputs.version }}
           version-date: ${{ steps.next-release-milestone.outputs.version-date }}
