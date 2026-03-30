@@ -132,6 +132,8 @@ jobs:
         run: ./gradlew createSaganRelease -PnextVersion="$VERSION" -PgitHubAccessToken="$TOKEN"
       - name: Schedule Next Release (if not already scheduled)
         if: ${{ steps.has-oss-support.outputs.result == 'true' }}
-        env:
-          VERSION: ${{ steps.next-release-milestone.outputs.version }}
-        run: ./gradlew scheduleNextRelease -PnextVersion="$VERSION" -PgitHubAccessToken="$TOKEN"
+        uses: spring-io/spring-release-actions/schedule-milestone@0.0.3
+        with:
+          version: ${{ steps.next-release-milestone.outputs.version }}
+          version-date: ${{ steps.next-release-milestone.outputs.version-date }}
+          token: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
