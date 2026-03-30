@@ -44,15 +44,6 @@ jobs:
         uses: spring-io/spring-release-actions/publish-release-notes@708379dd0580adcd6dddf4e3754c8accec4801d4 # 0.0.3
         with:
           tag: ${{ inputs.project-version }}
-      - name: Push Next Development Version
-        uses: spring-io/spring-release-actions/push-next-development-version@708379dd0580adcd6dddf4e3754c8accec4801d4 # 0.0.3
-        with:
-          version: ${{ inputs.project-version }}
-      - name: Announce Release on GChat
-        uses: spring-io/spring-release-actions/announce-on-gchat@708379dd0580adcd6dddf4e3754c8accec4801d4 # 0.0.3
-        with:
-          version: ${{ inputs.project-version }}
-          gchat-webhook-url: ${{ secrets.SPRING_RELEASE_GCHAT_WEBHOOK_URL }}
       - name: Update Learn Page
         uses: spring-io/spring-release-actions/update-learn-page@708379dd0580adcd6dddf4e3754c8accec4801d4 # 0.0.3
         with:
@@ -69,3 +60,12 @@ jobs:
           version: ${{ steps.next-release-milestone.outputs.version }}
           version-date: ${{ steps.next-release-milestone.outputs.version-date }}
           token: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
+      - name: Push Next Development Version
+        uses: spring-io/spring-release-actions/push-next-development-version@708379dd0580adcd6dddf4e3754c8accec4801d4 # 0.0.3
+        with:
+          version: ${{ inputs.project-version }}
+      - name: Announce Release on GChat
+        uses: spring-io/spring-release-actions/announce-on-gchat@708379dd0580adcd6dddf4e3754c8accec4801d4 # 0.0.3
+        with:
+          version: ${{ inputs.project-version }}
+          gchat-webhook-url: ${{ secrets.SPRING_RELEASE_GCHAT_WEBHOOK_URL }}
