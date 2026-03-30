@@ -76,9 +76,6 @@ jobs:
         with:
           version: ${{ inputs.project-version }}
           token: ${{ github.token }}
-      - id: has-oss-support
-        name: Check OSS Support (for current branch)
-        run: echo "result=$(./gradlew -q checkBranchHasOssSupport -Pbranch=$BRANCH -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
       - name: Publish Release Notes
         uses: spring-io/spring-release-actions/publish-release-notes@0.0.3
         with:
@@ -107,7 +104,7 @@ jobs:
           version: ${{ inputs.project-version }}
           token: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
       - name: Schedule Next Release (if not already scheduled)
-        if: ${{ steps.has-oss-support.outputs.result == 'true' }}
+        if: ${{ steps.next-release-milestone.outputs.version-type == 'oss' }}
         uses: spring-io/spring-release-actions/schedule-milestone@0.0.3
         with:
           version: ${{ steps.next-release-milestone.outputs.version }}
