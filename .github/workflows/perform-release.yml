@@ -117,9 +117,10 @@ jobs:
           VERSION: ${{ inputs.project-version }}
         run: ./gradlew createSaganRelease -PnextVersion="$VERSION" -PgitHubAccessToken="$TOKEN"
       - name: Close Release Milestone
-        env:
-          VERSION: ${{ inputs.project-version }}
-        run: ./gradlew closeMilestone -PnextVersion="$VERSION" -PgitHubAccessToken="$TOKEN"
+        uses: spring-io/spring-release-actions/close-milestone@0.0.3
+        with:
+          version: ${{ inputs.project-version }}
+          token: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
       - name: Delete Previous Snapshot Version
         if: ${{ steps.previous-snapshot-version.outputs.version != '' }}
         env:
