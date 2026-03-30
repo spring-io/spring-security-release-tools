@@ -67,9 +67,9 @@ jobs:
           java-version: ${{ inputs.java-version }}
       - id: next-snapshot-version
         name: Calculate Next Snapshot Version
-        env:
-          VERSION: ${{ inputs.project-version }}
-        run: echo "version=$(./gradlew -q getNextSnapshotVersion -PcurrentVersion=$VERSION)" >> $GITHUB_OUTPUT
+        uses: spring-io/spring-release-actions/compute-next-snapshot@0.0.3
+        with:
+          version: ${{ inputs.project-version }}
       - id: next-release-milestone
         name: Get Next Release Milestone
         uses: spring-io/spring-release-actions/compute-next-version@0.0.3
