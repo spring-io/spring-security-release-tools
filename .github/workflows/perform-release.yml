@@ -3,11 +3,6 @@ name: Perform Release
 on:
   workflow_call:
     inputs:
-      java-version:
-        description: The JDK version to use
-        required: false
-        default: '17'
-        type: string
       should-perform-release:
         description: Whether the release should be performed.
         required: false
@@ -17,32 +12,11 @@ on:
         description: The project version extracted from the current branch/tag, used to restrict running the workflow to release versions.
         required: true
         type: string
-      milestone-repo-url:
-        description: The base URL of the milestone repository (e.g. https://repo.spring.io/artifactory/milestone).
-        required: true
-        type: string
-      release-repo-url:
-        description: The base URL of the release repository (e.g. https://repo1.maven.org/maven2).
-        required: true
-        type: string
-      artifact-path:
-        description: The artifact path within the repository (e.g. org/springframework/security/spring-security-core) used to check for the existence of an artifact version.
-        required: true
-        type: string
-      slack-announcing-id:
-        description: The slack announcing id (e.g. spring-security-announcing) to use for slack release notifications.
-        required: true
-        type: string
     secrets:
-      DEVELOCITY_ACCESS_KEY:
-        required: false
       GH_ACTIONS_REPO_TOKEN:
         required: true
       SPRING_RELEASE_GCHAT_WEBHOOK_URL:
         required: true
-
-env:
-  DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
 
 jobs:
   perform-release:
@@ -50,111 +24,48 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     if: ${{ inputs.should-perform-release == 'true' && !endsWith(inputs.project-version, '-SNAPSHOT') }}
-    env:
-      REPO: ${{ github.repository }}
-      BRANCH: ${{ github.ref_name }}
-      TOKEN: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
-      MILESTONE_REPO: ${{ inputs.milestone-repo-url }}
-      RELEASE_REPO: ${{ inputs.release-repo-url }}
-      ARTIFACT_PATH: ${{ inputs.artifact-path }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           token: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
-      - name: Set up JDK ${{ inputs.java-version }}
-        uses: spring-io/spring-gradle-build-action@v2
-        with:
-          java-version: ${{ inputs.java-version }}
-      - id: next-snapshot-version
-        name: Calculate Next Snapshot Version
-        env:
-          VERSION: ${{ inputs.project-version }}
-        run: echo "version=$(./gradlew -q getNextSnapshotVersion -PcurrentVersion=$VERSION)" >> $GITHUB_OUTPUT
-      - id: previous-release-milestone
-        name: Get Previous Release Milestone
-        env:
-          VERSION: ${{ inputs.project-version }}
-        run: echo "version=$(./gradlew -q getPreviousReleaseMilestone -PcurrentVersion=$VERSION -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
-      - id: previous-snapshot-version
-        name: Get Previous Snapshot Version
-        env:
-          VERSION: ${{ steps.next-snapshot-version.outputs.version }}
-        run: echo "version=$(./gradlew -q getPreviousReleaseMilestone -PcurrentVersion=$VERSION -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
       - id: next-release-milestone
         name: Get Next Release Milestone
-        uses: spring-io/spring-release-actions/compute-next-version@0.0.3
+        uses: spring-io/spring-release-actions/compute-next-version@708379dd0580adcd6dddf4e3754c8accec4801d4 # 0.0.3
         with:
           version: ${{ inputs.project-version }}
           token: ${{ github.token }}
-      - id: has-oss-support
-        name: Check OSS Support (for current branch)
-        run: echo "result=$(./gradlew -q checkBranchHasOssSupport -Pbranch=$BRANCH -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
-      - name: Wait for Milestone Artifacts
-        if: ${{ contains(inputs.project-version, '-RC') || contains(inputs.project-version, '-M') }}
-        env:
-          VERSION: ${{ inputs.project-version }}
-        run: |
-          echo "Wait for artifacts of $REPO@$VERSION to appear on milestone repository ($MILESTONE_REPO)."
-          until curl -f -s $MILESTONE_REPO/$ARTIFACT_PATH/$VERSION/ > /dev/null
-          do
-            sleep 30
-            echo "."
-          done
-          echo "Artifacts for $REPO@$VERSION have been released to milestone repository ($MILESTONE_REPO)."
-      - name: Wait for Release Artifacts
-        if: ${{ !contains(inputs.project-version, '-RC') && !contains(inputs.project-version, '-M') }}
-        env:
-          VERSION: ${{ inputs.project-version }}
-        run: |
-          echo "Wait for artifacts of $REPO@$VERSION to appear on release repository ($RELEASE_REPO)."
-          until curl -f -s $RELEASE_REPO/$ARTIFACT_PATH/$VERSION/ > /dev/null
-          do
-            sleep 30
-            echo "."
-          done
-          echo "Artifacts for $REPO@$VERSION have been released to release repository ($RELEASE_REPO)."
-      - name: Create GitHub Release
-        env:
-          VERSION: ${{ inputs.project-version }}
-        run: ./gradlew createGitHubRelease -PnextVersion=$VERSION -Pbranch=$BRANCH -PcreateRelease=true -PgitHubAccessToken=$TOKEN
-      - name: Update Version
-        env:
-          VERSION: ${{ steps.next-snapshot-version.outputs.version }}
-        run: |
-          sed -ie "s/^version=.*/version=$VERSION/" gradle.properties
-          git config user.name 'github-actions[bot]'
-          git config user.email 'github-actions[bot]@users.noreply.github.com'
-          git commit -am "Next development version"
-          git push
+      - name: Generate Changelog
+        uses: spring-io/github-changelog-generator@f7d7a87a3e7c627ecb8c26cf086c38ac5a939721 # v0.0.14
+        with:
+          milestone: ${{ inputs.project-version }}
+          token: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
+          config-file: scripts/release/release-notes-sections.yml
+      - name: Publish Release Notes
+        uses: spring-io/spring-release-actions/publish-release-notes@708379dd0580adcd6dddf4e3754c8accec4801d4 # 0.0.3
+        with:
+          tag: ${{ inputs.project-version }}
+      - name: Update Learn Page
+        uses: spring-io/spring-release-actions/update-learn-page@708379dd0580adcd6dddf4e3754c8accec4801d4 # 0.0.3
+        with:
+          version: ${{ inputs.project-version }}
+      - name: Close Release Milestone
+        uses: spring-io/spring-release-actions/close-milestone@708379dd0580adcd6dddf4e3754c8accec4801d4 # 0.0.3
+        with:
+          version: ${{ inputs.project-version }}
+          token: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
+      - name: Schedule Next Release (if not already scheduled)
+        if: ${{ steps.next-release-milestone.outputs.version-type == 'oss' }}
+        uses: spring-io/spring-release-actions/schedule-milestone@708379dd0580adcd6dddf4e3754c8accec4801d4 # 0.0.3
+        with:
+          version: ${{ steps.next-release-milestone.outputs.version }}
+          version-date: ${{ steps.next-release-milestone.outputs.version-date }}
+          token: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
+      - name: Push Next Development Version
+        uses: spring-io/spring-release-actions/push-next-development-version@708379dd0580adcd6dddf4e3754c8accec4801d4 # 0.0.3
+        with:
+          version: ${{ inputs.project-version }}
       - name: Announce Release on GChat
-        uses: spring-io/spring-release-actions/announce-on-gchat@0.0.2
+        uses: spring-io/spring-release-actions/announce-on-gchat@708379dd0580adcd6dddf4e3754c8accec4801d4 # 0.0.3
         with:
           version: ${{ inputs.project-version }}
           gchat-webhook-url: ${{ secrets.SPRING_RELEASE_GCHAT_WEBHOOK_URL }}
-      - name: Delete Previous Version
-        if: ${{ steps.previous-release-milestone.outputs.version != '' }}
-        env:
-          VERSION: ${{ steps.previous-release-milestone.outputs.version }}
-        run: ./gradlew deleteSaganRelease -PpreviousVersion="$VERSION" -PgitHubAccessToken="$TOKEN"
-      - name: Create Released Version
-        env:
-          VERSION: ${{ inputs.project-version }}
-        run: ./gradlew createSaganRelease -PnextVersion="$VERSION" -PgitHubAccessToken="$TOKEN"
-      - name: Close Release Milestone
-        env:
-          VERSION: ${{ inputs.project-version }}
-        run: ./gradlew closeMilestone -PnextVersion="$VERSION" -PgitHubAccessToken="$TOKEN"
-      - name: Delete Previous Snapshot Version
-        if: ${{ steps.previous-snapshot-version.outputs.version != '' }}
-        env:
-          VERSION: ${{ steps.previous-snapshot-version.outputs.version }}
-        run: ./gradlew deleteSaganRelease -PpreviousVersion="$VERSION" -PgitHubAccessToken="$TOKEN"
-      - name: Create Next Snapshot Version
-        env:
-          VERSION: ${{ steps.next-snapshot-version.outputs.version }}
-        run: ./gradlew createSaganRelease -PnextVersion="$VERSION" -PgitHubAccessToken="$TOKEN"
-      - name: Schedule Next Release (if not already scheduled)
-        if: ${{ steps.has-oss-support.outputs.result == 'true' }}
-        env:
-          VERSION: ${{ steps.next-release-milestone.outputs.version }}
-        run: ./gradlew scheduleNextRelease -PnextVersion="$VERSION" -PgitHubAccessToken="$TOKEN"
