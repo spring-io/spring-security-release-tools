@@ -13,6 +13,11 @@ on:
         required: false
         default: 'temurin'
         type: string
+      ref:
+        description: The branch or tag to test
+        required: false
+        default: ${{ github.ref }}
+        type: string
       test-args:
         description: Arguments for the gradle test command.
         required: false
@@ -30,13 +35,15 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: ${{ inputs.ref }}
       - name: Set up JDK ${{ inputs.java-version }}
-        uses: spring-io/spring-gradle-build-action@v2
+        uses: spring-io/spring-gradle-build-action@861640e9cfde1abc0c071b82106bca8e9d495888 # v2
         with:
           java-version: ${{ inputs.java-version }}
           distribution: ${{ inputs.distribution }}
-      - name: Run Tests
+      - name: Run Tests on ${{ inputs.ref }}
         env:
           TEST_ARGS: ${{ inputs.test-args }}
         run: ./gradlew test $TEST_ARGS
