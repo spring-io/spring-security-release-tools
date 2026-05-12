@@ -33,6 +33,10 @@ on:
         required: false
       ARTIFACTORY_PASSWORD:
         required: false
+      COMMERCIAL_ARTIFACTORY_USERNAME:
+        required: false
+      COMMERCIAL_ARTIFACTORY_PASSWORD:
+        required: false
       DEVELOCITY_ACCESS_KEY:
         required: false
 
@@ -43,10 +47,10 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           ref: ${{ inputs.ref }}
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           repository: spring-io/spring-security-release-tools
           ref: ${{ github.action_ref }}
@@ -58,6 +62,7 @@ jobs:
           java-version: ${{ inputs.java-version }}
           distribution: ${{ inputs.distribution }}
           gradle-args: test ${{ inputs.test-args }}
-          artifactory-username: ${{ secrets.ARTIFACTORY_USERNAME }}
-          artifactory-password: ${{ secrets.ARTIFACTORY_PASSWORD }}
-          develocity-access-key: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
+          init-script: ${{ vars.COMMERCIAL == 'true' && 'spring-enterprise' || 'spring-oss' }}
+          artifactory-username: ${{ vars.COMMERCIAL == 'true' && secrets.COMMERCIAL_ARTIFACTORY_USERNAME || secrets.ARTIFACTORY_USERNAME }}
+          artifactory-password: ${{ vars.COMMERCIAL == 'true' && secrets.COMMERCIAL_ARTIFACTORY_PASSWORD || secrets.ARTIFACTORY_PASSWORD }}
+          develocity-access-key: ${{ vars.COMMERCIAL != 'true' && secrets.DEVELOCITY_ACCESS_KEY || '' }}

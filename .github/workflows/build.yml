@@ -23,14 +23,19 @@ on:
         required: false
         default: ${{ github.ref }}
         type: string
+      upload-artifacts:
+        description: Whether this run should upload the local Maven repository for later deployment. Set to true on exactly one matrix entry when build.yml is matrixed.
+        required: false
+        default: true
+        type: boolean
     outputs:
       should-deploy-artifacts:
         description: Whether artifacts should be deployed.
         value: ${{ jobs.build.outputs.should-deploy-artifacts }}
     secrets:
-      ARTIFACTORY_USERNAME:
+      COMMERCIAL_ARTIFACTORY_USERNAME:
         required: false
-      ARTIFACTORY_PASSWORD:
+      COMMERCIAL_ARTIFACTORY_PASSWORD:
         required: false
       DEVELOCITY_ACCESS_KEY:
         required: false
@@ -42,25 +47,31 @@ jobs:
     permissions:
       contents: read
     outputs:
-      should-deploy-artifacts: ${{ steps.run-gradle.outputs.should-deploy-artifacts }}
+      should-deploy-artifacts: ${{ steps.should-deploy-artifacts.outputs.result }}
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           ref: ${{ inputs.ref }}
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           repository: spring-io/spring-security-release-tools
           ref: ${{ github.action_ref }}
           path: _srt
           fetch-depth: 1
-      - id: run-gradle
-        name: Build ${{ inputs.ref }} with Gradle
+      - if: ${{ vars.COMMERCIAL == 'true' }}
+        uses: ./_srt/.github/actions/update-commercial-licensing
+      - id: should-deploy-artifacts
+        name: Mark as Canonical for Deploy
+        if: ${{ inputs.upload-artifacts }}
+        shell: bash
+        run: echo "result=true" >> $GITHUB_OUTPUT
+      - name: Build ${{ inputs.ref }} with Gradle
         uses: ./_srt/.github/actions/run-gradle
         with:
           java-version: ${{ inputs.java-version }}
           distribution: ${{ inputs.distribution }}
-          gradle-args: build --continue
-          upload-artifacts: 'true'
-          artifactory-username: ${{ secrets.ARTIFACTORY_USERNAME }}
-          artifactory-password: ${{ secrets.ARTIFACTORY_PASSWORD }}
-          develocity-access-key: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
+          upload-artifacts: ${{ inputs.upload-artifacts }}
+          init-script: ${{ vars.COMMERCIAL == 'true' && 'spring-enterprise' || '' }}
+          artifactory-username: ${{ vars.COMMERCIAL == 'true' && secrets.COMMERCIAL_ARTIFACTORY_USERNAME || '' }}
+          artifactory-password: ${{ vars.COMMERCIAL == 'true' && secrets.COMMERCIAL_ARTIFACTORY_PASSWORD || '' }}
+          develocity-access-key: ${{ vars.COMMERCIAL != 'true' && secrets.DEVELOCITY_ACCESS_KEY || '' }}

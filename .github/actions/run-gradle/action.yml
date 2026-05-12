@@ -1,5 +1,5 @@
 name: 'Run Gradle'
-description: 'Run a Gradle command, optionally with Spring Enterprise repository configuration and artifact upload.'
+description: 'Run a Gradle command with optional init script, repository credentials, and artifact upload.'
 author: 'Spring'
 
 inputs:
@@ -19,23 +19,22 @@ inputs:
     description: Whether to publish artifacts to a local repository and upload them for later deployment.
     required: false
     default: 'false'
+  init-script:
+    description: Name of the Gradle init script to apply (without .gradle extension). Valid values are spring-enterprise, spring-oss, or empty.
+    required: false
+    default: ''
   artifactory-username:
-    description: Artifactory username. When provided alongside artifactory-password, configures the Spring Enterprise Maven repository.
+    description: Username for the Artifactory repository referenced by the init script.
     required: false
     default: ''
   artifactory-password:
-    description: Artifactory password. When provided, configures the Spring Enterprise Maven repository.
+    description: Password for the Artifactory repository referenced by the init script.
     required: false
     default: ''
   develocity-access-key:
-    description: Develocity access key. Used for OSS builds when Artifactory credentials are not provided.
+    description: Develocity access key for OSS builds.
     required: false
     default: ''
-
-outputs:
-  should-deploy-artifacts:
-    description: Whether artifacts should be deployed. Only meaningful when upload-artifacts is true.
-    value: ${{ steps.should-deploy-artifacts.outputs.result }}
 
 runs:
   using: composite
@@ -57,56 +56,45 @@ runs:
           args="$args publishAllPublicationsToLocalRepository"
         fi
         echo "value=$args" >> $GITHUB_OUTPUT
+    - name: Set up Init Script
+      if: ${{ inputs.init-script != '' }}
+      shell: bash
+      env:
+        INIT_SCRIPT: ${{ inputs.init-script }}
+        ARTIFACTORY_USERNAME: ${{ inputs.artifactory-username }}
+        ARTIFACTORY_PASSWORD: ${{ inputs.artifactory-password }}
+      run: |
+        if [[ ! -f "$GITHUB_ACTION_PATH/$INIT_SCRIPT.gradle" ]] ; then
+          echo "::error::Unknown init-script '$INIT_SCRIPT'"
+          exit 1
+        fi
+        if [[ -z "$ARTIFACTORY_USERNAME" || -z "$ARTIFACTORY_PASSWORD" ]] ; then
+          echo "::error::init-script '$INIT_SCRIPT' requires both artifactory-username and artifactory-password"
+          exit 1
+        fi
+        mkdir -p "$HOME/.gradle/init.d"
+        cp "$GITHUB_ACTION_PATH/$INIT_SCRIPT.gradle" "$HOME/.gradle/init.d/$INIT_SCRIPT.gradle"
     - name: Build with Gradle
-      if: ${{ inputs.artifactory-password != '' }}
       shell: bash
       env:
         ARTIFACTORY_USERNAME: ${{ inputs.artifactory-username }}
         ARTIFACTORY_PASSWORD: ${{ inputs.artifactory-password }}
-        GRADLE_ARGS: ${{ steps.gradle-args.outputs.value }}
-      run: |
-        mkdir -p "$HOME/.gradle/init.d"
-        cat > "$HOME/.gradle/init.d/spring-enterprise.gradle" <<'EOF'
-        allprojects { project ->
-          project.repositories {
-            maven {
-              name = 'spring-enterprise-dev'
-              url = 'https://usw1.packages.broadcom.com/spring-enterprise-maven-dev-local'
-              credentials {
-                username = System.getenv("ARTIFACTORY_USERNAME")
-                password = System.getenv("ARTIFACTORY_PASSWORD")
-              }
-            }
-          }
-        }
-        EOF
-        ./gradlew $GRADLE_ARGS
-    - name: Build with Gradle
-      if: ${{ inputs.artifactory-password == '' }}
-      shell: bash
-      env:
         DEVELOCITY_ACCESS_KEY: ${{ inputs.develocity-access-key }}
         GRADLE_ARGS: ${{ steps.gradle-args.outputs.value }}
       run: ./gradlew $GRADLE_ARGS
     - name: Upload Local Maven Repository
       if: ${{ inputs.upload-artifacts == 'true' }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: local-maven-repository
         path: build/publications/repos
-    - id: should-deploy-artifacts
-      name: Check Deploy Artifacts
-      if: ${{ inputs.upload-artifacts == 'true' && runner.os == 'Linux' }}
-      shell: bash
-      env:
-        ARTIFACTORY_PASSWORD: ${{ inputs.artifactory-password }}
-      run: |
-        if [[ -n "$ARTIFACTORY_PASSWORD" ]] ; then
-          echo "result=true" >> $GITHUB_OUTPUT
-        else
-          echo "result=false" >> $GITHUB_OUTPUT
-        fi
-    - name: Remove Spring Enterprise Init Script
+        retention-days: 1
+    - name: Remove Init Script
       if: always()
       shell: bash
-      run: rm -f "$HOME/.gradle/init.d/spring-enterprise.gradle"
+      env:
+        INIT_SCRIPT: ${{ inputs.init-script }}
+      run: |
+        if [[ -n "$INIT_SCRIPT" ]] ; then
+          rm -f "$HOME/.gradle/init.d/$INIT_SCRIPT.gradle"
+        fi
