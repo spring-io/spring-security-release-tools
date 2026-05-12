@@ -1,0 +1,26 @@
+name: 'Update Commercial Licensing'
+description: 'Apply commercial copyright headers to source files and restore commercial configuration files.'
+author: 'Spring'
+
+runs:
+  using: composite
+  steps:
+    - name: Update Source File Licensing
+      shell: bash
+      run: |
+        find . \( -path './_srt' -prune -o -path './.git' -prune \) -o \
+          \( -name '*.java' -o -name '*.kt' -o -name '*.xml' -o -name '*.groovy' -o -name '*.tld' -o -name '*.aj' \) \
+          -print | while read -r file; do
+          if grep -q "Broadcom Inc." "$file" ; then
+            continue
+          fi
+          perl -pi -e 's!(Copyright \d{4})\s*(\-\d{4})? the original author or authors.!Copyright 2004-present the original author or authors.!' "$file"
+          perl -pi -e 's!^(\s*(?:.|@rem|//)\s*Copyright)(.*)$!$1 2004 Broadcom Inc. and/or its subsidiaries. All Rights Reserved.\n$1$2!' "$file"
+          perl -0777 -pi -e 's!^\s+(?:\*|~|//)\n\s+(?:\*|~|//) Licensed.*?\n(\s+(?:\*/|-->))!$1!sm' "$file"
+        done
+    - name: Add Commercial License Files
+      shell: bash
+      run: |
+        mkdir -p etc/checkstyle
+        cp "$GITHUB_ACTION_PATH/LICENSE.txt" LICENSE.txt
+        cp "$GITHUB_ACTION_PATH/checkstyle-header.txt" etc/checkstyle/header.txt
