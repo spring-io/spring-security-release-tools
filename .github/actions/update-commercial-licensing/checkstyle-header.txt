@@ -1,0 +1,5 @@
+^\Q/*\E$
+^\Q * Copyright 2004 Broadcom Inc. and/or its subsidiaries. All Rights Reserved.\E$
+^\Q * Copyright \E(\d{4}-present the original author or authors.|\d{4}(, \d{4})* Acegi Technology Pty Limited)$
+^\Q */\E$
+^$
