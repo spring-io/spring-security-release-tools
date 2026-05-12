@@ -42,6 +42,7 @@ jobs:
         with:
           java-version: ${{ inputs.java-version }}
           distribution: ${{ inputs.distribution }}
-          artifactory-username: ${{ secrets.COMMERCIAL_ARTIFACTORY_USERNAME }}
-          artifactory-password: ${{ secrets.COMMERCIAL_ARTIFACTORY_PASSWORD }}
-          develocity-access-key: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
+          init-script: ${{ vars.COMMERCIAL == 'true' && 'spring-enterprise' || '' }}
+          artifactory-username: ${{ vars.COMMERCIAL == 'true' && secrets.COMMERCIAL_ARTIFACTORY_USERNAME || '' }}
+          artifactory-password: ${{ vars.COMMERCIAL == 'true' && secrets.COMMERCIAL_ARTIFACTORY_PASSWORD || '' }}
+          develocity-access-key: ${{ vars.COMMERCIAL != 'true' && secrets.DEVELOCITY_ACCESS_KEY || '' }}

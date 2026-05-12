@@ -23,9 +23,11 @@ on:
         description: Whether artifacts should be deployed.
         value: ${{ jobs.build.outputs.should-deploy-artifacts }}
     secrets:
-      ARTIFACTORY_USERNAME:
-        required: false
       ARTIFACTORY_PASSWORD:
+        required: false
+      COMMERCIAL_ARTIFACTORY_USERNAME:
+        required: false
+      COMMERCIAL_ARTIFACTORY_PASSWORD:
         required: false
       DEVELOCITY_ACCESS_KEY:
         required: false
@@ -35,7 +37,7 @@ jobs:
     name: Build
     runs-on: ${{ inputs.runs-on }}
     outputs:
-      should-deploy-artifacts: ${{ steps.run-gradle.outputs.should-deploy-artifacts }}
+      should-deploy-artifacts: ${{ steps.should-deploy-artifacts.outputs.result }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
@@ -44,13 +46,27 @@ jobs:
           ref: ${{ github.action_ref }}
           path: _srt
           fetch-depth: 1
-      - id: run-gradle
-        uses: ./_srt/.github/actions/run-gradle
+      - if: ${{ vars.COMMERCIAL == 'true' }}
+        uses: ./_srt/.github/actions/update-commercial-licensing
+      - id: should-deploy-artifacts
+        name: Check Deploy Artifacts
+        shell: bash
+        env:
+          ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+          COMMERCIAL_ARTIFACTORY_PASSWORD: ${{ secrets.COMMERCIAL_ARTIFACTORY_PASSWORD }}
+        run: |
+          if [[ -n "$ARTIFACTORY_PASSWORD" || -n "$COMMERCIAL_ARTIFACTORY_PASSWORD" ]] ; then
+            echo "result=true" >> $GITHUB_OUTPUT
+          else
+            echo "result=false" >> $GITHUB_OUTPUT
+          fi
+      - uses: ./_srt/.github/actions/run-gradle
         with:
           java-version: ${{ inputs.java-version }}
           distribution: ${{ inputs.distribution }}
           gradle-args: build --continue
           upload-artifacts: 'true'
-          artifactory-username: ${{ secrets.ARTIFACTORY_USERNAME }}
-          artifactory-password: ${{ secrets.ARTIFACTORY_PASSWORD }}
-          develocity-access-key: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
+          init-script: ${{ vars.COMMERCIAL == 'true' && 'spring-enterprise' || '' }}
+          artifactory-username: ${{ vars.COMMERCIAL == 'true' && secrets.COMMERCIAL_ARTIFACTORY_USERNAME || '' }}
+          artifactory-password: ${{ vars.COMMERCIAL == 'true' && secrets.COMMERCIAL_ARTIFACTORY_PASSWORD || '' }}
+          develocity-access-key: ${{ vars.COMMERCIAL != 'true' && secrets.DEVELOCITY_ACCESS_KEY || '' }}
