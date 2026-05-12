@@ -61,7 +61,17 @@ runs:
       shell: bash
       env:
         INIT_SCRIPT: ${{ inputs.init-script }}
+        ARTIFACTORY_USERNAME: ${{ inputs.artifactory-username }}
+        ARTIFACTORY_PASSWORD: ${{ inputs.artifactory-password }}
       run: |
+        if [[ ! -f "$GITHUB_ACTION_PATH/$INIT_SCRIPT.gradle" ]] ; then
+          echo "::error::Unknown init-script '$INIT_SCRIPT'"
+          exit 1
+        fi
+        if [[ -z "$ARTIFACTORY_USERNAME" || -z "$ARTIFACTORY_PASSWORD" ]] ; then
+          echo "::error::init-script '$INIT_SCRIPT' requires both artifactory-username and artifactory-password"
+          exit 1
+        fi
         mkdir -p "$HOME/.gradle/init.d"
         cp "$GITHUB_ACTION_PATH/$INIT_SCRIPT.gradle" "$HOME/.gradle/init.d/$INIT_SCRIPT.gradle"
     - name: Build with Gradle
@@ -74,7 +84,7 @@ runs:
       run: ./gradlew $GRADLE_ARGS
     - name: Upload Local Maven Repository
       if: ${{ inputs.upload-artifacts == 'true' }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: local-maven-repository
         path: build/publications/repos

@@ -1,5 +1,5 @@
 name: Build Pull Request
-
+permissions: {}
 on:
   workflow_call:
     inputs:
@@ -31,8 +31,8 @@ jobs:
     name: Build
     runs-on: ${{ inputs.runs-on }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           repository: spring-io/spring-security-release-tools
           ref: ${{ github.action_ref }}

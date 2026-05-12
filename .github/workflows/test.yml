@@ -40,25 +40,13 @@ jobs:
     name: Test
     runs-on: ${{ inputs.runs-on }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           repository: spring-io/spring-security-release-tools
           ref: ${{ github.action_ref }}
           path: _srt
           fetch-depth: 1
-      - name: Set up JDK ${{ inputs.java-version }}
-        uses: spring-io/spring-gradle-build-action@c8668747d7c264864c8c7f7026d0d277d14a78dc # v2.0.6
-        with:
-          java-version: ${{ inputs.java-version }}
-          distribution: ${{ inputs.distribution }}
-      - uses: ./_srt/.github/actions/run-gradle
-        if: ${{ vars.COMMERCIAL == 'true' }}
-        with:
-          gradle-args: test ${{ inputs.test-args }}
-          init-script: spring-enterprise
-          artifactory-username: ${{ secrets.COMMERCIAL_ARTIFACTORY_USERNAME }}
-          artifactory-password: ${{ secrets.COMMERCIAL_ARTIFACTORY_PASSWORD }}
       - uses: ./_srt/.github/actions/run-gradle
         with:
           java-version: ${{ inputs.java-version }}
