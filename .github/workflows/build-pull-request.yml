@@ -13,23 +13,35 @@ on:
         required: false
         default: 'temurin'
         type: string
+      runs-on:
+        description: GitHub Actions runner to run the build task on.
+        required: false
+        default: 'ubuntu-latest'
+        type: string
     secrets:
+      COMMERCIAL_ARTIFACTORY_USERNAME:
+        required: false
+      COMMERCIAL_ARTIFACTORY_PASSWORD:
+        required: false
       DEVELOCITY_ACCESS_KEY:
         required: false
-
-env:
-  DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
 
 jobs:
   build:
     name: Build
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     steps:
       - uses: actions/checkout@v4
-      - name: Set up JDK ${{ inputs.java-version }}
-        uses: spring-io/spring-gradle-build-action@v2
+      - uses: actions/checkout@v4
+        with:
+          repository: spring-io/spring-security-release-tools
+          ref: ${{ github.action_ref }}
+          path: _srt
+          fetch-depth: 1
+      - uses: ./_srt/.github/actions/run-gradle
         with:
           java-version: ${{ inputs.java-version }}
           distribution: ${{ inputs.distribution }}
-      - name: Build with Gradle
-        run: ./gradlew clean build --continue
+          artifactory-username: ${{ secrets.COMMERCIAL_ARTIFACTORY_USERNAME }}
+          artifactory-password: ${{ secrets.COMMERCIAL_ARTIFACTORY_PASSWORD }}
+          develocity-access-key: ${{ secrets.DEVELOCITY_ACCESS_KEY }}

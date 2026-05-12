@@ -23,29 +23,41 @@ on:
         required: false
         default: ''
         type: string
+      runs-on:
+        description: GitHub Actions runner to run the build task on.
+        required: false
+        default: 'ubuntu-latest'
+        type: string
     secrets:
+      ARTIFACTORY_USERNAME:
+        required: false
+      ARTIFACTORY_PASSWORD:
+        required: false
       DEVELOCITY_ACCESS_KEY:
         required: false
-
-env:
-  DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
 
 jobs:
   test:
     name: Test
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           ref: ${{ inputs.ref }}
-      - name: Set up JDK ${{ inputs.java-version }}
-        uses: spring-io/spring-gradle-build-action@861640e9cfde1abc0c071b82106bca8e9d495888 # v2
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          repository: spring-io/spring-security-release-tools
+          ref: ${{ github.action_ref }}
+          path: _srt
+          fetch-depth: 1
+      - name: Run Tests of ${{ inputs.ref }}
+        uses: ./_srt/.github/actions/run-gradle
         with:
           java-version: ${{ inputs.java-version }}
           distribution: ${{ inputs.distribution }}
-      - name: Run Tests on ${{ inputs.ref }}
-        env:
-          TEST_ARGS: ${{ inputs.test-args }}
-        run: ./gradlew test $TEST_ARGS
+          gradle-args: test ${{ inputs.test-args }}
+          artifactory-username: ${{ secrets.ARTIFACTORY_USERNAME }}
+          artifactory-password: ${{ secrets.ARTIFACTORY_PASSWORD }}
+          develocity-access-key: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
