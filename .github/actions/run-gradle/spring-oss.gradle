@@ -1,0 +1,18 @@
+allprojects { project ->
+  def artifactoryUsername = System.getenv("ARTIFACTORY_USERNAME")
+  def artifactoryPassword = System.getenv("ARTIFACTORY_PASSWORD")
+  if (artifactoryUsername && artifactoryPassword) {
+    repositories {
+      if (project.version.toString().endsWith('-SNAPSHOT')) {
+        maven {
+          name = 'spring-oss-snapshot'
+          url = 'https://repo.spring.io/snapshot'
+          credentials {
+            username = artifactoryUsername
+            password = artifactoryPassword
+          }
+        }
+      }
+    }
+  }
+}
