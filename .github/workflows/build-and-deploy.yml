@@ -14,20 +14,21 @@ jobs:
     name: Test
     uses: ./.github/workflows/test.yml
     secrets: inherit
-  deploy-artifacts:
-    name: Deploy Artifacts
+  ensure-artifacts:
+    name: Ensure Artifacts
     needs: [ build, test ]
-    uses: ./.github/workflows/deploy-artifacts.yml
+    uses: ./.github/workflows/ensure-artifacts.yml
     with:
       should-deploy-artifacts: ${{ needs.build.outputs.should-deploy-artifacts }}
+      artifact-path: io/spring/gradle/spring-security-release-plugin
     secrets: inherit
   publish-plugins:
     name: Publish Plugins
-    needs: [ deploy-artifacts ]
+    needs: [ ensure-artifacts ]
     uses: ./.github/workflows/publish-plugins.yml
     with:
-      should-publish-plugins: ${{ needs.deploy-artifacts.outputs.artifacts-deployed }}
-      project-version: ${{ needs.deploy-artifacts.outputs.project-version }}
+      should-publish-plugins: ${{ needs.ensure-artifacts.outputs.artifacts-deployed }}
+      project-version: ${{ needs.ensure-artifacts.outputs.project-version }}
     secrets: inherit
   send-notification:
     name: Send Notification
