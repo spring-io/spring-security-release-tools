@@ -35,6 +35,14 @@ inputs:
     description: Develocity access key for OSS builds.
     required: false
     default: ''
+  signing-key:
+    description: GPG private key used to sign published artifacts. When empty, signing is skipped.
+    required: false
+    default: ''
+  signing-password:
+    description: Passphrase for the GPG private key.
+    required: false
+    default: ''
 
 runs:
   using: composite
@@ -80,6 +88,8 @@ runs:
         ARTIFACTORY_USERNAME: ${{ inputs.artifactory-username }}
         ARTIFACTORY_PASSWORD: ${{ inputs.artifactory-password }}
         DEVELOCITY_ACCESS_KEY: ${{ inputs.develocity-access-key }}
+        ORG_GRADLE_PROJECT_signingKey: ${{ inputs.signing-key }}
+        ORG_GRADLE_PROJECT_signingPassword: ${{ inputs.signing-password }}
         GRADLE_ARGS: ${{ steps.gradle-args.outputs.value }}
       run: ./gradlew $GRADLE_ARGS
     - name: Upload Local Maven Repository

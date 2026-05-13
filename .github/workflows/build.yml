@@ -24,10 +24,10 @@ on:
         default: ${{ github.ref }}
         type: string
       upload-artifacts:
-        description: Whether this run should upload the local Maven repository for later deployment. Set to true on exactly one matrix entry when build.yml is matrixed.
+        description: Whether this run should upload the local Maven repository for later deployment. Accepts 'true', 'false', or 'auto'. 'auto' (the default) uploads on Linux runners only, matching the historical convention that the Linux matrix entry is canonical.
         required: false
-        default: true
-        type: boolean
+        default: 'auto'
+        type: string
     outputs:
       should-deploy-artifacts:
         description: Whether artifacts should be deployed.
@@ -38,6 +38,10 @@ on:
       COMMERCIAL_ARTIFACTORY_PASSWORD:
         required: false
       DEVELOCITY_ACCESS_KEY:
+        required: false
+      GPG_PRIVATE_KEY:
+        required: false
+      GPG_PASSPHRASE:
         required: false
 
 jobs:
@@ -60,9 +64,23 @@ jobs:
           fetch-depth: 1
       - if: ${{ vars.COMMERCIAL == 'true' }}
         uses: ./_srt/.github/actions/update-commercial-licensing
+      - id: upload-artifacts
+        name: Resolve Effective Upload Artifacts
+        shell: bash
+        env:
+          UPLOAD: ${{ inputs.upload-artifacts }}
+          OS: ${{ runner.os }}
+        run: |
+          case "$UPLOAD" in
+            auto)  if [[ "$OS" == "Linux" ]] ; then value=true ; else value=false ; fi ;;
+            true)  value=true ;;
+            false) value=false ;;
+            *)     echo "::error::upload-artifacts must be 'true', 'false', or 'auto'; got '$UPLOAD'" ; exit 1 ;;
+          esac
+          echo "value=$value" >> $GITHUB_OUTPUT
       - id: should-deploy-artifacts
         name: Mark as Canonical for Deploy
-        if: ${{ inputs.upload-artifacts }}
+        if: ${{ steps.upload-artifacts.outputs.value == 'true' }}
         shell: bash
         run: echo "result=true" >> $GITHUB_OUTPUT
       - name: Build ${{ inputs.ref }} with Gradle
@@ -70,8 +88,10 @@ jobs:
         with:
           java-version: ${{ inputs.java-version }}
           distribution: ${{ inputs.distribution }}
-          upload-artifacts: ${{ inputs.upload-artifacts }}
+          upload-artifacts: ${{ steps.upload-artifacts.outputs.value }}
           init-script: ${{ vars.COMMERCIAL == 'true' && 'spring-enterprise' || '' }}
           artifactory-username: ${{ vars.COMMERCIAL == 'true' && secrets.COMMERCIAL_ARTIFACTORY_USERNAME || '' }}
           artifactory-password: ${{ vars.COMMERCIAL == 'true' && secrets.COMMERCIAL_ARTIFACTORY_PASSWORD || '' }}
           develocity-access-key: ${{ vars.COMMERCIAL != 'true' && secrets.DEVELOCITY_ACCESS_KEY || '' }}
+          signing-key: ${{ steps.upload-artifacts.outputs.value == 'true' && secrets.GPG_PRIVATE_KEY || '' }}
+          signing-password: ${{ steps.upload-artifacts.outputs.value == 'true' && secrets.GPG_PASSPHRASE || '' }}
