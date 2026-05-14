@@ -40,9 +40,9 @@ jobs:
     outputs:
       schema-deployed: ${{ steps.schema-deployed.outputs.result }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
       - name: Set up JDK ${{ inputs.java-version }}
-        uses: spring-io/spring-gradle-build-action@v2
+        uses: spring-io/spring-gradle-build-action@c8668747d7c264864c8c7f7026d0d277d14a78dc # v2.0.6
         with:
           java-version: ${{ inputs.java-version }}
       - name: Deploy Schema

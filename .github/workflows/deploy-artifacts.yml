@@ -54,14 +54,14 @@ jobs:
       artifacts-deployed: ${{ steps.artifacts-deployed.outputs.result }}
       project-version: ${{ steps.project-version.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
       - name: Set up JDK ${{ inputs.java-version }}
-        uses: spring-io/spring-gradle-build-action@v2
+        uses: spring-io/spring-gradle-build-action@c8668747d7c264864c8c7f7026d0d277d14a78dc # v2.0.6
         with:
           java-version: ${{ inputs.java-version }}
       - id: project-version
         name: Extract Project Version
-        uses: spring-io/spring-release-actions/compute-version@0.0.2
+        uses: spring-io/spring-release-actions/compute-version@a1f321783a0769dd2aea4fad6c2ae2f95a52b885 # 0.0.5
       - id: branch-name
         name: Extract Branch Name
         env:
@@ -111,7 +111,7 @@ jobs:
           find -name "*.sha*" | xargs rm -f
       - name: Deploy to Artifactory
         if: ${{ steps.deploy-location.outputs.deploy_location != 'central' }}
-        uses: spring-io/artifactory-deploy-action@v0.0.4
+        uses: spring-io/artifactory-deploy-action@926d7f7cc810569395346bf3a4d91b380b3e355b # v0.0.4
         with:
           uri: "https://repo.spring.io"
           repository: ${{ steps.deploy-location.outputs.deploy_location }}
@@ -123,7 +123,7 @@ jobs:
           folder: build/publications/repos
       - name: Publish Staged Artifacts to Central
         if: ${{ steps.deploy-location.outputs.deploy_location == 'central' }}
-        uses: spring-io/central-publish-action@v0.3.0
+        uses: spring-io/central-publish-action@0c03960e9b16fdfe70e2443e1d5393cbc3a35622 # v0.3.0
         with:
           token-name: ${{ secrets.CENTRAL_TOKEN_USERNAME }}
           token: ${{ secrets.CENTRAL_TOKEN_PASSWORD }}

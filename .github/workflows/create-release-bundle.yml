@@ -36,7 +36,7 @@ jobs:
           fi
           echo "branch=$branch" >> $GITHUB_OUTPUT
       - name: Create Release Bundle
-        uses: spring-io/spring-release-actions/create-release-bundle@0.0.5
+        uses: spring-io/spring-release-actions/create-release-bundle@a1f321783a0769dd2aea4fad6c2ae2f95a52b885 # 0.0.5
         with:
           version: ${{ inputs.project-version }}
           username: ${{ secrets.COMMERCIAL_ARTIFACTORY_USERNAME }}

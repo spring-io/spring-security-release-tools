@@ -54,14 +54,14 @@ jobs:
           path: build/publications/repos
       - id: project-version
         name: Extract Project Version
-        uses: spring-io/spring-release-actions/compute-version@708379dd0580adcd6dddf4e3754c8accec4801d4 # 0.0.3
+        uses: spring-io/spring-release-actions/compute-version@a1f321783a0769dd2aea4fad6c2ae2f95a52b885 # 0.0.5
       - id: deploy-location
         name: Compute Deploy Location
-        uses: spring-io/spring-release-actions/compute-artifact-repository@708379dd0580adcd6dddf4e3754c8accec4801d4 # 0.0.3
+        uses: spring-io/spring-release-actions/compute-artifact-repository@a1f321783a0769dd2aea4fad6c2ae2f95a52b885 # 0.0.5
         with:
           version: ${{ steps.project-version.outputs.version }}
       - name: Ensure Artifacts
-        uses: spring-io/spring-security-actions/ensure-artifacts@ae64e792fd249f65f694593a66fa5477334e4737
+        uses: spring-io/spring-security-actions/ensure-artifacts@f8ef0d53fc61799c18f19bc6a4c42ccb9aa265de
         with:
           version: ${{ steps.project-version.outputs.version }}
           username: ${{ vars.COMMERCIAL == 'true' && secrets.COMMERCIAL_ARTIFACTORY_USERNAME || (steps.deploy-location.outputs.name == 'maven2' && secrets.CENTRAL_TOKEN_USERNAME || secrets.ARTIFACTORY_USERNAME) }}
