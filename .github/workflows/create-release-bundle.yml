@@ -1,0 +1,44 @@
+name: Create Release Bundle
+
+on:
+  workflow_call:
+    inputs:
+      should-distribute-release:
+        description: Whether the release should be distributed.
+        required: false
+        default: 'false'
+        type: string
+      project-version:
+        description: The project version extracted from the current branch/tag, used to restrict running the workflow to release versions.
+        required: true
+        type: string
+    secrets:
+      COMMERCIAL_ARTIFACTORY_USERNAME:
+        required: true
+      COMMERCIAL_ARTIFACTORY_PASSWORD:
+        required: true
+
+jobs:
+  distribute-release:
+    name: Distribute Release
+    runs-on: ubuntu22-2-8
+    if: ${{ inputs.should-distribute-release == 'true' && !endsWith(inputs.project-version, '-SNAPSHOT') }}
+    steps:
+      - id: branch-name
+        name: Extract Branch Name
+        env:
+          BRANCH: ${{ github.ref_name }}
+          VERSION: ${{ inputs.project-version }}
+        run: |
+          branch=$BRANCH
+          if [[ "$branch" = "main" ]] ; then
+            branch="${VERSION%.*}.x"
+          fi
+          echo "branch=$branch" >> $GITHUB_OUTPUT
+      - name: Create Release Bundle
+        uses: spring-io/spring-release-actions/create-release-bundle@0.0.5
+        with:
+          version: ${{ inputs.project-version }}
+          username: ${{ secrets.COMMERCIAL_ARTIFACTORY_USERNAME }}
+          password: ${{ secrets.COMMERCIAL_ARTIFACTORY_PASSWORD }}
+          build-name: ${{ github.event.repository.name }}-${{ steps.branch-name.outputs.branch }}
