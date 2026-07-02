@@ -7,9 +7,6 @@ on:
         description: The project version to stage
         required: true
         type: string
-    secrets:
-      GH_ACTIONS_REPO_TOKEN:
-        required: true
 
 jobs:
   stage-release-announcements:
@@ -21,10 +18,10 @@ jobs:
         uses: spring-io/github-changelog-generator@f7d7a87a3e7c627ecb8c26cf086c38ac5a939721 # v0.0.14
         with:
           milestone: ${{ inputs.version }}
-          token: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
+          token: ${{ github.token }}
           config-file: etc/release-notes-sections.yml
       - name: Publish Changelog
         uses: spring-io/spring-release-actions/publish-release-notes@a1f321783a0769dd2aea4fad6c2ae2f95a52b885 # 0.0.5
         with:
           tag: ${{ inputs.version }}
-          token: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
+          token: ${{ github.token }}
