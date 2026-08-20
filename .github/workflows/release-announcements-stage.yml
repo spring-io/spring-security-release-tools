@@ -7,6 +7,13 @@ on:
         description: The project version to stage
         required: true
         type: string
+      branch:
+        description: The branch to release from. Defaults to deriving it from version (e.g. 1.2.3 -> 1.2.x).
+        required: false
+        type: string
+    secrets:
+      GH_ACTIONS_REPO_TOKEN:
+        required: true
 
 jobs:
   stage-release-announcements:
@@ -14,14 +21,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Generate Changelog
-        uses: spring-io/github-changelog-generator@f7d7a87a3e7c627ecb8c26cf086c38ac5a939721 # v0.0.14
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
         with:
-          milestone: ${{ inputs.version }}
-          token: ${{ github.token }}
-          config-file: etc/release-notes-sections.yml
-      - name: Publish Changelog
-        uses: spring-io/spring-release-actions/publish-release-notes@a1f321783a0769dd2aea4fad6c2ae2f95a52b885 # 0.0.5
-        with:
-          tag: ${{ inputs.version }}
-          token: ${{ github.token }}
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'gradle'
+      - id: branch-name
+        name: Extract Branch Name
+        env:
+          VERSION: ${{ inputs.version }}
+          BRANCH: ${{ inputs.branch }}
+        run: echo "branch=${BRANCH:-${VERSION%.*}.x}" >> $GITHUB_OUTPUT
+      - name: Create GitHub Release
+        env:
+          TOKEN: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
+          BRANCH: ${{ steps.branch-name.outputs.branch }}
+          VERSION: ${{ inputs.version }}
+        run: ./gradlew createGitHubRelease -PnextVersion=$VERSION -Pbranch=$BRANCH -PcreateRelease=true -PgitHubAccessToken=$TOKEN

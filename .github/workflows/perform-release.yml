@@ -58,6 +58,8 @@ jobs:
       RELEASE_REPO: ${{ inputs.release-repo-url }}
       ARTIFACT_PATH: ${{ inputs.artifact-path }}
     steps:
+      - name: Deprecation Notice
+        run: echo "::warning title=Deprecated Workflow::perform-release.yml is deprecated; use release-announcements-stage.yml and release-announcements-publish.yml instead."
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
