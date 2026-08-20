@@ -25,6 +25,8 @@ jobs:
     timeout-minutes: 90
     if: ${{ inputs.should-perform-release == 'true' && !endsWith(inputs.project-version, '-SNAPSHOT') }}
     steps:
+      - name: Deprecation Notice
+        run: echo "::warning title=Deprecated Workflow::perform-release.yml is deprecated; use release-announcements-stage.yml and release-announcements-publish.yml instead."
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           token: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}

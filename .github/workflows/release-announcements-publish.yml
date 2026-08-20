@@ -1,0 +1,65 @@
+name: Release Announcements - Publish
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: The release to publish
+        required: true
+        type: string
+    secrets:
+      SPRING_RELEASE_GCHAT_WEBHOOK_URL:
+        required: true
+
+permissions:
+  actions: write
+  contents: read
+  issues: write
+
+jobs:
+  compute-release:
+    name: Compute Release Coordinates
+    runs-on: ubuntu-latest
+    outputs:
+      next-milestone-version: ${{ steps.next-release-milestone.outputs.version }}
+      next-milestone-version-date: ${{ steps.next-release-milestone.outputs.version-date }}
+      next-milestone-version-type: ${{ steps.next-release-milestone.outputs.version-type }}
+    steps:
+      - id: next-release-milestone
+        name: Get Next Release Milestone
+        uses: spring-io/spring-release-actions/compute-next-version@a1f321783a0769dd2aea4fad6c2ae2f95a52b885  # 0.0.5
+        with:
+          version: ${{ inputs.version }}
+          token: ${{ github.token }}
+  deploy-docs:
+    name: Deploy Docs
+    uses: spring-io/spring-security-release-tools/.github/workflows/dispatch-deploy-docs.yml@b92832ecbc7cbe969201e6beafbde0ee400cf095 # v1.0.15
+    with:
+      build-type: full
+  update-milestones:
+    name: Update Milestones
+    needs: [ compute-release, deploy-docs ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close Milestone
+        uses: spring-io/spring-release-actions/close-milestone@a1f321783a0769dd2aea4fad6c2ae2f95a52b885  # 0.0.5
+        with:
+          version: ${{ inputs.version }}
+          token: ${{ github.token }}
+      - name: Schedule Next Release (if not already scheduled)
+        if: ${{ needs.compute-release.outputs.next-milestone-version-type == 'oss' }}
+        uses: spring-io/spring-release-actions/schedule-milestone@a1f321783a0769dd2aea4fad6c2ae2f95a52b885  # 0.0.5
+        with:
+          version: ${{ needs.compute-release.outputs.next-milestone-version }}
+          version-date: ${{ needs.compute-release.outputs.next-milestone-version-date }}
+          token: ${{ github.token }}
+  announce:
+    name: Announce Release
+    needs: [ update-milestones ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Announce Release on GChat
+        uses: spring-io/spring-release-actions/announce-on-gchat@a1f321783a0769dd2aea4fad6c2ae2f95a52b885  # 0.0.5
+        with:
+          version: ${{ inputs.version }}
+          gchat-webhook-url: ${{ secrets.SPRING_RELEASE_GCHAT_WEBHOOK_URL }}
