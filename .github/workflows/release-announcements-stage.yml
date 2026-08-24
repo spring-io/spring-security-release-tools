@@ -15,9 +15,31 @@ on:
       GH_ACTIONS_REPO_TOKEN:
         required: true
 
+permissions:
+  actions: write
+  contents: read
+
 jobs:
+  check-support-window:
+    name: Check Support Window
+    runs-on: ubuntu-latest
+    steps:
+      - id: support-window
+        name: Compute Support Window
+        uses: spring-io/spring-release-actions/compute-support-window@fbfbd143f47bf73be69883a5a7c9cd1f826022fe  # 0.0.6
+        with:
+          version: ${{ inputs.version }}
+      - name: Cancel if Repository Doesn't Match Support Window
+        if: steps.support-window.outputs.repository-matches-support-window == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          echo "::warning::Cancelling release announcements for $VERSION — $GITHUB_REPOSITORY does not match its support window."
+          gh run cancel "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY"
   stage-release-announcements:
     name: Stage Release Announcements
+    needs: [ check-support-window ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
