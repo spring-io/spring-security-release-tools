@@ -17,40 +17,68 @@ permissions:
   issues: write
 
 jobs:
+  check-support-window:
+    name: Check Support Window
+    runs-on: ubuntu-latest
+    steps:
+      - id: support-window
+        name: Compute Support Window
+        uses: spring-io/spring-release-actions/compute-support-window@1b8671612c3eb3d9b9763e2d7b66f1a80d00ee95  # 0.0.6
+        with:
+          version: ${{ inputs.version }}
+      - name: Cancel if Repository Doesn't Match Support Window
+        if: steps.support-window.outputs.repository-matches-support-window == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          echo "::warning::Cancelling release announcements for $VERSION — $GITHUB_REPOSITORY does not match its support window."
+          gh run cancel "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY"
+  compute-release:
+    name: Compute Release Coordinates
+    needs: [ check-support-window ]
+    runs-on: ubuntu-latest
+    outputs:
+      next-milestone-version: ${{ steps.next-release-milestone.outputs.version }}
+      next-milestone-version-date: ${{ steps.next-release-milestone.outputs.version-date }}
+      next-milestone-version-type: ${{ steps.next-release-milestone.outputs.version-type }}
+    steps:
+      - id: next-release-milestone
+        name: Get Next Release Milestone
+        uses: spring-io/spring-release-actions/compute-next-version@1b8671612c3eb3d9b9763e2d7b66f1a80d00ee95  # 0.0.6
+        with:
+          version: ${{ inputs.version }}
+          token: ${{ github.token }}
   deploy-docs:
     name: Deploy Docs
+    needs: [ check-support-window ]
     uses: spring-io/spring-security-release-tools/.github/workflows/dispatch-deploy-docs.yml@b92832ecbc7cbe969201e6beafbde0ee400cf095 # v1.0.15
     with:
       build-type: full
   update-milestones:
     name: Update Milestones
+    needs: [ compute-release, deploy-docs ]
     runs-on: ubuntu-latest
     steps:
-      - id: next-release-milestone
-        name: Get Next Release Milestone
-        uses: spring-io/spring-release-actions/compute-next-version@a1f321783a0769dd2aea4fad6c2ae2f95a52b885  # 0.0.5
-        with:
-          version: ${{ inputs.version }}
-          token: ${{ github.token }}
       - name: Close Milestone
-        uses: spring-io/spring-release-actions/close-milestone@a1f321783a0769dd2aea4fad6c2ae2f95a52b885  # 0.0.5
+        uses: spring-io/spring-release-actions/close-milestone@1b8671612c3eb3d9b9763e2d7b66f1a80d00ee95  # 0.0.6
         with:
           version: ${{ inputs.version }}
           token: ${{ github.token }}
       - name: Schedule Next Release (if not already scheduled)
-        if: ${{ steps.next-release-milestone.outputs.version-type == 'oss' }}
-        uses: spring-io/spring-release-actions/schedule-milestone@a1f321783a0769dd2aea4fad6c2ae2f95a52b885  # 0.0.5
+        uses: spring-io/spring-release-actions/schedule-milestone@1b8671612c3eb3d9b9763e2d7b66f1a80d00ee95  # 0.0.6
         with:
-          version: ${{ steps.next-release-milestone.outputs.version }}
-          version-date: ${{ steps.next-release-milestone.outputs.version-date }}
+          version: ${{ needs.compute-release.outputs.next-milestone-version }}
+          version-date: ${{ needs.compute-release.outputs.next-milestone-version-date }}
+          version-type: ${{ needs.compute-release.outputs.next-milestone-version-type }}
           token: ${{ github.token }}
   announce:
     name: Announce Release
-    needs: [ deploy-docs, update-milestones ]
+    needs: [ update-milestones ]
     runs-on: ubuntu-latest
     steps:
       - name: Announce Release on GChat
-        uses: spring-io/spring-release-actions/announce-on-gchat@a1f321783a0769dd2aea4fad6c2ae2f95a52b885  # 0.0.5
+        uses: spring-io/spring-release-actions/announce-on-gchat@1b8671612c3eb3d9b9763e2d7b66f1a80d00ee95  # 0.0.6
         with:
           version: ${{ inputs.version }}
           gchat-webhook-url: ${{ secrets.SPRING_RELEASE_GCHAT_WEBHOOK_URL }}
