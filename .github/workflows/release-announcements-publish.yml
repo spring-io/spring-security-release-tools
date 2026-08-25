@@ -23,7 +23,7 @@ jobs:
     steps:
       - id: support-window
         name: Compute Support Window
-        uses: spring-io/spring-release-actions/compute-support-window@fbfbd143f47bf73be69883a5a7c9cd1f826022fe  # 0.0.6
+        uses: spring-io/spring-release-actions/compute-support-window@1b8671612c3eb3d9b9763e2d7b66f1a80d00ee95  # 0.0.6
         with:
           version: ${{ inputs.version }}
       - name: Cancel if Repository Doesn't Match Support Window
@@ -45,7 +45,7 @@ jobs:
     steps:
       - id: next-release-milestone
         name: Get Next Release Milestone
-        uses: spring-io/spring-release-actions/compute-next-version@a1f321783a0769dd2aea4fad6c2ae2f95a52b885  # 0.0.5
+        uses: spring-io/spring-release-actions/compute-next-version@1b8671612c3eb3d9b9763e2d7b66f1a80d00ee95  # 0.0.6
         with:
           version: ${{ inputs.version }}
           token: ${{ github.token }}
@@ -61,12 +61,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Close Milestone
-        uses: spring-io/spring-release-actions/close-milestone@a1f321783a0769dd2aea4fad6c2ae2f95a52b885  # 0.0.5
+        uses: spring-io/spring-release-actions/close-milestone@1b8671612c3eb3d9b9763e2d7b66f1a80d00ee95  # 0.0.6
         with:
           version: ${{ inputs.version }}
           token: ${{ github.token }}
       - name: Schedule Next Release (if not already scheduled)
-        uses: spring-io/spring-release-actions/schedule-milestone@a1f321783a0769dd2aea4fad6c2ae2f95a52b885  # 0.0.5
+        uses: spring-io/spring-release-actions/schedule-milestone@1b8671612c3eb3d9b9763e2d7b66f1a80d00ee95  # 0.0.6
         with:
           version: ${{ needs.compute-release.outputs.next-milestone-version }}
           version-date: ${{ needs.compute-release.outputs.next-milestone-version-date }}
@@ -78,7 +78,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Announce Release on GChat
-        uses: spring-io/spring-release-actions/announce-on-gchat@a1f321783a0769dd2aea4fad6c2ae2f95a52b885  # 0.0.5
+        uses: spring-io/spring-release-actions/announce-on-gchat@1b8671612c3eb3d9b9763e2d7b66f1a80d00ee95  # 0.0.6
         with:
           version: ${{ inputs.version }}
           gchat-webhook-url: ${{ secrets.SPRING_RELEASE_GCHAT_WEBHOOK_URL }}
