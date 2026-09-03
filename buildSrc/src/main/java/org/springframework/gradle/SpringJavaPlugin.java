@@ -52,6 +52,7 @@ public class SpringJavaPlugin implements Plugin<Project> {
 		pluginManager.apply(SpringJavaFormatPlugin.class);
 		pluginManager.apply(SpringJavaCheckstylePlugin.class);
 		pluginManager.apply(SpringCopyPropertiesPlugin.class);
+		new ReproducibleBuildConventions().apply(project);
 
 		// Apply Java source compatibility version
 		JavaPluginExtension java = project.getExtensions().getByType(JavaPluginExtension.class);
@@ -66,7 +67,7 @@ public class SpringJavaPlugin implements Plugin<Project> {
 		});
 		project.getTasks().withType(Jar.class, (jar) -> jar.manifest((manifest) -> {
 			Map<String, String> attributes = new HashMap<>();
-			attributes.put("Created-By", String.format("%s (%s)", System.getProperty("java.version"), System.getProperty("java.specification.vendor")));
+			attributes.put("Build-Jdk-Spec", System.getProperty("java.specification.version"));
 			attributes.put("Implementation-Title", project.getName());
 			attributes.put("Implementation-Version", project.getVersion().toString());
 			attributes.put("Automatic-Module-Name", project.getName().replace("-", "."));

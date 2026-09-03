@@ -71,6 +71,7 @@ public class SpringJavaPlugin implements Plugin<Project> {
 		pluginManager.apply(SpringJavaCheckstylePlugin.class);
 		pluginManager.apply(SpringCopyPropertiesPlugin.class);
 		pluginManager.apply(SpringJacocoPlugin.class);
+		new ReproducibleBuildConventions().apply(project);
 
 		// Apply Java toolchain version
 		JavaPluginExtension java = project.getExtensions().getByType(JavaPluginExtension.class);
@@ -87,8 +88,7 @@ public class SpringJavaPlugin implements Plugin<Project> {
 		// Configure jar task
 		project.getTasks().withType(Jar.class, (jar) -> jar.manifest((manifest) -> {
 			Map<String, String> attributes = new HashMap<>();
-			attributes.put("Created-By", String.format("%s (%s)", System.getProperty("java.version"),
-					System.getProperty("java.specification.vendor")));
+			attributes.put("Build-Jdk-Spec", System.getProperty("java.specification.version"));
 			attributes.put("Implementation-Title", project.getName());
 			attributes.put("Implementation-Version", project.getVersion().toString());
 			attributes.put("Automatic-Module-Name", project.getName().replace("-", "."));
