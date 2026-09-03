@@ -74,7 +74,8 @@ public class SpringMavenPublishPlugin implements Plugin<Project> {
 		String signingPassword = (String) project.findProperty("signingPassword");
 
 		SigningExtension signing = project.getExtensions().getByType(SigningExtension.class);
-		signing.setRequired((Callable<Boolean>) () -> signingKeyId != null || signingKey != null || signingPassword != null);
+		signing.setRequired(
+				(Callable<Boolean>) () -> signingKeyId != null || signingKey != null || signingPassword != null);
 		if (signingKeyId != null) {
 			signing.useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword);
 		}
