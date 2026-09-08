@@ -1,0 +1,106 @@
+# update-bot (./update-bot) is a TypeScript GitHub Action, compiled with ncc into
+# the checked-in update-bot/dist/index.js - that's the file `uses:
+# spring-io/spring-security-release-tools/update-bot` actually runs. This workflow
+# installs its dependencies, runs its unit tests, rebuilds dist/, and fails if the
+# rebuilt dist/ doesn't match what's checked in, so a stale or broken build can
+# never reach consumers.
+#
+# If package-lock.json doesn't exist yet (e.g. it couldn't be generated locally),
+# this workflow installs fresh instead of failing, then - for a same-repository
+# pull request - commits the resulting package-lock.json and dist/ back onto the
+# PR branch so subsequent runs use `npm ci` like normal. (GitHub Actions won't
+# necessarily re-run this workflow off that commit, since pushes made with the
+# default GITHUB_TOKEN don't always trigger new runs - but the test/build steps
+# above already validated the code before that commit is made, so the result is
+# known either way. Re-run the job manually afterward to double check `npm ci`
+# against the newly committed lockfile if you want that extra confirmation.)
+name: Update Bot CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-test:
+    name: Build, Test, and Check dist/
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: update-bot
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # For a pull_request event this checks out the actual PR branch
+          # (rather than the default merge ref) so the commit step below, if
+          # it runs, can push straight back onto it.
+          ref: ${{ github.event.pull_request.head.ref || github.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: update-bot/.node-version
+
+      - name: Install Dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            echo "No package-lock.json yet; installing fresh instead of 'npm ci'."
+            npm install
+          fi
+
+      - name: Run Tests
+        run: npm run test
+
+      - name: Build dist/
+        run: npm run bundle
+
+      - name: Check for uncommitted build output
+        id: diff
+        run: |
+          if [ -n "$(git status --porcelain package-lock.json dist src)" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Build produced changes not present in the branch:"
+            git status --porcelain package-lock.json dist src
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Same-repository pull requests only: commit the missing lockfile/dist
+      # back so future runs can use `npm ci` and the dist-parity check below
+      # has something real to compare against. Forked PRs can't be pushed to
+      # by this token, so they just get the build/test verification above.
+      - name: Commit build output
+        if: >
+          steps.diff.outputs.changed == 'true' &&
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json dist src
+          git commit -m "Build update-bot package-lock.json and dist/"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+
+      - name: Fail if build output is still missing
+        if: >
+          steps.diff.outputs.changed == 'true' &&
+          !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+        run: |
+          echo "package-lock.json and/or dist/ are missing or out of date, and this workflow can't push to a fork. Run 'npm install && npm run bundle' in update-bot/ and commit the result."
+          exit 1
+
+      - if: ${{ failure() }}
+        name: Upload dist/ for inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: update-bot/dist
