@@ -1,27 +1,24 @@
 = Update Bot
 
-This action keeps a consuming project's use of `spring-security-release-tools` in sync with its latest release: it bumps the `spring-security-release-plugin` version wherever it's declared (e.g. a Gradle version catalog) and repoints every pinned `uses: spring-io/spring-security-release-tools/...@<sha> # v<version>` workflow/action reference to the new release's SHA, then opens (or updates) a single pull request with both changes.
+This action keeps a consuming project's use of `spring-security-release-tools` in sync with its latest release: it bumps the `spring-security-release-plugin` version wherever it's declared (e.g. a Gradle version catalog) and repoints every pinned `uses: spring-io/spring-security-release-tools/...@<sha> # v<version>` workflow/action reference to the new release's SHA, then opens (or updates) a single pull request with both changes - once per branch.
 
 This exists because Dependabot treats the Gradle plugin and the GitHub Actions references as separate ecosystems, so it can never combine them into one pull request - you'd get one PR bumping the plugin and a handful of others bumping individual workflow/action SHAs, all out of sync with each other. This action produces exactly one consistent pull request per branch instead.
 
+update-bot reads its target branches, milestone, and labels from the repository's own `.github/dependabot.yml` rather than from workflow configuration: it looks at every `package-ecosystem: github-actions` entry there, and for each one's `target-branch`, checks out that branch and applies the update. This keeps update-bot in lockstep with whatever Dependabot is already configured to watch - the same milestone and labels (if the entry sets them) are applied to update-bot's pull request; a branch whose entry doesn't specify `labels` gets `type: dependency-upgrade` instead. update-bot deliberately does not honor a `github-actions` entry's `ignore` list: repositories typically ignore `spring-io/spring-security-release-tools` there precisely so Dependabot doesn't also try to bump it and fight with update-bot's own pull request - honoring that same ignore rule here would make update-bot skip the one dependency it exists to update.
+
+The action fails if `.github/dependabot.yml` doesn't exist, or if it has no `github-actions` entries - there would be no branches to know about otherwise.
+
 == Inputs
 
-- *token* (string, required): Token used to push the update branch and open/update the pull request. Needs `contents: write` and `pull-requests: write`.
-- *labels* (string): Comma-separated labels applied to the pull request. Defaults to `type: dependency-upgrade`.
-
-== Outputs
-
-- *updated*: Whether a newer release was found.
-- *previous-version*: The version that was previously pinned in the repository.
-- *new-version*: The latest available version.
-- *pull-request-url*: The URL of the opened or updated pull request.
+- *token* (string): Token used to push the update branch and open/update the pull request. Needs `contents: write` and `pull-requests: write`. Defaults to `${{ github.token }}`.
 
 == How it Works
 
 . Looks up the latest release of `spring-security-release-tools` and resolves the commit SHA it points to (dereferencing annotated tags).
-. Searches the checked-out repository for the currently pinned version, first in Gradle files, then in workflow files.
-. If a newer version is available, rewrites the plugin coordinate and every matching workflow/action reference in place.
-. Commits the changes to a dedicated branch (`chore/bump-spring-security-release-tools-<version>`), force-pushes it, and opens a pull request against whichever branch is currently checked out - or updates the existing pull request for that branch if one is already open.
+. Reads `.github/dependabot.yml` and collects every `target-branch` with a `package-ecosystem: github-actions` entry, merging `milestone` and `labels` across entries that share a branch.
+. For each target branch: checks it out, searches it for the currently pinned version (first in Gradle files, then in workflow files), and if a newer version is available, rewrites the plugin coordinate and every matching workflow/action reference in place.
+. Commits the changes to a dedicated, branch-specific head (`chore/bump-spring-security-release-tools-<version>-<branch>`), force-pushes it, and opens a pull request against that branch - or updates the existing pull request for it if one is already open - applying that branch's labels (or `type: dependency-upgrade`, if its entry doesn't set any) and milestone.
+. Writes a job summary listing the outcome for every branch. One branch failing doesn't stop the others from being attempted; the action fails at the end if any branch failed.
 
 References pinned to a moving tag (e.g. `@v1`) instead of a 40-character SHA are left untouched, since there's nothing to bump - only SHA-pinned references carry a version comment.
 
@@ -29,7 +26,7 @@ References pinned to a moving tag (e.g. `@v1`) instead of a 40-character SHA are
 
 update-bot needs to be pinned to a specific commit SHA of this repository, the same way it pins *your* references. Find the SHA for the release you want on the https://github.com/spring-io/spring-security-release-tools/releases[Releases page] - each release's commit is linked from its tag. The example below pins to the `v1.0.17` release on the `1.0.x` line (`3f6cc7ffc137ca160061749d5f34dc30d5f36986`); use the latest SHA available when you set this up.
 
-Because GitHub only evaluates `schedule` triggers from the workflow file on a repository's default branch, checking every maintained branch requires a single workflow on the default branch that checks out each branch in a matrix and runs the action against it. The `permissions` block below is what allows update-bot to push its branch and open the pull request itself - without `contents: write` and `pull-requests: write`, both will fail.
+Because GitHub only evaluates `schedule` triggers from the workflow file on a repository's default branch, this workflow only runs on the default branch - update-bot itself checks out each branch listed in `.github/dependabot.yml`'s `github-actions` entries, so no matrix is needed here. The `permissions` block below is what allows update-bot to push its branch and open the pull request itself - without `contents: write` and `pull-requests: write`, both will fail.
 
 [source,yaml]
 ----
@@ -45,24 +42,16 @@ permissions:
 
 jobs:
   update:
-    strategy:
-      fail-fast: false
-      matrix:
-        branch: [ main, 6.1.x, 6.2.x ]
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ matrix.branch }}
       - uses: spring-io/spring-security-release-tools/update-bot@3f6cc7ffc137ca160061749d5f34dc30d5f36986 # v1.0.17
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 ----
 
-The default `GITHUB_TOKEN` works as long as branch protection on the target branch allows it to push and open pull requests. If it doesn't, pass a PAT such as `secrets.GH_ACTIONS_REPO_TOKEN` (documented in the xref:../README.md[root README]) instead.
+The default `github.token` works as long as branch protection on the target branches allows it to push and open pull requests. If it doesn't, pass a PAT such as `secrets.GH_ACTIONS_REPO_TOKEN` (documented in the xref:../README.md[root README]) instead via the `token` input.
 
 == Development
 

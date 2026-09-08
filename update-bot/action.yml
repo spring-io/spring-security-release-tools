@@ -1,5 +1,5 @@
 name: 'Update Bot'
-description: 'Opens a pull request bumping the spring-security-release-plugin version and the pinned spring-security-release-tools workflow/action SHAs to the latest release'
+description: "Reads .github/dependabot.yml's github-actions entries and, for each target branch, opens a pull request bumping the spring-security-release-plugin version and the pinned spring-security-release-tools workflow/action SHAs to the latest release"
 author: 'spring-projects'
 
 branding:
@@ -9,21 +9,8 @@ branding:
 inputs:
   token:
     description: 'GitHub token used to push the update branch and open/update the pull request. Needs contents:write and pull-requests:write.'
-    required: true
-  labels:
-    description: 'Comma-separated labels to apply to the pull request'
     required: false
-    default: 'type: dependency-upgrade'
-
-outputs:
-  updated:
-    description: 'Whether a newer release was found and a pull request was opened or updated'
-  previous-version:
-    description: 'The version that was previously pinned in this repository'
-  new-version:
-    description: 'The latest available version'
-  pull-request-url:
-    description: 'The URL of the opened or updated pull request'
+    default: ${{ github.token }}
 
 runs:
   using: node24
