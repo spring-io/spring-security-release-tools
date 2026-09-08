@@ -4,7 +4,7 @@ This action keeps a consuming project's use of `spring-security-release-tools` i
 
 This exists because Dependabot treats the Gradle plugin and the GitHub Actions references as separate ecosystems, so it can never combine them into one pull request - you'd get one PR bumping the plugin and a handful of others bumping individual workflow/action SHAs, all out of sync with each other. This action produces exactly one consistent pull request per branch instead.
 
-update-bot reads its target branches, milestone, and labels from the repository's own `.github/dependabot.yml` rather than from workflow configuration: it looks at every `package-ecosystem: github-actions` entry there, and for each one's `target-branch`, checks out that branch and applies the update. This keeps update-bot in lockstep with whatever Dependabot is already configured to watch - the same milestone and labels (if the entry sets them) are applied to update-bot's pull request; a branch whose entry doesn't specify `labels` gets `type: dependency-upgrade` instead. update-bot deliberately does not honor a `github-actions` entry's `ignore` list: repositories typically ignore `spring-io/spring-security-release-tools` there precisely so Dependabot doesn't also try to bump it and fight with update-bot's own pull request - honoring that same ignore rule here would make update-bot skip the one dependency it exists to update.
+update-bot reads its target branches, milestone, and labels from the repository's own `.github/dependabot.yml` rather than from workflow configuration: it looks at every `package-ecosystem: github-actions` entry there, and for each one's `target-branch`, checks out that branch and applies the update. This keeps update-bot in lockstep with whatever Dependabot is already configured to watch - the same milestone and labels (if the entry sets them) are applied to update-bot's pull request; a branch whose entry doesn't specify `labels` gets `type: dependency-upgrade` instead. update-bot does not honor Dependabot's `ignore` field; instead, you should change your `dependabot.yml` to ignore `spring-io/spring-security-release-tools` updates so that update-bot is the only one taking care of those.
 
 The action fails if `.github/dependabot.yml` doesn't exist, or if it has no `github-actions` entries - there would be no branches to know about otherwise.
 
@@ -52,6 +52,18 @@ jobs:
 ----
 
 The default `github.token` works as long as branch protection on the target branches allows it to push and open pull requests. If it doesn't, pass a PAT such as `secrets.GH_ACTIONS_REPO_TOKEN` (documented in the xref:../README.md[root README]) instead via the `token` input.
+
+Also, make sure to configure your `dependabot.yml` to ignore `spring-io/spring-security-release-tools` so that it doesn't create competing pull requests:
+
+[source,yaml]
+----
+...
+updates:
+  - package-ecosystem: "github-actions"
+    ignore:
+      - dependency-name: "spring-io/spring-security-release-tools/*"
+...
+----
 
 == Development
 
