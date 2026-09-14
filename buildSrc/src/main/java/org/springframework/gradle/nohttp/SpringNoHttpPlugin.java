@@ -33,5 +33,8 @@ public class SpringNoHttpPlugin implements Plugin<Project> {
 		// Configure nohttp
 		NoHttpExtension nohttp = project.getExtensions().getByType(NoHttpExtension.class);
 		nohttp.getSource().exclude("buildSrc/build/**");
+		nohttp.getSource().exclude("update-bot/node_modules/**");
+		nohttp.getSource().exclude("update-bot/dist/**");
+		nohttp.getSource().exclude("update-bot/coverage/**");
 	}
 }
