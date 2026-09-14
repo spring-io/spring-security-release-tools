@@ -27,6 +27,7 @@ This plugin performs the following on each sub-module it is applied to:
 * Configures the `publishing` extension to sign artifacts
 * Creates a `local` repository for publishing artifacts to a local directory
 * Configures the `artifactory` extension using gradle properties
+* Registers a `checkMavenPomLicense` task that verifies the generated `mavenJava` POM agrees with the project's `LICENSE.txt` when it is the Apache License
 
 == Task Reference
 
@@ -65,4 +66,18 @@ This task is provided by the `maven-publish` plugin when the `local` repository 
 [source,bash]
 ----
 ./gradlew publishMavenJavaPublicationToLocalRepository
+----
+
+== `checkMavenPomLicense`
+
+This task verifies that the generated POM for the `mavenJava` publication configures for the Apache 2.0 license if the project's `LICENSE.txt` is the Apache 2.0 license.
+Specifically, it asserts that the POM declare `Apache License, Version 2.0` / `https://www.apache.org/licenses/LICENSE-2.0` as its license.
+When `LICENSE.txt` is missing or declares a different license, this task does nothing.
+It runs automatically as part of `check`.
+
+*Example:*
+
+[source,bash]
+----
+./gradlew checkMavenPomLicense
 ----
