@@ -26,6 +26,9 @@ import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.publish.PublishingExtension;
 import org.gradle.api.publish.maven.MavenPublication;
 import org.gradle.api.publish.maven.plugins.MavenPublishPlugin;
+import org.gradle.api.publish.maven.tasks.GenerateMavenPom;
+import org.gradle.api.tasks.TaskProvider;
+import org.gradle.language.base.plugins.LifecycleBasePlugin;
 import org.gradle.plugin.devel.plugins.JavaGradlePluginPlugin;
 import org.gradle.plugins.signing.SigningExtension;
 import org.gradle.plugins.signing.SigningPlugin;
@@ -34,6 +37,8 @@ import org.gradle.plugins.signing.SigningPlugin;
  * @author Steve Riesenberg
  */
 public class SpringMavenPublishPlugin implements Plugin<Project> {
+
+	private static final String MAVEN_JAVA_PUBLICATION_NAME = "mavenJava";
 
 	@Override
 	public void apply(Project project) {
@@ -53,7 +58,7 @@ public class SpringMavenPublishPlugin implements Plugin<Project> {
 		}
 
 		PublishingExtension publishing = project.getExtensions().getByType(PublishingExtension.class);
-		publishing.getPublications().create("mavenJava", MavenPublication.class, (maven) -> {
+		publishing.getPublications().create(MAVEN_JAVA_PUBLICATION_NAME, MavenPublication.class, (maven) -> {
 			// @formatter:off
 			project.getPlugins().withType(JavaPlugin.class, (plugin) ->
 				maven.from(project.getComponents().getByName("java")));
@@ -61,6 +66,37 @@ public class SpringMavenPublishPlugin implements Plugin<Project> {
 				maven.from(project.getComponents().getByName("javaPlatform")));
 			// @formatter:on
 		});
+
+		configureCheckPomLicenseTask(project);
+	}
+
+	private static void configureCheckPomLicenseTask(Project project) {
+		String generatePomTaskName = "generatePomFileFor" + capitalize(MAVEN_JAVA_PUBLICATION_NAME) + "Publication";
+		TaskProvider<GenerateMavenPom> generatePomFileTask = project.getTasks()
+			.named(generatePomTaskName, GenerateMavenPom.class);
+
+		TaskProvider<CheckMavenPomLicenseTask> checkPomLicenseTask = project.getTasks()
+			.register("checkMavenPomLicense", CheckMavenPomLicenseTask.class, (task) -> {
+				task.setGroup(LifecycleBasePlugin.VERIFICATION_GROUP);
+				task.setDescription("Verifies the generated POM for the '" + MAVEN_JAVA_PUBLICATION_NAME
+						+ "' publication agrees with the project's LICENSE.txt when it is Apache License, Version 2.0");
+				task.getPublicationName().set(MAVEN_JAVA_PUBLICATION_NAME);
+				task.getLicenseFile()
+					.set(project.getRootProject().getLayout().getProjectDirectory().file("LICENSE.txt"));
+				task.getPomFile()
+					.set(project.getLayout().file(generatePomFileTask.map(GenerateMavenPom::getDestination)));
+				task.dependsOn(generatePomFileTask);
+			});
+
+		project.getPlugins()
+			.withType(LifecycleBasePlugin.class,
+					(plugin) -> project.getTasks()
+						.named(LifecycleBasePlugin.CHECK_TASK_NAME)
+						.configure((checkTask) -> checkTask.dependsOn(checkPomLicenseTask)));
+	}
+
+	private static String capitalize(String value) {
+		return value.substring(0, 1).toUpperCase() + value.substring(1);
 	}
 
 	private static void configureSigning(Project project) {
