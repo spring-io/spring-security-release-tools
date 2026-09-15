@@ -167,7 +167,7 @@ public class SpringReleases {
 			return false;
 		}
 
-		var today = LocalDate.now();
+		var today = LocalDate.now(ZoneOffset.UTC);
 		var dueOn = milestone.dueOn().atZone(ZoneOffset.UTC).toLocalDate();
 		return !today.isBefore(dueOn);
 	}
