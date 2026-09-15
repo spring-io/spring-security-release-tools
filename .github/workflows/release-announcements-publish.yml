@@ -69,7 +69,6 @@ jobs:
         uses: spring-io/spring-release-actions/schedule-milestone@6795980b9d960a13d420e114d50f1c8abe730769  # 0.0.7
         with:
           version: ${{ needs.compute-release.outputs.next-milestone-version }}
-          version-date: ${{ needs.compute-release.outputs.next-milestone-version-date }}
           version-type: ${{ needs.compute-release.outputs.next-milestone-version-type }}
           token: ${{ github.token }}
   announce:
