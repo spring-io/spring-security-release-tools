@@ -24,6 +24,7 @@ import org.gradle.api.Project;
 import org.gradle.api.plugins.JavaPlatformPlugin;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.publish.PublishingExtension;
+import org.gradle.api.publish.maven.MavenPom;
 import org.gradle.api.publish.maven.MavenPublication;
 import org.gradle.api.publish.maven.plugins.MavenPublishPlugin;
 import org.gradle.api.publish.maven.tasks.GenerateMavenPom;
@@ -39,6 +40,18 @@ import org.gradle.plugins.signing.SigningPlugin;
 public class SpringMavenPublishPlugin implements Plugin<Project> {
 
 	private static final String MAVEN_JAVA_PUBLICATION_NAME = "mavenJava";
+
+	private static final String DEFAULT_OSS_REPO_OWNER = "spring-projects";
+
+	private static final String ORGANIZATION_NAME = "VMware, Inc.";
+
+	private static final String ORGANIZATION_URL = "https://spring.io";
+
+	private static final String DEVELOPER_NAME = "Spring";
+
+	private static final String DEVELOPER_EMAIL = "ask@spring.io";
+
+	private static final String DEVELOPER_ORGANIZATION_URL = "https://www.spring.io";
 
 	@Override
 	public void apply(Project project) {
@@ -65,9 +78,61 @@ public class SpringMavenPublishPlugin implements Plugin<Project> {
 			project.getPlugins().withType(JavaPlatformPlugin.class, (plugin) ->
 				maven.from(project.getComponents().getByName("javaPlatform")));
 			// @formatter:on
+			configurePom(project, maven.getPom());
 		});
 
 		configureCheckPomLicenseTask(project);
+	}
+
+	/**
+	 * Configures the POM with the conventions shared by Spring's security projects,
+	 * derived from the {@code ossRepoOwner} (default {@code "spring-projects"}) and
+	 * {@code ossRepoName} (default {@link Project#getName() the root project's name})
+	 * properties. Any of these values can be overridden by configuring the
+	 * {@value #MAVEN_JAVA_PUBLICATION_NAME} publication's {@code pom} in the usual way,
+	 * since that configuration always runs after a project applies this plugin.
+	 */
+	private static void configurePom(Project project, MavenPom pom) {
+		String ossRepoOwner = ossRepoOwner(project);
+		String ossRepoName = ossRepoName(project);
+
+		pom.getName().set(project.provider(project::getName));
+		pom.getDescription().set(project.provider(project::getDescription));
+		pom.getUrl().set("https://spring.io/projects/" + ossRepoName);
+		pom.organization((organization) -> {
+			organization.getName().set(ORGANIZATION_NAME);
+			organization.getUrl().set(ORGANIZATION_URL);
+		});
+		pom.licenses((licenses) -> licenses.license((license) -> {
+			license.getName().set(ApacheLicense.NAME);
+			license.getUrl().set(ApacheLicense.URL);
+		}));
+		pom.developers((developers) -> developers.developer((developer) -> {
+			developer.getName().set(DEVELOPER_NAME);
+			developer.getEmail().set(DEVELOPER_EMAIL);
+			developer.getOrganization().set(ORGANIZATION_NAME);
+			developer.getOrganizationUrl().set(DEVELOPER_ORGANIZATION_URL);
+		}));
+		pom.scm((scm) -> {
+			scm.getConnection().set("scm:git:git://github.com/" + ossRepoOwner + "/" + ossRepoName + ".git");
+			scm.getDeveloperConnection()
+				.set("scm:git:ssh://git@github.com/" + ossRepoOwner + "/" + ossRepoName + ".git");
+			scm.getUrl().set("https://github.com/" + ossRepoOwner + "/" + ossRepoName);
+		});
+		pom.issueManagement((issueManagement) -> {
+			issueManagement.getSystem().set("GitHub");
+			issueManagement.getUrl().set("https://github.com/" + ossRepoOwner + "/" + ossRepoName + "/issues");
+		});
+	}
+
+	private static String ossRepoOwner(Project project) {
+		Object ossRepoOwner = project.findProperty("ossRepoOwner");
+		return (ossRepoOwner != null) ? ossRepoOwner.toString() : DEFAULT_OSS_REPO_OWNER;
+	}
+
+	private static String ossRepoName(Project project) {
+		Object ossRepoName = project.findProperty("ossRepoName");
+		return (ossRepoName != null) ? ossRepoName.toString() : project.getRootProject().getName();
 	}
 
 	private static void configureCheckPomLicenseTask(Project project) {

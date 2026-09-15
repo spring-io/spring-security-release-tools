@@ -59,10 +59,6 @@ public abstract class CheckMavenPomLicenseTask extends DefaultTask {
 
 	static final String APACHE_LICENSE_SIGNATURE_LINE = "Apache License";
 
-	static final String EXPECTED_LICENSE_NAME = "Apache License, Version 2.0";
-
-	static final String EXPECTED_LICENSE_URL = "https://www.apache.org/licenses/LICENSE-2.0";
-
 	@InputFile
 	@Optional
 	@PathSensitive(PathSensitivity.NONE)
@@ -85,7 +81,7 @@ public abstract class CheckMavenPomLicenseTask extends DefaultTask {
 		var pomFile = getPomFile().get().getAsFile();
 		var declaredLicenses = readDeclaredLicenses(pomFile);
 		var matches = declaredLicenses.stream()
-			.anyMatch((license) -> EXPECTED_LICENSE_NAME.equals(license[0]) && EXPECTED_LICENSE_URL.equals(license[1]));
+			.anyMatch((license) -> ApacheLicense.NAME.equals(license[0]) && ApacheLicense.URL.equals(license[1]));
 		if (!matches) {
 			throw new GradleException(buildFailureMessage(pomFile, declaredLicenses));
 		}
@@ -147,7 +143,7 @@ public abstract class CheckMavenPomLicenseTask extends DefaultTask {
 		message.append(String.format("  LICENSE.txt: %s%n", getLicenseFile().get().getAsFile().getAbsolutePath()));
 		message.append(String.format("  POM file:    %s%n", pomFile.getAbsolutePath()));
 		message
-			.append(String.format("  Expected:    name='%s', url='%s'%n", EXPECTED_LICENSE_NAME, EXPECTED_LICENSE_URL));
+			.append(String.format("  Expected:    name='%s', url='%s'%n", ApacheLicense.NAME, ApacheLicense.URL));
 		if (declaredLicenses.isEmpty()) {
 			message.append("  Found:       no <license> elements were declared in the generated POM.");
 		}

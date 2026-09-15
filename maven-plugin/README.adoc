@@ -23,11 +23,50 @@ This plugin performs the following on each sub-module it is applied to:
 * Applies the `signing` plugin
 * Applies the `com.jfrog.artifactory` plugin
 * Creates a `mavenJava` publication with the `java` component
+* Configures the `mavenJava` publication's POM with the conventions shared by Spring's security projects (see below)
 * Configures the `signing` extension using gradle properties
 * Configures the `publishing` extension to sign artifacts
 * Creates a `local` repository for publishing artifacts to a local directory
 * Configures the `artifactory` extension using gradle properties
 * Registers a `checkMavenPomLicense` task that verifies the generated `mavenJava` POM agrees with the project's `LICENSE.txt` when it is the Apache License
+
+== POM Conventions
+
+Projects previously needed their own `MavenPublishingConventionsPlugin` in `buildSrc` to fill in a POM's `organization`, `licenses`, `developers`, `scm`, and `issueManagement` before it could be published to Maven Central. This plugin now applies those conventions automatically, so that plugin can be deleted:
+
+* `name` / `description` — the project's `name` / `description`
+* `organization` — `VMware, Inc.` / `https://spring.io`
+* `licenses` — `Apache License, Version 2.0` / `https://www.apache.org/licenses/LICENSE-2.0`
+* `developers` — a single `Spring` / `ask@spring.io` developer
+* `url` — `+https://spring.io/projects/<ossRepoName>+`
+* `scm` / `issueManagement` — derived from `+https://github.com/<ossRepoOwner>/<ossRepoName>+`
+
+`ossRepoOwner` and `ossRepoName` are Gradle properties (e.g. set in `gradle.properties`) that identify the project's public GitHub repository:
+
+* `ossRepoOwner` defaults to `spring-projects`
+* `ossRepoName` defaults to the root project's name
+
+Most projects need neither property, since their root project name already matches their GitHub repository name. A project whose root project name differs from its repository name, such as Spring Session (root project `spring-session-build`, repository `spring-session`), only needs:
+
+[source,properties]
+----
+ossRepoName=spring-session
+----
+
+Any of these conventions can still be overridden, since a project's own configuration of the `mavenJava` publication always runs after this plugin applies its defaults:
+
+[source,gradle]
+----
+publishing {
+	publications {
+		named("mavenJava") {
+			pom {
+				url = "https://github.com/spring-io/spring-security-release-tools"
+			}
+		}
+	}
+}
+----
 
 == Task Reference
 
