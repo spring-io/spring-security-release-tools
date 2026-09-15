@@ -12,6 +12,8 @@ jobs:
     secrets: inherit
   test:
     name: Test
+    permissions:
+      contents: read
     uses: ./.github/workflows/test.yml
     secrets: inherit
   deploy-artifacts:
