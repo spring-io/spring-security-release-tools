@@ -23,7 +23,7 @@ jobs:
     steps:
       - id: support-window
         name: Compute Support Window
-        uses: spring-io/spring-release-actions/compute-support-window@1b8671612c3eb3d9b9763e2d7b66f1a80d00ee95  # 0.0.6
+        uses: spring-io/spring-release-actions/compute-support-window@6795980b9d960a13d420e114d50f1c8abe730769  # 0.0.7
         with:
           version: ${{ inputs.version }}
       - name: Cancel if Repository Doesn't Match Support Window
@@ -45,7 +45,7 @@ jobs:
     steps:
       - id: next-release-milestone
         name: Get Next Release Milestone
-        uses: spring-io/spring-release-actions/compute-next-version@1b8671612c3eb3d9b9763e2d7b66f1a80d00ee95  # 0.0.6
+        uses: spring-io/spring-release-actions/compute-next-version@6795980b9d960a13d420e114d50f1c8abe730769  # 0.0.7
         with:
           version: ${{ inputs.version }}
           token: ${{ github.token }}
@@ -61,15 +61,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Close Milestone
-        uses: spring-io/spring-release-actions/close-milestone@1b8671612c3eb3d9b9763e2d7b66f1a80d00ee95  # 0.0.6
+        uses: spring-io/spring-release-actions/close-milestone@6795980b9d960a13d420e114d50f1c8abe730769  # 0.0.7
         with:
           version: ${{ inputs.version }}
           token: ${{ github.token }}
       - name: Schedule Next Release (if not already scheduled)
-        uses: spring-io/spring-release-actions/schedule-milestone@1b8671612c3eb3d9b9763e2d7b66f1a80d00ee95  # 0.0.6
+        uses: spring-io/spring-release-actions/schedule-milestone@6795980b9d960a13d420e114d50f1c8abe730769  # 0.0.7
         with:
           version: ${{ needs.compute-release.outputs.next-milestone-version }}
-          version-date: ${{ needs.compute-release.outputs.next-milestone-version-date }}
           version-type: ${{ needs.compute-release.outputs.next-milestone-version-type }}
           token: ${{ github.token }}
   announce:
@@ -78,7 +77,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Announce Release on GChat
-        uses: spring-io/spring-release-actions/announce-on-gchat@1b8671612c3eb3d9b9763e2d7b66f1a80d00ee95  # 0.0.6
+        uses: spring-io/spring-release-actions/announce-on-gchat@6795980b9d960a13d420e114d50f1c8abe730769  # 0.0.7
         with:
           version: ${{ inputs.version }}
           gchat-webhook-url: ${{ secrets.SPRING_RELEASE_GCHAT_WEBHOOK_URL }}

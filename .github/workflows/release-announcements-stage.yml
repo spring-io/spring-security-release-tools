@@ -20,7 +20,7 @@ jobs:
     steps:
       - id: support-window
         name: Compute Support Window
-        uses: spring-io/spring-release-actions/compute-support-window@1b8671612c3eb3d9b9763e2d7b66f1a80d00ee95  # 0.0.6
+        uses: spring-io/spring-release-actions/compute-support-window@6795980b9d960a13d420e114d50f1c8abe730769  # 0.0.7
         with:
           version: ${{ inputs.version }}
       - name: Cancel if Repository Doesn't Match Support Window
@@ -37,6 +37,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Publish Release Notes
-        uses: spring-io/spring-security-actions/publish-release-notes@15a5e9ef75eee29c39237c6821939a04e43a4b11 # 0.0.1
+        uses: spring-io/spring-security-actions/publish-release-notes@7b123d42b18f8e52c1925c5eecc3e217bfe3b31b # 0.0.2
         with:
           tag: ${{ inputs.version }}
