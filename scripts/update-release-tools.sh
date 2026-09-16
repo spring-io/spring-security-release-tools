@@ -12,7 +12,8 @@
 #   2. Every Gradle dependency on the release-tools plugins
 #      (io.spring.gradle:spring-security-release-plugin or
 #      io.spring.gradle:spring-security-project-plugin) has its version
-#      bumped to match, in any *.gradle / *.gradle.kts file.
+#      bumped to match, in any *.gradle, *.gradle.kts, or *.toml
+#      (e.g. gradle/libs.versions.toml) file.
 #
 # By default the target release is whichever spring-io/spring-security-release-tools
 # tag is newest, resolved from GitHub over the network. Pass a tag explicitly
@@ -119,7 +120,7 @@ while IFS= read -r -d '' file; do
     UPDATED_FILES+=("${file}")
   fi
   rm -f "${backup}"
-done < <(find "${TARGET_DIR}" \( -name '*.gradle' -o -name '*.gradle.kts' \) -type f -not -path '*/.git/*' -not -path '*/build/*' -print0)
+done < <(find "${TARGET_DIR}" \( -name '*.gradle' -o -name '*.gradle.kts' -o -name '*.toml' \) -type f -not -path '*/.git/*' -not -path '*/build/*' -print0)
 
 if [[ "${#UPDATED_FILES[@]}" -eq 0 ]]; then
   echo "No outdated references found; nothing to do."
