@@ -16,9 +16,6 @@
 
 package org.springframework.gradle;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import io.spring.javaformat.gradle.SpringJavaFormatPlugin;
 import org.gradle.api.JavaVersion;
 import org.gradle.api.Plugin;
@@ -28,7 +25,6 @@ import org.gradle.api.plugins.PluginManager;
 import org.gradle.api.tasks.compile.CompileOptions;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.api.tasks.testing.Test;
-import org.gradle.jvm.tasks.Jar;
 import org.gradle.jvm.toolchain.JavaLanguageVersion;
 
 import org.springframework.gradle.checkstyle.SpringJavaCheckstylePlugin;
@@ -71,7 +67,7 @@ public class SpringJavaPlugin implements Plugin<Project> {
 		pluginManager.apply(SpringJavaCheckstylePlugin.class);
 		pluginManager.apply(SpringCopyPropertiesPlugin.class);
 		pluginManager.apply(SpringJacocoPlugin.class);
-		new ReproducibleBuildConventions().apply(project);
+		pluginManager.apply(SpringReproducibleBuildPlugin.class);
 
 		// Apply Java toolchain version
 		JavaPluginExtension java = project.getExtensions().getByType(JavaPluginExtension.class);
@@ -86,14 +82,7 @@ public class SpringJavaPlugin implements Plugin<Project> {
 		});
 
 		// Configure jar task
-		project.getTasks().withType(Jar.class, (jar) -> jar.manifest((manifest) -> {
-			Map<String, String> attributes = new HashMap<>();
-			attributes.put("Build-Jdk-Spec", System.getProperty("java.specification.version"));
-			attributes.put("Implementation-Title", project.getName());
-			attributes.put("Implementation-Version", project.getVersion().toString());
-			attributes.put("Automatic-Module-Name", project.getName().replace("-", "."));
-			manifest.attributes(attributes);
-		}));
+		pluginManager.apply(SpringJarManifestPlugin.class);
 
 		// Configure JUnit 5
 		project.getTasks().withType(Test.class, Test::useJUnitPlatform);
