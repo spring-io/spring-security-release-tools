@@ -16,15 +16,18 @@
 
 package org.springframework.gradle;
 
+import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.bundling.AbstractArchiveTask;
 
-public class ReproducibleBuildConventions {
+/**
+ * Ensures that the archive always has the same time and file ordering between builds.
+ *
+ * @author Steve Riesenberg
+ */
+public class SpringReproducibleBuildPlugin implements Plugin<Project> {
 
-	/**
-	 * Ensures that the archive always has the same time and file ordering between builds.
-	 * @param project the current project
-	 */
+	@Override
 	public void apply(Project project) {
 		project.getTasks().withType(AbstractArchiveTask.class).configureEach(task -> {
 			task.setPreserveFileTimestamps(false);
