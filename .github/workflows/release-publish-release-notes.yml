@@ -20,8 +20,10 @@ jobs:
     steps:
       - name: Deprecation Notice
         run: echo "::warning title=Deprecated Workflow::release-publish-release-notes.yml is deprecated; use release-announcements-stage.yml instead."
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.version }}
       - name: Publish Release Notes
         uses: spring-io/spring-security-actions/publish-release-notes@96df48300f5fa058d0765832d48a534cc6a378d5 # 0.0.3
         with:
           tag: ${{ inputs.version }}
-          config-file: etc/release-notes-sections.yml
