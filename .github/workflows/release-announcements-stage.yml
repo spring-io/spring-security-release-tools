@@ -1,6 +1,12 @@
-name: Stage Release Announcements
+name: Release Announcements - Stage
 
 on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: The project version to stage
+        required: true
+        type: string
   workflow_call:
     inputs:
       version:
