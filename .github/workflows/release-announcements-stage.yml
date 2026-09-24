@@ -36,6 +36,9 @@ jobs:
     needs: [ check-support-window ]
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.version }}
       - name: Publish Release Notes
         uses: spring-io/spring-security-actions/publish-release-notes@7b123d42b18f8e52c1925c5eecc3e217bfe3b31b # 0.0.2
         with:
