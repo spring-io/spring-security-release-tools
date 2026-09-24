@@ -23,6 +23,24 @@ describe('parseVersionFromGradle', () => {
   it('returns undefined when the coordinate is not present', () => {
     expect(parseVersionFromGradle('some unrelated content')).toBeUndefined()
   })
+
+  it('finds the version from a settings.gradle plugins DSL declaration', () => {
+    const content = [
+      'plugins {',
+      '\tid "io.spring.security.settings" version "1.0.20"',
+      '}'
+    ].join('\n')
+    expect(parseVersionFromGradle(content)).toBe('1.0.20')
+  })
+
+  it('finds the version from a single-quoted plugins DSL declaration', () => {
+    const content = [
+      'plugins {',
+      "    id 'io.spring.security.settings' version '1.0.20'",
+      '}'
+    ].join('\n')
+    expect(parseVersionFromGradle(content)).toBe('1.0.20')
+  })
 })
 
 describe('parseVersionFromWorkflow', () => {
@@ -53,6 +71,34 @@ describe('updateGradleVersion', () => {
   it('returns the content unchanged when the old version is not present', () => {
     const content = 'io.spring.gradle:spring-security-release-plugin:1.0.16'
     expect(updateGradleVersion(content, '1.0.17', '1.0.18')).toBe(content)
+  })
+
+  it('replaces the version in a settings.gradle plugins DSL declaration', () => {
+    const content = [
+      'plugins {',
+      '\tid "io.spring.security.settings" version "1.0.20"',
+      '}'
+    ].join('\n')
+    const updated = updateGradleVersion(content, '1.0.20', '1.0.21')
+    expect(updated).toContain(
+      'id "io.spring.security.settings" version "1.0.21"'
+    )
+  })
+
+  it('leaves an unrelated plugin unchanged even if its version matches', () => {
+    const content = [
+      'plugins {',
+      '\tid "io.spring.security.settings" version "1.0.20"',
+      '\tid "io.spring.develocity.conventions" version "1.0.20"',
+      '}'
+    ].join('\n')
+    const updated = updateGradleVersion(content, '1.0.20', '1.0.21')
+    expect(updated).toContain(
+      'id "io.spring.security.settings" version "1.0.21"'
+    )
+    expect(updated).toContain(
+      'id "io.spring.develocity.conventions" version "1.0.20"'
+    )
   })
 })
 

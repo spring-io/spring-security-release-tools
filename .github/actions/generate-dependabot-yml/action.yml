@@ -1,5 +1,6 @@
-name: 'The name of your action here'
-description: 'Provide a description here'
+# DEPRECATED: This action is deprecated in favor of spring-io/github-actions/update-dependabot.
+name: 'Generate Dependabot YML'
+description: 'DEPRECATED: Use spring-io/github-actions/update-dependabot instead. Generates a dependabot.yml from a template file.'
 author: 'Your name or organization here'
 
 # Add your action's branding here. This will appear on the GitHub Marketplace.
