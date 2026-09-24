@@ -142,8 +142,7 @@ public abstract class CheckMavenPomLicenseTask extends DefaultTask {
 				"The generated POM for the '%s' publication does not declare the expected license.%n", publication));
 		message.append(String.format("  LICENSE.txt: %s%n", getLicenseFile().get().getAsFile().getAbsolutePath()));
 		message.append(String.format("  POM file:    %s%n", pomFile.getAbsolutePath()));
-		message
-			.append(String.format("  Expected:    name='%s', url='%s'%n", ApacheLicense.NAME, ApacheLicense.URL));
+		message.append(String.format("  Expected:    name='%s', url='%s'%n", ApacheLicense.NAME, ApacheLicense.URL));
 		if (declaredLicenses.isEmpty()) {
 			message.append("  Found:       no <license> elements were declared in the generated POM.");
 		}
