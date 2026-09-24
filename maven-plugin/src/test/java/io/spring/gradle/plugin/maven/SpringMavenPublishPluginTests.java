@@ -140,7 +140,10 @@ public class SpringMavenPublishPluginTests {
 
 	@Test
 	public void pomWhenOssRepoNamePropertySetThenUrlAndScmUseIt() {
-		Project otherProject = ProjectBuilder.builder().withProjectDir(this.projectDir).withName("spring-session-build").build();
+		Project otherProject = ProjectBuilder.builder()
+			.withProjectDir(this.projectDir)
+			.withName("spring-session-build")
+			.build();
 		otherProject.getExtensions().getExtraProperties().set("ossRepoName", "spring-session");
 		otherProject.getPluginManager().apply("java");
 		otherProject.getPluginManager().apply(SpringMavenPublishPlugin.class);
