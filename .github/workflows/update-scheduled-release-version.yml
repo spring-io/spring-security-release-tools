@@ -1,3 +1,4 @@
+# DEPRECATED: This workflow is deprecated with no replacement; release orchestration is now centralized.
 name: Update Scheduled Release Version
 
 on:
@@ -25,6 +26,8 @@ jobs:
     name: Update Scheduled Release Version
     runs-on: ubuntu-latest
     steps:
+      - name: Deprecation Notice
+        run: echo "::warning title=Deprecated Workflow::update-scheduled-release-version.yml is deprecated with no replacement; release orchestration is now centralized."
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
