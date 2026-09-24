@@ -60,11 +60,11 @@ jobs:
     steps:
       - name: Deprecation Notice
         run: echo "::warning title=Deprecated Workflow::perform-release.yml is deprecated; use release-announcements-stage.yml and release-announcements-publish.yml instead."
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           token: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
       - name: Set up JDK ${{ inputs.java-version }}
-        uses: spring-io/spring-gradle-build-action@v2
+        uses: spring-io/spring-gradle-build-action@c8668747d7c264864c8c7f7026d0d277d14a78dc # v2.0.6
         with:
           java-version: ${{ inputs.java-version }}
       - id: next-snapshot-version
@@ -84,7 +84,7 @@ jobs:
         run: echo "version=$(./gradlew -q getPreviousReleaseMilestone -PcurrentVersion=$VERSION -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
       - id: next-release-milestone
         name: Get Next Release Milestone
-        uses: spring-io/spring-release-actions/compute-next-version@0.0.6
+        uses: spring-io/spring-release-actions/compute-next-version@1b8671612c3eb3d9b9763e2d7b66f1a80d00ee95 # 0.0.6
         with:
           version: ${{ inputs.project-version }}
           token: ${{ github.token }}
@@ -129,7 +129,7 @@ jobs:
           git commit -am "Next development version"
           git push
       - name: Announce Release on GChat
-        uses: spring-io/spring-release-actions/announce-on-gchat@0.0.6
+        uses: spring-io/spring-release-actions/announce-on-gchat@1b8671612c3eb3d9b9763e2d7b66f1a80d00ee95 # 0.0.6
         with:
           version: ${{ inputs.project-version }}
           gchat-webhook-url: ${{ secrets.SPRING_RELEASE_GCHAT_WEBHOOK_URL }}
