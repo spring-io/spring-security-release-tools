@@ -26,8 +26,8 @@ import org.springframework.gradle.develocity.DevelocityConventionsPlugin;
  * Applies Spring Security's settings-level conventions.
  * <p>
  * This is the single entry point projects should apply from {@code settings.gradle}; it
- * applies the individual settings plugins internally so that consumers don't need to
- * know about or reference them directly.
+ * applies the individual settings plugins internally so that consumers don't need to know
+ * about or reference them directly.
  *
  * @author Josh Cummings
  */
