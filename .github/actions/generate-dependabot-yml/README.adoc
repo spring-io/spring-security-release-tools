@@ -1,5 +1,7 @@
 = Generate Dependabot YML
 
+WARNING: This action is deprecated in favor of https://github.com/spring-io/github-actions/tree/main/update-dependabot[spring-io/github-actions/update-dependabot].
+
 This action facilitates the automatic update of a Dependabot configuration template file (dependabot.yml).
 This action reads a template file, resolves updates based on specified package ecosystems and target branches, and then writes the updated template to the `.github` directory within your repository.
 
