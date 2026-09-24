@@ -1,3 +1,5 @@
+# DEPRECATED: This workflow is deprecated in favor of the equivalent workflow in spring-github-workflows.
+#
 # In TypeScript actions, `dist/` is a special directory. When you reference
 # an action with the `uses:` property, `dist/index.js` is the code that will be
 # run. For this project, the `dist/index.js` file is transpiled from other
@@ -27,6 +29,9 @@ jobs:
         working-directory: .github/actions/auto-merge-forward
 
     steps:
+      - name: Deprecation Notice
+        run: echo "::warning title=Deprecated Workflow::check-auto-merge-forward-action-dist.yml is deprecated; use the equivalent workflow in spring-github-workflows instead."
+
       - name: Checkout
         id: checkout
         uses: actions/checkout@v4

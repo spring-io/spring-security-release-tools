@@ -1,3 +1,4 @@
+# DEPRECATED: This workflow is deprecated in favor of release-announcements-stage.yml.
 name: "Release - Publish Release Notes"
 
 permissions:
@@ -17,6 +18,8 @@ jobs:
     name: "Publish Release Notes"
     runs-on: ubuntu-latest
     steps:
+      - name: Deprecation Notice
+        run: echo "::warning title=Deprecated Workflow::release-publish-release-notes.yml is deprecated; use release-announcements-stage.yml instead."
       - name: Publish Release Notes
         uses: spring-io/spring-security-actions/publish-release-notes@7b123d42b18f8e52c1925c5eecc3e217bfe3b31b # 0.0.2
         with:

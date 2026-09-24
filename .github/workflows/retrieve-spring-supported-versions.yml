@@ -1,3 +1,4 @@
+# DEPRECATED: This workflow is deprecated with no replacement; no security workflows use it.
 name: Retrieve Spring Supported Versions
 
 on:
@@ -36,6 +37,8 @@ jobs:
       TYPE: ${{ inputs.type }}
 
     steps:
+      - name: Deprecation Notice
+        run: echo "::warning title=Deprecated Workflow::retrieve-spring-supported-versions.yml is deprecated with no replacement; no security workflows use it."
       - id: get-supported-versions
         shell: bash
         run: |
