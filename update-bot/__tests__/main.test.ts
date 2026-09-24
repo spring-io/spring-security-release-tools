@@ -40,6 +40,7 @@ const writeFileSyncSpy = fs.writeFileSync as jest.Mock
 const existsSyncSpy = fs.existsSync as jest.Mock
 
 const GRADLE_FILE = 'gradle/libs.versions.toml'
+const SETTINGS_FILE = 'settings.gradle'
 const WORKFLOW_FILE = '.github/workflows/build.yml'
 const DEPENDABOT_PATH = '.github/dependabot.yml'
 
@@ -298,6 +299,32 @@ describe('run', () => {
       expect.objectContaining({ labels: ['type: dependency-upgrade'] })
     )
     expect(octokit.rest.issues.update).not.toHaveBeenCalled()
+    expect(mockedCore.setFailed).not.toHaveBeenCalled()
+  })
+
+  it('also rewrites a settings.gradle plugins DSL declaration', async () => {
+    mockInputs()
+    mockFiles([GRADLE_FILE, SETTINGS_FILE], [])
+    mockDependabotConfig(githubActionsDependabotYaml())
+    mockFileContents({
+      [GRADLE_FILE]: 'io.spring.gradle:spring-security-release-plugin:1.0.17',
+      [SETTINGS_FILE]:
+        'plugins {\n\tid "io.spring.security.settings" version "1.0.17"\n}\n'
+    })
+    mockedGetLatestRelease.mockResolvedValue({
+      version: '1.0.18',
+      sha: 'sha3'
+    })
+    mockOctokit({})
+
+    await run()
+
+    expect(writeFileSyncSpy).toHaveBeenCalledWith(
+      SETTINGS_FILE,
+      expect.stringContaining(
+        'id "io.spring.security.settings" version "1.0.18"'
+      )
+    )
     expect(mockedCore.setFailed).not.toHaveBeenCalled()
   })
 

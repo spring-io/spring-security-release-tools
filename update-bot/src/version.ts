@@ -6,6 +6,10 @@ function gradleCoordinatePattern(): RegExp {
   return /io\.spring\.gradle:spring-security-release-plugin:([\w.-]+)/
 }
 
+function settingsPluginPattern(): RegExp {
+  return /id\s+["']io\.spring\.security\.settings["']\s+version\s+["']([\w.-]+)["']/
+}
+
 function workflowReferencePattern(repository: string): RegExp {
   const repo = escapeRegExp(repository)
   return new RegExp(
@@ -15,7 +19,10 @@ function workflowReferencePattern(repository: string): RegExp {
 }
 
 export function parseVersionFromGradle(content: string): string | undefined {
-  return content.match(gradleCoordinatePattern())?.[1]
+  return (
+    content.match(gradleCoordinatePattern())?.[1] ??
+    content.match(settingsPluginPattern())?.[1]
+  )
 }
 
 export function parseVersionFromWorkflow(
@@ -32,14 +39,20 @@ export function updateGradleVersion(
   oldVersion: string,
   newVersion: string
 ): string {
-  const pattern = new RegExp(
+  const coordinatePattern = new RegExp(
     `io\\.spring\\.gradle:spring-security-release-plugin:${escapeRegExp(oldVersion)}`,
     'g'
   )
-  return content.replace(
-    pattern,
-    `io.spring.gradle:spring-security-release-plugin:${newVersion}`
+  const pluginPattern = new RegExp(
+    `(id\\s+["']io\\.spring\\.security\\.settings["']\\s+version\\s+["'])${escapeRegExp(oldVersion)}(["'])`,
+    'g'
   )
+  return content
+    .replace(
+      coordinatePattern,
+      `io.spring.gradle:spring-security-release-plugin:${newVersion}`
+    )
+    .replace(pluginPattern, `$1${newVersion}$2`)
 }
 
 export function updateWorkflowRefs(

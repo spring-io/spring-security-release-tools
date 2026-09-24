@@ -68619,12 +68619,16 @@ function escapeRegExp(value) {
 function gradleCoordinatePattern() {
     return /io\.spring\.gradle:spring-security-release-plugin:([\w.-]+)/;
 }
+function settingsPluginPattern() {
+    return /id\s+["']io\.spring\.security\.settings["']\s+version\s+["']([\w.-]+)["']/;
+}
 function workflowReferencePattern(repository) {
     const repo = escapeRegExp(repository);
     return new RegExp(`(?<path>${repo}/[^@\\s]+)@[0-9a-f]{40}(?<separator>\\s*#\\s*)v(?<version>[\\w.-]+)`, 'g');
 }
 function parseVersionFromGradle(content) {
-    return content.match(gradleCoordinatePattern())?.[1];
+    return (content.match(gradleCoordinatePattern())?.[1] ??
+        content.match(settingsPluginPattern())?.[1]);
 }
 function parseVersionFromWorkflow(content, repository) {
     const pattern = workflowReferencePattern(repository);
@@ -68632,8 +68636,11 @@ function parseVersionFromWorkflow(content, repository) {
     return pattern.exec(content)?.groups?.version;
 }
 function updateGradleVersion(content, oldVersion, newVersion) {
-    const pattern = new RegExp(`io\\.spring\\.gradle:spring-security-release-plugin:${escapeRegExp(oldVersion)}`, 'g');
-    return content.replace(pattern, `io.spring.gradle:spring-security-release-plugin:${newVersion}`);
+    const coordinatePattern = new RegExp(`io\\.spring\\.gradle:spring-security-release-plugin:${escapeRegExp(oldVersion)}`, 'g');
+    const pluginPattern = new RegExp(`(id\\s+["']io\\.spring\\.security\\.settings["']\\s+version\\s+["'])${escapeRegExp(oldVersion)}(["'])`, 'g');
+    return content
+        .replace(coordinatePattern, `io.spring.gradle:spring-security-release-plugin:${newVersion}`)
+        .replace(pluginPattern, `$1${newVersion}$2`);
 }
 function updateWorkflowRefs(content, repository, newSha, newVersion) {
     return content.replace(workflowReferencePattern(repository), `$<path>@${newSha}$<separator>v${newVersion}`);

@@ -53,6 +53,8 @@ jobs:
 
 The default `github.token` works as long as branch protection on the target branches allows it to push and open pull requests. If it doesn't, pass a PAT such as `secrets.GH_ACTIONS_REPO_TOKEN` (documented in the xref:../README.md[root README]) instead via the `token` input.
 
+Note that the default `github.token` can *never* push changes to files under `.github/workflows/`, regardless of the `permissions:` declared by the calling workflow - that's a hard GitHub restriction on the built-in token, not something this action's `permissions:` requirements can work around. If a target branch's workflow files need updating, `token` must be a PAT that explicitly carries the workflow-file permission: the `workflow` scope for a classic PAT, or "Workflows: Read and write" for a fine-grained one (see the root README's `GH_ACTIONS_REPO_TOKEN` entry).
+
 Also, make sure to configure your `dependabot.yml` to ignore `spring-io/spring-security-release-tools` so that it doesn't create competing pull requests:
 
 [source,yaml]
