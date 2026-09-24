@@ -33,7 +33,7 @@ jobs:
 
       - name: Setup Node.js
         id: setup-node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version-file: .github/actions/generate-dependabot-yml/.node-version
           cache-dependency-path: .github/actions/generate-dependabot-yml/package-lock.json
