@@ -14,13 +14,21 @@ gradlePlugin {
 			tags.addAll("spring", "project", "java", "kotlin", "groovy")
 			implementationClass = "io.spring.gradle.plugin.module.SpringProjectPlugin"
 		}
+		springSecuritySettingsPlugin {
+			id = "io.spring.security.settings"
+			displayName = "Spring Security Settings Plugin"
+			description = "Spring Security Settings Plugin is a Gradle plugin that applies common configuration conventions to settings files."
+			tags.addAll("spring", "settings", "develocity", "release")
+			implementationClass = "org.springframework.gradle.SpringSettingsPlugin"
+		}
 	}
 }
 
 artifactory {
 	publish {
 		defaults {
-			publications("pluginMaven", "springSecurityProjectPluginPluginMarkerMaven")
+			publications("pluginMaven", "springSecurityProjectPluginPluginMarkerMaven",
+					"springSecuritySettingsPluginPluginMarkerMaven")
 		}
 	}
 }
@@ -33,6 +41,8 @@ dependencies {
 	management platform(project(":dependencies"))
 	implementation "io.spring.javaformat:spring-javaformat-gradle-plugin:0.0.42"
 	implementation "io.spring.nohttp:nohttp-gradle:0.0.11"
+	implementation "com.gradle.develocity:com.gradle.develocity.gradle.plugin:3.19.2"
+	implementation "io.spring.ge.conventions:io.spring.ge.conventions.gradle.plugin:0.0.17"
 
 	testImplementation "org.junit.jupiter:junit-jupiter"
 	testRuntimeOnly "org.junit.platform:junit-platform-launcher"
