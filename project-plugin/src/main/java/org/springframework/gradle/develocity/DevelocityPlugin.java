@@ -18,6 +18,7 @@ package org.springframework.gradle.develocity;
 
 import org.gradle.api.Plugin;
 import org.gradle.api.initialization.Settings;
+import org.springframework.gradle.ReleaseChannel;
 
 /**
  * Applies Develocity build scan conventions, for the "oss" release channel.
@@ -27,11 +28,7 @@ import org.gradle.api.initialization.Settings;
  * @author Josh Cummings
  * @since 1.0.20
  */
-public class DevelocityConventionsPlugin implements Plugin<Settings> {
-
-	public static final String RELEASE_CHANNEL_PROPERTY = "releaseChannel";
-
-	public static final String OSS_RELEASE_CHANNEL = "oss";
+public class DevelocityPlugin implements Plugin<Settings> {
 
 	private static final String DEVELOCITY_PLUGIN_ID = "com.gradle.develocity";
 
@@ -39,11 +36,12 @@ public class DevelocityConventionsPlugin implements Plugin<Settings> {
 
 	@Override
 	public void apply(Settings settings) {
-		String releaseChannel = settings.getProviders().gradleProperty(RELEASE_CHANNEL_PROPERTY).getOrNull();
-		if (OSS_RELEASE_CHANNEL.equals(releaseChannel)) {
-			settings.getPluginManager().apply(DEVELOCITY_PLUGIN_ID);
-			settings.getPluginManager().apply(DEVELOCITY_CONVENTIONS_PLUGIN_ID);
+		ReleaseChannel channel = ReleaseChannel.from(settings);
+		if (channel != ReleaseChannel.OSS) {
+			return;
 		}
+		settings.getPluginManager().apply(DEVELOCITY_PLUGIN_ID);
+		settings.getPluginManager().apply(DEVELOCITY_CONVENTIONS_PLUGIN_ID);
 	}
 
 }

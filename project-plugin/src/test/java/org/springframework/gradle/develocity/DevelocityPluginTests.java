@@ -31,11 +31,11 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * Tests for {@link DevelocityConventionsPlugin}.
+ * Tests for {@link DevelocityPlugin}.
  *
  * @author Josh Cummings
  */
-public class DevelocityConventionsPluginTests {
+public class DevelocityPluginTests {
 
 	private final Settings settings = mock(Settings.class);
 
@@ -43,7 +43,7 @@ public class DevelocityConventionsPluginTests {
 
 	private final PluginManager pluginManager = mock(PluginManager.class);
 
-	private final DevelocityConventionsPlugin plugin = new DevelocityConventionsPlugin();
+	private final DevelocityPlugin plugin = new DevelocityPlugin();
 
 	@BeforeEach
 	public void setUp() {

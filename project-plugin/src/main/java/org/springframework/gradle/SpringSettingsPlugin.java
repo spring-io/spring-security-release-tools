@@ -20,7 +20,7 @@ import org.gradle.api.Plugin;
 import org.gradle.api.initialization.Settings;
 import org.gradle.api.plugins.PluginManager;
 
-import org.springframework.gradle.develocity.DevelocityConventionsPlugin;
+import org.springframework.gradle.develocity.DevelocityPlugin;
 
 /**
  * Applies Spring Security's settings-level conventions.
@@ -36,7 +36,7 @@ public class SpringSettingsPlugin implements Plugin<Settings> {
 	@Override
 	public void apply(Settings settings) {
 		PluginManager pluginManager = settings.getPluginManager();
-		pluginManager.apply(DevelocityConventionsPlugin.class);
+		pluginManager.apply(DevelocityPlugin.class);
 	}
 
 }
