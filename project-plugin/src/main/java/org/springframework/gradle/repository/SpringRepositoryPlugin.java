@@ -74,9 +74,9 @@ public abstract class SpringRepositoryPlugin implements Plugin<Project> {
 		}
 
 		String version = project.getVersion().toString();
-		boolean isSnapshot = version.endsWith("-SNAPSHOT") && forceMavenRepositories.isEmpty()
+		boolean isSnapshot = Versions.isSnapshot(version) && forceMavenRepositories.isEmpty()
 				|| forceMavenRepositories.contains("snapshot");
-		boolean isMilestone = (version.contains("-RC") || version.contains("-M")) && forceMavenRepositories.isEmpty()
+		boolean isMilestone = Versions.isMilestone(version) && forceMavenRepositories.isEmpty()
 				|| forceMavenRepositories.contains("milestone");
 
 		RepositoryHandler repositories = project.getRepositories();
@@ -88,7 +88,7 @@ public abstract class SpringRepositoryPlugin implements Plugin<Project> {
 		if (isSnapshot) {
 			repositories.maven(spec.repository("artifactory-snapshot", artifactorySnapshotUrl));
 		}
-		if (isMilestone) {
+		if (isSnapshot || isMilestone) {
 			repositories.maven(spec.repository("artifactory-milestone", artifactoryMilestoneUrl));
 		}
 		repositories.maven(spec.repository("artifactory-release", artifactoryReleaseUrl));

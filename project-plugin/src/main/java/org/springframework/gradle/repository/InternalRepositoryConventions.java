@@ -91,7 +91,7 @@ final class InternalRepositoryConventions {
 		RepositorySpec spec = new RepositorySpec(username, password);
 		repositories.maven(spec.repository("spring-internal-release", INTERNAL_RELEASE_URL));
 		repositories.maven(spec.repository("spring-lts-release", LTS_RELEASE_URL));
-		if (String.valueOf(project.getVersion()).endsWith("-SNAPSHOT")) {
+		if (Versions.isSnapshot(String.valueOf(project.getVersion()))) {
 			repositories.maven(spec.repository("spring-lts-snapshot", LTS_SNAPSHOT_URL));
 		}
 	}

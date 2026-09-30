@@ -28,6 +28,8 @@ import org.gradle.testfixtures.ProjectBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -73,7 +75,8 @@ public class SpringRepositoryPluginTests {
 	public void applyWhenSnapshotThenIncludesSnapshotRepository() {
 		evaluate("1.0.0-SNAPSHOT");
 
-		assertThat(names()).containsExactly("MavenRepo", "artifactory-snapshot", "artifactory-release");
+		assertThat(names()).containsExactly("MavenRepo", "artifactory-snapshot", "artifactory-milestone",
+				"artifactory-release");
 	}
 
 	@Test
@@ -89,7 +92,8 @@ public class SpringRepositoryPluginTests {
 		force("snapshot");
 		evaluate("1.0.0");
 
-		assertThat(names()).containsExactly("MavenRepo", "artifactory-snapshot", "artifactory-release");
+		assertThat(names()).containsExactly("MavenRepo", "artifactory-snapshot", "artifactory-milestone",
+				"artifactory-release");
 	}
 
 	@Test
@@ -124,7 +128,32 @@ public class SpringRepositoryPluginTests {
 				Map.of("RELEASE_TRAIN_MAVEN_REPOSITORY_URL", "https://example.com/release-train")::get);
 
 		assertThat(names()).containsExactly("MavenRepo", "spring-internal-deployment", "artifactory-snapshot",
-				"artifactory-release", "spring-internal-release", "spring-lts-release", "spring-lts-snapshot");
+				"artifactory-milestone", "artifactory-release", "spring-internal-release", "spring-lts-release",
+				"spring-lts-snapshot");
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = { "1.0.0.M1", "1.0.0.RC2", "1.0.0-M3", "1.0.0-RC10" })
+	public void applyWhenMilestoneVersionFormatThenIncludesMilestoneRepository(String version) {
+		evaluate(version);
+
+		assertThat(names()).containsExactly("MavenRepo", "artifactory-milestone", "artifactory-release");
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = { "1.0.0", "1.0.0-MYFEATURE", "1.0.0-RELEASE", "2.0.0-MAIN", "1.0.0-RCA" })
+	public void applyWhenNotMilestoneVersionThenExcludesMilestoneRepository(String version) {
+		evaluate(version);
+
+		assertThat(names()).containsExactly("MavenRepo", "artifactory-release");
+	}
+
+	@Test
+	public void applyWhenSnapshotAndForceReleaseThenExcludesMilestoneRepository() {
+		force("release");
+		evaluate("1.0.0-SNAPSHOT");
+
+		assertThat(names()).containsExactly("MavenRepo", "artifactory-release");
 	}
 
 	private void force(String repositories) {
