@@ -129,7 +129,7 @@ jobs:
           git commit -am "Next development version"
           git push
       - name: Announce Release on GChat
-        uses: spring-io/spring-release-actions/announce-on-gchat@1b8671612c3eb3d9b9763e2d7b66f1a80d00ee95 # 0.0.6
+        uses: spring-io/spring-release-actions/announce-on-gchat@6795980b9d960a13d420e114d50f1c8abe730769 # 0.0.7
         with:
           version: ${{ inputs.project-version }}
           gchat-webhook-url: ${{ secrets.SPRING_RELEASE_GCHAT_WEBHOOK_URL }}
