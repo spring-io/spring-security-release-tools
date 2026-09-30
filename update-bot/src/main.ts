@@ -15,6 +15,15 @@ import {
 const REPOSITORY = 'spring-io/spring-security-release-tools'
 const DEPENDABOT_CONFIG_PATH = '.github/dependabot.yml'
 const DEFAULT_LABELS = ['type: dependency-upgrade']
+const IGNORED_BRANCHES = ['docs-build']
+
+/**
+ * Thrown when a branch simply doesn't reference this repository in a way
+ * the bot recognizes (e.g. a docs-only branch with no build files). This is
+ * not a failure of the bot itself, so it's surfaced as a warning rather than
+ * an error.
+ */
+class UnknownBranchError extends Error {}
 
 const GRADLE_FILE_GLOB = ['**/*.toml', '**/*.gradle', '**/*.gradle.kts']
 const WORKFLOW_FILE_GLOB = ['.github/**/*.yml', '.github/**/*.yaml']
@@ -38,6 +47,7 @@ interface BranchResult {
   newVersion?: string
   pullRequestUrl?: string
   error?: string
+  warning?: string
 }
 
 function getInputs(): Inputs {
@@ -83,7 +93,13 @@ function readDependabotUpdates(defaultBranch: string): GithubActionsUpdate[] {
       `Found ${DEPENDABOT_CONFIG_PATH}, but it has no "package-ecosystem: github-actions" entries.`
     )
   }
-  return updates
+  return updates.filter(update => {
+    if (IGNORED_BRANCHES.includes(update.targetBranch)) {
+      core.info(`[${update.targetBranch}] Ignoring branch`)
+      return false
+    }
+    return true
+  })
 }
 
 type Octokit = ReturnType<typeof github.getOctokit>
@@ -117,7 +133,7 @@ async function updateBranch(
     }
   }
   if (!currentVersion) {
-    throw new Error(
+    throw new UnknownBranchError(
       `Could not find a currently pinned version of ${REPOSITORY} on branch ${branch}.`
     )
   }
@@ -156,7 +172,7 @@ async function updateBranch(
   }
 
   if (changedFiles.length === 0) {
-    throw new Error(
+    throw new UnknownBranchError(
       `Found new release v${latest.version} but no references to ${REPOSITORY} were found to update on branch ${branch}.`
     )
   }
@@ -267,6 +283,7 @@ async function writeSummary(results: BranchResult[]): Promise<void> {
 
 function describeResult(result: BranchResult): string {
   if (result.error) return `❌ Failed: ${result.error}`
+  if (result.warning) return `⚠️ Warning: ${result.warning}`
   if (result.updated) {
     return `⬆️ [${result.previousVersion} → ${result.newVersion}](${result.pullRequestUrl})`
   }
@@ -310,8 +327,13 @@ export async function run(): Promise<void> {
         )
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
-        core.error(`[${update.targetBranch}] ${message}`)
-        results.push({ branch: update.targetBranch, error: message })
+        if (error instanceof UnknownBranchError) {
+          core.warning(`[${update.targetBranch}] ${message}`)
+          results.push({ branch: update.targetBranch, warning: message })
+        } else {
+          core.error(`[${update.targetBranch}] ${message}`)
+          results.push({ branch: update.targetBranch, error: message })
+        }
       }
     }
 

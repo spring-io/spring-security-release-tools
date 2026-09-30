@@ -25,6 +25,7 @@ import org.gradle.api.plugins.PluginManager;
 import org.springframework.gradle.SpringJavaPlugin;
 import org.springframework.gradle.classpath.SpringCheckClasspathForProhibitedDependenciesPlugin;
 import org.springframework.gradle.classpath.SpringCheckProhibitedDependenciesLifecyclePlugin;
+import org.springframework.gradle.repository.SpringRepositoryPlugin;
 
 /**
  * @author Steve Riesenberg
@@ -39,6 +40,7 @@ public class SpringProjectPlugin implements Plugin<Project> {
 			pluginManager.apply(BasePlugin.class);
 			// pluginManager.apply(SpringNoHttpPlugin.class);
 			pluginManager.apply(SpringCheckProhibitedDependenciesLifecyclePlugin.class);
+			pluginManager.apply(SpringRepositoryPlugin.class);
 		}
 		else {
 			pluginManager.apply(JavaLibraryPlugin.class);

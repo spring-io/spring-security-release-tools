@@ -18,19 +18,28 @@ package io.spring.gradle.plugin.maven;
 
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.plugins.PluginManager;
+import org.gradle.api.publish.PublishingExtension;
 
 /**
  * @author Steve Riesenberg
  */
-public class SpringMavenPlugin implements Plugin<Project> {
+public class SpringDeploymentRepositoryPublishPlugin implements Plugin<Project> {
+
+	private static final String DEPLOYMENT_REPOSITORY_PROPERTY = "deploymentRepository";
 
 	@Override
 	public void apply(Project project) {
-		PluginManager pluginManager = project.getPluginManager();
-		pluginManager.apply(SpringDeploymentRepositoryPublishPlugin.class);
-		pluginManager.apply(SpringMavenPublishPlugin.class);
-		pluginManager.apply(SpringArtifactoryPlugin.class);
+		if (!project.hasProperty(DEPLOYMENT_REPOSITORY_PROPERTY)) {
+			return;
+		}
+
+		project.getPluginManager().withPlugin("maven-publish", (plugin) -> {
+			PublishingExtension publishing = project.getExtensions().getByType(PublishingExtension.class);
+			publishing.getRepositories().maven((repository) -> {
+				repository.setName("deployment");
+				repository.setUrl(project.property(DEPLOYMENT_REPOSITORY_PROPERTY));
+			});
+		});
 	}
 
 }

@@ -40,7 +40,10 @@ repositories {
 dependencies {
 	management platform(project(":dependencies"))
 	implementation "io.spring.javaformat:spring-javaformat-gradle-plugin:0.0.42"
-	implementation "io.spring.nohttp:nohttp-gradle:0.0.11"
+	implementation("io.spring.nohttp:nohttp-gradle:0.0.11") {
+		exclude group: "ch.qos.logback"
+		exclude group: "org.slf4j"
+	}
 	implementation "com.gradle.develocity:com.gradle.develocity.gradle.plugin:3.19.2"
 	implementation "io.spring.ge.conventions:io.spring.ge.conventions.gradle.plugin:0.0.17"
 

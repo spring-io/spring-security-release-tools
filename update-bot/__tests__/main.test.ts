@@ -239,7 +239,7 @@ describe('run', () => {
     expect(mockedCore.setFailed).not.toHaveBeenCalled()
   })
 
-  it('fails the branch when no pinned version can be found', async () => {
+  it('warns instead of failing when no pinned version can be found', async () => {
     mockInputs()
     mockFiles([], [])
     mockDependabotConfig(githubActionsDependabotYaml())
@@ -251,9 +251,37 @@ describe('run', () => {
 
     await run()
 
-    expect(mockedCore.setFailed).toHaveBeenCalledWith(
-      expect.stringContaining('Failed to update 1 branch(es): main')
+    expect(mockedCore.warning).toHaveBeenCalledWith(
+      expect.stringContaining(
+        '[main] Could not find a currently pinned version'
+      )
     )
+    expect(mockedCore.setFailed).not.toHaveBeenCalled()
+  })
+
+  it('ignores docs-build branches entirely', async () => {
+    mockInputs()
+    mockFiles([GRADLE_FILE], [])
+    mockDependabotConfig(githubActionsDependabotYaml(['main', 'docs-build']))
+    mockFileContents({
+      [GRADLE_FILE]: 'io.spring.gradle:spring-security-release-plugin:1.0.17'
+    })
+    mockedGetLatestRelease.mockResolvedValue({
+      version: '1.0.18',
+      sha: 'sha2'
+    })
+    mockOctokit({})
+
+    await run()
+
+    expect(mockedCore.info).toHaveBeenCalledWith('[docs-build] Ignoring branch')
+    expect(mockedExec.exec).not.toHaveBeenCalledWith('git', [
+      'fetch',
+      'origin',
+      'docs-build'
+    ])
+    expect(mockedCore.warning).not.toHaveBeenCalled()
+    expect(mockedCore.setFailed).not.toHaveBeenCalled()
   })
 
   it('rewrites pinned files, pushes a per-branch head, and opens a new pull request', async () => {

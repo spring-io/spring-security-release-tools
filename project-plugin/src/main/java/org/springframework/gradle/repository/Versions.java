@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2023 the original author or authors.
+ * Copyright 2002-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,23 +14,29 @@
  * limitations under the License.
  */
 
-package io.spring.gradle.plugin.maven;
+package org.springframework.gradle.repository;
 
-import org.gradle.api.Plugin;
-import org.gradle.api.Project;
-import org.gradle.api.plugins.PluginManager;
+import java.util.regex.Pattern;
 
 /**
- * @author Steve Riesenberg
+ * Classifies project versions for repository selection.
+ *
+ * @author Josh Cummings
+ * @since 1.0.20
  */
-public class SpringMavenPlugin implements Plugin<Project> {
+final class Versions {
 
-	@Override
-	public void apply(Project project) {
-		PluginManager pluginManager = project.getPluginManager();
-		pluginManager.apply(SpringDeploymentRepositoryPublishPlugin.class);
-		pluginManager.apply(SpringMavenPublishPlugin.class);
-		pluginManager.apply(SpringArtifactoryPlugin.class);
+	private static final Pattern MILESTONE = Pattern.compile("^.*[.-](M|RC)\\d+$");
+
+	private Versions() {
+	}
+
+	static boolean isSnapshot(String version) {
+		return version.endsWith("-SNAPSHOT");
+	}
+
+	static boolean isMilestone(String version) {
+		return MILESTONE.matcher(version).matches();
 	}
 
 }

@@ -21,7 +21,7 @@ import org.gradle.api.plugins.PluginManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import org.springframework.gradle.develocity.DevelocityConventionsPlugin;
+import org.springframework.gradle.develocity.DevelocityPlugin;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -49,7 +49,7 @@ public class SpringSettingsPluginTests {
 	public void applyAppliesDevelocityConventionsPlugin() {
 		this.plugin.apply(this.settings);
 
-		verify(this.pluginManager).apply(DevelocityConventionsPlugin.class);
+		verify(this.pluginManager).apply(DevelocityPlugin.class);
 	}
 
 }
