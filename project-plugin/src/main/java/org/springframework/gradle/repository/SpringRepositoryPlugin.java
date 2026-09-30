@@ -44,13 +44,13 @@ public abstract class SpringRepositoryPlugin implements Plugin<Project> {
 
 	private static final String FORCE_MAVEN_REPOSITORIES = "forceMavenRepositories";
 
-	private static final String ARTIFACTORY_URL = "https://repo.spring.io";
+	private static final String OSS_URL = "https://repo.spring.io";
 
-	private static final String ARTIFACTORY_SNAPSHOT_REPOSITORY = "snapshot";
+	private static final String OSS_SNAPSHOT_REPOSITORY = "snapshot";
 
-	private static final String ARTIFACTORY_MILESTONE_REPOSITORY = "milestone";
+	private static final String OSS_MILESTONE_REPOSITORY = "milestone";
 
-	private static final String ARTIFACTORY_RELEASE_REPOSITORY = "release";
+	private static final String OSS_RELEASE_REPOSITORY = "release";
 
 	private static final String ARTIFACTORY_USERNAME = "artifactoryUsername";
 
@@ -62,9 +62,9 @@ public abstract class SpringRepositoryPlugin implements Plugin<Project> {
 	}
 
 	static void addRepositories(Project project, Function<String, String> env) {
-		String artifactorySnapshotUrl = "%s/%s".formatted(ARTIFACTORY_URL, ARTIFACTORY_SNAPSHOT_REPOSITORY);
-		String artifactoryMilestoneUrl = "%s/%s".formatted(ARTIFACTORY_URL, ARTIFACTORY_MILESTONE_REPOSITORY);
-		String artifactoryReleaseUrl = "%s/%s".formatted(ARTIFACTORY_URL, ARTIFACTORY_RELEASE_REPOSITORY);
+		String ossSnapshotUrl = "%s/%s".formatted(OSS_URL, OSS_SNAPSHOT_REPOSITORY);
+		String ossMilestoneUrl = "%s/%s".formatted(OSS_URL, OSS_MILESTONE_REPOSITORY);
+		String ossReleaseUrl = "%s/%s".formatted(OSS_URL, OSS_RELEASE_REPOSITORY);
 		RepositorySpec spec = getRepositorySpec(project);
 
 		List<String> forceMavenRepositories = Collections.emptyList();
@@ -86,12 +86,12 @@ public abstract class SpringRepositoryPlugin implements Plugin<Project> {
 		repositories.mavenCentral();
 		InternalRepositoryConventions.addReleaseTrain(repositories, env);
 		if (isSnapshot) {
-			repositories.maven(spec.repository("artifactory-snapshot", artifactorySnapshotUrl));
+			repositories.maven(spec.repository("spring-oss-snapshot", ossSnapshotUrl));
 		}
 		if (isSnapshot || isMilestone) {
-			repositories.maven(spec.repository("artifactory-milestone", artifactoryMilestoneUrl));
+			repositories.maven(spec.repository("spring-oss-milestone", ossMilestoneUrl));
 		}
-		repositories.maven(spec.repository("artifactory-release", artifactoryReleaseUrl));
+		repositories.maven(spec.repository("spring-oss-release", ossReleaseUrl));
 		InternalRepositoryConventions.addReleaseChannel(project, repositories);
 	}
 

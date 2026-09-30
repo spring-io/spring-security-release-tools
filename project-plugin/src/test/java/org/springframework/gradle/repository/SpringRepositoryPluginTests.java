@@ -54,29 +54,29 @@ public class SpringRepositoryPluginTests {
 	public void applyWhenReleaseThenMavenCentralAndReleaseRepository() {
 		evaluate("1.0.0");
 
-		assertThat(names()).containsExactly("MavenRepo", "artifactory-release");
+		assertThat(names()).containsExactly("MavenRepo", "spring-oss-release");
 	}
 
 	@Test
 	public void applyWhenMilestoneThenIncludesMilestoneRepository() {
 		evaluate("1.0.0-M1");
 
-		assertThat(names()).containsExactly("MavenRepo", "artifactory-milestone", "artifactory-release");
+		assertThat(names()).containsExactly("MavenRepo", "spring-oss-milestone", "spring-oss-release");
 	}
 
 	@Test
 	public void applyWhenReleaseCandidateThenIncludesMilestoneRepository() {
 		evaluate("1.0.0-RC1");
 
-		assertThat(names()).containsExactly("MavenRepo", "artifactory-milestone", "artifactory-release");
+		assertThat(names()).containsExactly("MavenRepo", "spring-oss-milestone", "spring-oss-release");
 	}
 
 	@Test
 	public void applyWhenSnapshotThenIncludesSnapshotRepository() {
 		evaluate("1.0.0-SNAPSHOT");
 
-		assertThat(names()).containsExactly("MavenRepo", "artifactory-snapshot", "artifactory-milestone",
-				"artifactory-release");
+		assertThat(names()).containsExactly("MavenRepo", "spring-oss-snapshot", "spring-oss-milestone",
+				"spring-oss-release");
 	}
 
 	@Test
@@ -84,7 +84,7 @@ public class SpringRepositoryPluginTests {
 		force("milestone");
 		evaluate("1.0.0");
 
-		assertThat(names()).containsExactly("MavenRepo", "artifactory-milestone", "artifactory-release");
+		assertThat(names()).containsExactly("MavenRepo", "spring-oss-milestone", "spring-oss-release");
 	}
 
 	@Test
@@ -92,8 +92,8 @@ public class SpringRepositoryPluginTests {
 		force("snapshot");
 		evaluate("1.0.0");
 
-		assertThat(names()).containsExactly("MavenRepo", "artifactory-snapshot", "artifactory-milestone",
-				"artifactory-release");
+		assertThat(names()).containsExactly("MavenRepo", "spring-oss-snapshot", "spring-oss-milestone",
+				"spring-oss-release");
 	}
 
 	@Test
@@ -101,7 +101,7 @@ public class SpringRepositoryPluginTests {
 		force("release");
 		evaluate("1.0.0-SNAPSHOT");
 
-		assertThat(names()).containsExactly("MavenRepo", "artifactory-release");
+		assertThat(names()).containsExactly("MavenRepo", "spring-oss-release");
 	}
 
 	@Test
@@ -109,7 +109,7 @@ public class SpringRepositoryPluginTests {
 		force("local");
 		evaluate("1.0.0");
 
-		assertThat(names()).containsExactly("MavenLocal", "MavenRepo", "artifactory-release");
+		assertThat(names()).containsExactly("MavenLocal", "MavenRepo", "spring-oss-release");
 	}
 
 	@Test
@@ -117,7 +117,7 @@ public class SpringRepositoryPluginTests {
 		force("milestone,local");
 		evaluate("1.0.0");
 
-		assertThat(names()).containsExactly("MavenLocal", "MavenRepo", "artifactory-milestone", "artifactory-release");
+		assertThat(names()).containsExactly("MavenLocal", "MavenRepo", "spring-oss-milestone", "spring-oss-release");
 	}
 
 	@Test
@@ -127,8 +127,8 @@ public class SpringRepositoryPluginTests {
 		SpringRepositoryPlugin.addRepositories(this.project,
 				Map.of("RELEASE_TRAIN_MAVEN_REPOSITORY_URL", "https://example.com/release-train")::get);
 
-		assertThat(names()).containsExactly("MavenRepo", "spring-internal-deployment", "artifactory-snapshot",
-				"artifactory-milestone", "artifactory-release", "spring-internal-release", "spring-lts-release",
+		assertThat(names()).containsExactly("MavenRepo", "spring-internal-deployment", "spring-oss-snapshot",
+				"spring-oss-milestone", "spring-oss-release", "spring-internal-release", "spring-lts-release",
 				"spring-lts-snapshot");
 	}
 
@@ -137,7 +137,7 @@ public class SpringRepositoryPluginTests {
 	public void applyWhenMilestoneVersionFormatThenIncludesMilestoneRepository(String version) {
 		evaluate(version);
 
-		assertThat(names()).containsExactly("MavenRepo", "artifactory-milestone", "artifactory-release");
+		assertThat(names()).containsExactly("MavenRepo", "spring-oss-milestone", "spring-oss-release");
 	}
 
 	@ParameterizedTest
@@ -145,7 +145,7 @@ public class SpringRepositoryPluginTests {
 	public void applyWhenNotMilestoneVersionThenExcludesMilestoneRepository(String version) {
 		evaluate(version);
 
-		assertThat(names()).containsExactly("MavenRepo", "artifactory-release");
+		assertThat(names()).containsExactly("MavenRepo", "spring-oss-release");
 	}
 
 	@Test
@@ -153,7 +153,7 @@ public class SpringRepositoryPluginTests {
 		force("release");
 		evaluate("1.0.0-SNAPSHOT");
 
-		assertThat(names()).containsExactly("MavenRepo", "artifactory-release");
+		assertThat(names()).containsExactly("MavenRepo", "spring-oss-release");
 	}
 
 	private void force(String repositories) {
