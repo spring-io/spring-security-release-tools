@@ -17,8 +17,6 @@
 package org.springframework.gradle.repository;
 
 import java.io.File;
-import java.net.URI;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -26,8 +24,6 @@ import java.util.stream.StreamSupport;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.repositories.ArtifactRepository;
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository;
-import org.gradle.api.artifacts.dsl.RepositoryHandler;
-import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.testfixtures.ProjectBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,12 +48,11 @@ public class InternalRepositoryConventionsTests {
 	@BeforeEach
 	public void setUp() {
 		this.project = ProjectBuilder.builder().withProjectDir(this.projectDir).build();
-		this.project.getPluginManager().apply(SpringRepositoryPlugin.class);
 	}
 
 	@Test
 	public void applyWhenReleaseChannelUnspecifiedThenNoInternalRepositories() {
-		((ProjectInternal) this.project).evaluate();
+		new InternalRepositoryConventions().apply(this.project);
 
 		assertThat(names(this.project)).doesNotContain("spring-internal-release", "spring-lts-release",
 				"spring-lts-snapshot");
@@ -106,42 +101,9 @@ public class InternalRepositoryConventionsTests {
 		assertThat(repository.getCredentials().getPassword()).isEqualTo("password");
 	}
 
-	@Test
-	public void addReleaseTrainWhenUrlUnsetThenNoRepositoryAdded() {
-		InternalRepositoryConventions.addReleaseTrain(this.project.getRepositories(), Map.<String, String>of()::get);
-
-		assertThat(this.project.getRepositories()).isEmpty();
-	}
-
-	@Test
-	public void addReleaseTrainWhenCredentialsSpecifiedThenNameUrlAndCredentialsSet() {
-		addReleaseTrain(Map.of("RELEASE_TRAIN_MAVEN_REPOSITORY_URL", "https://example.com/release-train",
-				"RELEASE_TRAIN_MAVEN_REPOSITORY_USERNAME", "user", "RELEASE_TRAIN_MAVEN_REPOSITORY_PASSWORD",
-				"password"));
-
-		MavenArtifactRepository repository = mavenRepository(this.project, "spring-internal-deployment");
-		assertThat(repository.getUrl()).isEqualTo(URI.create("https://example.com/release-train"));
-		assertThat(repository.getCredentials().getUsername()).isEqualTo("user");
-		assertThat(repository.getCredentials().getPassword()).isEqualTo("password");
-	}
-
-	@Test
-	public void addReleaseTrainWhenOnlyUsernameSpecifiedThenNoCredentialsSet() {
-		addReleaseTrain(Map.of("RELEASE_TRAIN_MAVEN_REPOSITORY_URL", "https://example.com/release-train",
-				"RELEASE_TRAIN_MAVEN_REPOSITORY_USERNAME", "user"));
-
-		MavenArtifactRepository repository = mavenRepository(this.project, "spring-internal-deployment");
-		assertThat(repository.getCredentials().getUsername()).isNull();
-	}
-
-	private void addReleaseTrain(Map<String, String> env) {
-		RepositoryHandler repositories = this.project.getRepositories();
-		InternalRepositoryConventions.addReleaseTrain(repositories, env::get);
-	}
-
 	private void givenReleaseChannel(String releaseChannel) {
 		this.project.getExtensions().getExtraProperties().set("releaseChannel", releaseChannel);
-		((org.gradle.api.internal.project.ProjectInternal) this.project).evaluate();
+		new InternalRepositoryConventions().apply(this.project);
 	}
 
 	private static Set<String> names(Project project) {

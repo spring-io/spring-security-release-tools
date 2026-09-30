@@ -16,8 +16,6 @@
 
 package org.springframework.gradle.repository;
 
-import java.util.function.Function;
-
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.dsl.RepositoryHandler;
 
@@ -25,22 +23,11 @@ import org.springframework.gradle.ReleaseChannel;
 
 /**
  * Adds the non-OSS Maven repositories used by {@link SpringRepositoryPlugin}.
- * <p>
- * This is not a standalone plugin; {@link SpringRepositoryPlugin} decides where in the
- * repository order each group is added.
  *
  * @author Josh Cummings
  * @since 1.0.20
  */
 final class InternalRepositoryConventions {
-
-	static final String DEPLOYMENT_REPOSITORY_NAME = "spring-internal-deployment";
-
-	static final String RELEASE_TRAIN_MAVEN_REPOSITORY_URL = "RELEASE_TRAIN_MAVEN_REPOSITORY_URL";
-
-	static final String RELEASE_TRAIN_MAVEN_REPOSITORY_USERNAME = "RELEASE_TRAIN_MAVEN_REPOSITORY_USERNAME";
-
-	static final String RELEASE_TRAIN_MAVEN_REPOSITORY_PASSWORD = "RELEASE_TRAIN_MAVEN_REPOSITORY_PASSWORD";
 
 	private static final String ARTIFACTORY_USERNAME_PROPERTY = "artifactoryUsername";
 
@@ -52,55 +39,20 @@ final class InternalRepositoryConventions {
 
 	private static final String LTS_SNAPSHOT_URL = "https://usw1.packages.broadcom.com/spring-enterprise-maven-dev-local";
 
-	private InternalRepositoryConventions() {
-	}
-
-	/**
-	 * Adds the release train repository for resolution when
-	 * {@code RELEASE_TRAIN_MAVEN_REPOSITORY_URL} is set, using the
-	 * {@code RELEASE_TRAIN_MAVEN_REPOSITORY_USERNAME} and
-	 * {@code RELEASE_TRAIN_MAVEN_REPOSITORY_PASSWORD} credentials when both are set.
-	 * @param repositories the repositories to add to
-	 * @param env looks up an environment variable by name
-	 */
-	static void addReleaseTrain(RepositoryHandler repositories, Function<String, String> env) {
-		String url = env.apply(RELEASE_TRAIN_MAVEN_REPOSITORY_URL);
-		if (url == null) {
-			return;
-		}
-		String username = env.apply(RELEASE_TRAIN_MAVEN_REPOSITORY_USERNAME);
-		String password = env.apply(RELEASE_TRAIN_MAVEN_REPOSITORY_PASSWORD);
-		RepositorySpec spec = new RepositorySpec(username, password);
-		repositories.maven(spec.repository(DEPLOYMENT_REPOSITORY_NAME, url));
-	}
-
-	/**
-	 * Adds the repositories needed to resolve Spring dependencies for any
-	 * {@code releaseChannel} other than {@code oss}, plus the LTS snapshot repository
-	 * when the project version is a snapshot.
-	 * @param project the project whose {@code releaseChannel} and version are read
-	 * @param repositories the repositories to add to
-	 */
-	static void addReleaseChannel(Project project, RepositoryHandler repositories) {
+	void apply(Project project) {
 		ReleaseChannel channel = ReleaseChannel.from(project);
 		if (channel == null || channel == ReleaseChannel.OSS) {
 			return;
 		}
-		String username = findProperty(project, ARTIFACTORY_USERNAME_PROPERTY);
-		String password = findProperty(project, ARTIFACTORY_PASSWORD_PROPERTY);
+		String username = (String) project.findProperty(ARTIFACTORY_USERNAME_PROPERTY);
+		String password = (String) project.findProperty(ARTIFACTORY_PASSWORD_PROPERTY);
 		RepositorySpec spec = new RepositorySpec(username, password);
+		RepositoryHandler repositories = project.getRepositories();
 		repositories.maven(spec.repository("spring-internal-release", INTERNAL_RELEASE_URL));
 		repositories.maven(spec.repository("spring-lts-release", LTS_RELEASE_URL));
 		if (Versions.isSnapshot(String.valueOf(project.getVersion()))) {
 			repositories.maven(spec.repository("spring-lts-snapshot", LTS_SNAPSHOT_URL));
 		}
-	}
-
-	private static String findProperty(Project project, String propertyName) {
-		if (project.hasProperty(propertyName)) {
-			return String.valueOf(project.property(propertyName));
-		}
-		return null;
 	}
 
 }

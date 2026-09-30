@@ -56,12 +56,16 @@ public abstract class SpringRepositoryPlugin implements Plugin<Project> {
 
 	private static final String ARTIFACTORY_PASSWORD = "artifactoryPassword";
 
+	private final DeploymentRepositoryConventions deployment = new DeploymentRepositoryConventions();
+
+	private final InternalRepositoryConventions internal = new InternalRepositoryConventions();
+
 	@Override
 	public void apply(Project project) {
 		project.afterEvaluate((p) -> addRepositories(p, System::getenv));
 	}
 
-	static void addRepositories(Project project, Function<String, String> env) {
+	void addRepositories(Project project, Function<String, String> env) {
 		String ossSnapshotUrl = "%s/%s".formatted(OSS_URL, OSS_SNAPSHOT_REPOSITORY);
 		String ossMilestoneUrl = "%s/%s".formatted(OSS_URL, OSS_MILESTONE_REPOSITORY);
 		String ossReleaseUrl = "%s/%s".formatted(OSS_URL, OSS_RELEASE_REPOSITORY);
@@ -84,7 +88,7 @@ public abstract class SpringRepositoryPlugin implements Plugin<Project> {
 			repositories.mavenLocal();
 		}
 		repositories.mavenCentral();
-		InternalRepositoryConventions.addReleaseTrain(repositories, env);
+		this.deployment.apply(project, env);
 		if (isSnapshot) {
 			repositories.maven(spec.repository("spring-oss-snapshot", ossSnapshotUrl));
 		}
@@ -92,7 +96,7 @@ public abstract class SpringRepositoryPlugin implements Plugin<Project> {
 			repositories.maven(spec.repository("spring-oss-milestone", ossMilestoneUrl));
 		}
 		repositories.maven(spec.repository("spring-oss-release", ossReleaseUrl));
-		InternalRepositoryConventions.addReleaseChannel(project, repositories);
+		this.internal.apply(project);
 	}
 
 	private static RepositorySpec getRepositorySpec(Project project) {

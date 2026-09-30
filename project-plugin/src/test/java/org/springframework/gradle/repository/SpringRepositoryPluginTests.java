@@ -124,10 +124,12 @@ public class SpringRepositoryPluginTests {
 	public void addRepositoriesWhenReleaseTrainAndLtsSnapshotThenReleaseTrainIsAfterCentralAndInternalIsLast() {
 		this.project.setVersion("1.0.0-SNAPSHOT");
 		this.project.getExtensions().getExtraProperties().set("releaseChannel", "lts");
-		SpringRepositoryPlugin.addRepositories(this.project,
-				Map.of("RELEASE_TRAIN_MAVEN_REPOSITORY_URL", "https://example.com/release-train")::get);
+		this.project.getPlugins()
+			.apply(SpringRepositoryPlugin.class)
+			.addRepositories(this.project,
+					Map.of("RELEASE_TRAIN_MAVEN_REPOSITORY_URL", "https://example.com/release-train")::get);
 
-		assertThat(names()).containsExactly("MavenRepo", "spring-internal-deployment", "spring-oss-snapshot",
+		assertThat(names()).containsExactly("MavenRepo", "spring-staged-deployment", "spring-oss-snapshot",
 				"spring-oss-milestone", "spring-oss-release", "spring-internal-release", "spring-lts-release",
 				"spring-lts-snapshot");
 	}
