@@ -111,7 +111,7 @@ jobs:
           find -name "*.sha*" | xargs rm -f
       - name: Deploy to Artifactory
         if: ${{ steps.deploy-location.outputs.deploy_location != 'central' }}
-        uses: spring-io/artifactory-deploy-action@aba148f1541e09adcf5735af90029fac9a6d3083 # v0.0.5
+        uses: spring-io/artifactory-deploy-action@9cb1c7df78cd8d1223de1dde974819fa6378af9f # v0.0.6
         with:
           uri: "https://repo.spring.io"
           repository: ${{ steps.deploy-location.outputs.deploy_location }}
@@ -123,7 +123,7 @@ jobs:
           folder: build/publications/repos
       - name: Publish Staged Artifacts to Central
         if: ${{ steps.deploy-location.outputs.deploy_location == 'central' }}
-        uses: spring-io/central-publish-action@0c03960e9b16fdfe70e2443e1d5393cbc3a35622 # v0.3.0
+        uses: spring-io/central-publish-action@5ea05c77127404d89c374ac4cd17b6ec6b0e7293 # v0.4.0
         with:
           token-name: ${{ secrets.CENTRAL_TOKEN_USERNAME }}
           token: ${{ secrets.CENTRAL_TOKEN_PASSWORD }}
