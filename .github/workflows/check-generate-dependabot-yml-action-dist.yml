@@ -29,12 +29,12 @@ jobs:
         working-directory: .github/actions/generate-dependabot-yml
 
     steps:
-      - name: Deprecation Notice
-        run: echo "::warning title=Deprecated Workflow::check-generate-dependabot-yml-action-dist.yml is deprecated; use spring-io/github-actions/update-dependabot instead."
-
       - name: Checkout
         id: checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Deprecation Notice
+        run: echo "::warning title=Deprecated Workflow::check-generate-dependabot-yml-action-dist.yml is deprecated; use spring-io/github-actions/update-dependabot instead."
 
       - name: Setup Node.js
         id: setup-node
