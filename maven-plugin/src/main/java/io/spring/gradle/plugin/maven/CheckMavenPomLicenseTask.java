@@ -37,6 +37,7 @@ import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.work.DisableCachingByDefault;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -55,6 +56,7 @@ import org.xml.sax.SAXException;
  *
  * @author Josh Cummings
  */
+@DisableCachingByDefault(because = "Verification task that declares no outputs")
 public abstract class CheckMavenPomLicenseTask extends DefaultTask {
 
 	static final String APACHE_LICENSE_SIGNATURE_LINE = "Apache License";

@@ -28,10 +28,12 @@ import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.work.DisableCachingByDefault;
 
 /**
  * @author Steve Riesenberg
  */
+@DisableCachingByDefault(because = "Output depends on live Sagan release state that is not captured by the task inputs")
 public abstract class GetPreviousReleaseMilestoneTask extends DefaultTask {
 
 	public static final String TASK_NAME = "getPreviousReleaseMilestone";

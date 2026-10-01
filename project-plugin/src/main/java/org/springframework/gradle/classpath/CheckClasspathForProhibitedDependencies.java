@@ -29,12 +29,14 @@ import org.gradle.api.artifacts.ResolvedConfiguration;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.Classpath;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.work.DisableCachingByDefault;
 
 /**
  * A {@link Task} for checking the classpath for prohibited dependencies.
  *
  * @author Andy Wilkinson
  */
+@DisableCachingByDefault(because = "Verification task that declares no outputs")
 public class CheckClasspathForProhibitedDependencies extends DefaultTask {
 
 	private Configuration classpath;
