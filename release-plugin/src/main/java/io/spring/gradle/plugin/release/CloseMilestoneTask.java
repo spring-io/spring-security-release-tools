@@ -27,7 +27,9 @@ import org.gradle.api.Project;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.work.DisableCachingByDefault;
 
+@DisableCachingByDefault(because = "Closes a GitHub milestone; a cache hit would skip the side effect")
 public abstract class CloseMilestoneTask extends DefaultTask {
 
 	public static final String TASK_NAME = "closeMilestone";

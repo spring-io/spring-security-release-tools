@@ -27,10 +27,12 @@ import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.work.DisableCachingByDefault;
 
 /**
  * @author Steve Riesenberg
  */
+@DisableCachingByDefault(because = "Declares no outputs (prints to stdout) and support status must be checked live")
 public abstract class CheckBranchHasOssSupportTask extends DefaultTask {
 
 	public static final String TASK_NAME = "checkBranchHasOssSupport";

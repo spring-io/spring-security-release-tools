@@ -26,10 +26,13 @@ import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.work.DisableCachingByDefault;
 
 /**
  * @author Steve Riesenberg
  */
+@DisableCachingByDefault(
+		because = "Trivial computation whose result is also printed to stdout, which a cache hit would skip")
 public abstract class GetNextSnapshotVersionTask extends DefaultTask {
 
 	public static final String TASK_NAME = "getNextSnapshotVersion";

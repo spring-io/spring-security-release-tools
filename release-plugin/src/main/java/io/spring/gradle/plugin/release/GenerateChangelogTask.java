@@ -25,10 +25,12 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.JavaExec;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputFile;
+import org.gradle.work.DisableCachingByDefault;
 
 /**
  * @author Steve Riesenberg
  */
+@DisableCachingByDefault(because = "Output depends on live GitHub issue state that is not captured by the task inputs")
 public abstract class GenerateChangelogTask extends JavaExec {
 
 	public static final String TASK_NAME = "generateChangelog";
