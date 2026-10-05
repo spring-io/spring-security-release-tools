@@ -2,14 +2,29 @@ import * as github from '@actions/github'
 import { findUntrustedCommit } from '../src/verify-commit-source'
 
 type Verification = { verified: boolean; reason: string } | null
-type Pull = { merged_at: string | null; user: { login: string } | null }
+type Pull = {
+  number: number
+  merged_at: string | null
+  merge_commit_sha: string | null
+  user: { login: string } | null
+}
+type FullPull = {
+  merge_commit_sha: string | null
+  merged_by: { type: string } | null
+}
 
 function octokit(
   commits: Record<string, Verification>,
-  pulls: Record<string, Pull[]>
+  pulls: Record<string, Pull[]>,
+  full: Record<number, FullPull> = {}
 ): ReturnType<typeof github.getOctokit> {
   return {
     rest: {
+      pulls: {
+        get: jest.fn(async ({ pull_number }: { pull_number: number }) => ({
+          data: full[pull_number]
+        }))
+      },
       repos: {
         getCommit: jest.fn(async ({ ref }: { ref: string }) => ({
           data: { commit: { verification: commits[ref] } }
@@ -25,9 +40,21 @@ function octokit(
 }
 
 const verified = { verified: true, reason: 'valid' }
-const merged = (login: string): Pull => ({
+const unsigned = { verified: false, reason: 'unsigned' }
+const merged = (
+  login: string,
+  merge_commit_sha: string | null = null
+): Pull => ({
+  number: 1,
   merged_at: '2026-01-01T00:00:00Z',
+  merge_commit_sha,
   user: { login }
+})
+const mergedBy = (
+  merge_commit_sha: string,
+  type: string | null = 'User'
+): Record<number, FullPull> => ({
+  1: { merge_commit_sha, merged_by: type ? { type } : null }
 })
 
 describe('findUntrustedCommit', () => {
@@ -46,7 +73,7 @@ describe('findUntrustedCommit', () => {
 
   it('does not trust a commit that is not verified', async () => {
     const client = octokit(
-      { a: { verified: false, reason: 'unsigned' }, b: null },
+      { a: unsigned, b: null },
       { a: [merged(login)], b: [merged(login)] }
     )
 
@@ -70,7 +97,7 @@ describe('findUntrustedCommit', () => {
   it('does not trust a pull request that is not merged', async () => {
     const client = octokit(
       { a: verified },
-      { a: [{ merged_at: null, user: { login } }] }
+      { a: [{ ...merged(login), merged_at: null }] }
     )
 
     expect(await findUntrustedCommit(client, 'o', 'r', ['a'], login)).toBe('a')
@@ -79,15 +106,97 @@ describe('findUntrustedCommit', () => {
   it('does not trust a pull request without a user', async () => {
     const client = octokit(
       { a: verified },
-      { a: [{ merged_at: '2026-01-01T00:00:00Z', user: null }] }
+      { a: [{ ...merged(login), user: null }] }
     )
 
     expect(await findUntrustedCommit(client, 'o', 'r', ['a'], login)).toBe('a')
   })
 
+  describe('unsigned commits, e.g. from a rebase merge', () => {
+    it('trusts the merge result of a pull request merged by a user', async () => {
+      const client = octokit(
+        { a: unsigned },
+        { a: [merged(login, 'a')] },
+        mergedBy('a')
+      )
+
+      expect(
+        await findUntrustedCommit(client, 'o', 'r', ['a'], login)
+      ).toBeUndefined()
+    })
+
+    it('does not trust a commit that is not the merge result of the pull request', async () => {
+      const client = octokit(
+        { a: unsigned },
+        { a: [merged(login, 'other')] },
+        mergedBy('other')
+      )
+
+      expect(await findUntrustedCommit(client, 'o', 'r', ['a'], login)).toBe(
+        'a'
+      )
+      expect(client.rest.pulls.get).not.toHaveBeenCalled()
+    })
+
+    it('does not trust a commit when the full pull request disagrees', async () => {
+      const client = octokit(
+        { a: unsigned },
+        { a: [merged(login, 'a')] },
+        mergedBy('other')
+      )
+
+      expect(await findUntrustedCommit(client, 'o', 'r', ['a'], login)).toBe(
+        'a'
+      )
+    })
+
+    it('does not trust a pull request that was not merged by a user', async () => {
+      for (const type of ['Bot', null]) {
+        const client = octokit(
+          { a: unsigned },
+          { a: [merged(login, 'a')] },
+          mergedBy('a', type)
+        )
+
+        expect(await findUntrustedCommit(client, 'o', 'r', ['a'], login)).toBe(
+          'a'
+        )
+      }
+    })
+
+    it('does not trust a forged author on a direct push', async () => {
+      const client = octokit({ a: unsigned }, { a: [] })
+
+      expect(await findUntrustedCommit(client, 'o', 'r', ['a'], login)).toBe(
+        'a'
+      )
+    })
+
+    it('does not trust the merge result of a pull request by someone else', async () => {
+      const client = octokit(
+        { a: unsigned },
+        { a: [merged('mallory', 'a')] },
+        mergedBy('a')
+      )
+
+      expect(await findUntrustedCommit(client, 'o', 'r', ['a'], login)).toBe(
+        'a'
+      )
+    })
+
+    it('does not look up the full pull request for signed commits', async () => {
+      const client = octokit({ a: verified }, { a: [merged(login)] })
+
+      expect(
+        await findUntrustedCommit(client, 'o', 'r', ['a'], login)
+      ).toBeUndefined()
+      expect(client.rest.pulls.get).not.toHaveBeenCalled()
+    })
+  })
+
   it('stops at the first commit it cannot confirm', async () => {
     const client = octokit(
-      { a: verified, b: { verified: false, reason: 'unsigned' }, c: verified },
+      { a: verified, b: unsigned, c: verified },
       { a: [merged(login)], b: [merged(login)], c: [merged(login)] }
     )
 
