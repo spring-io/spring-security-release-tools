@@ -1,0 +1,73 @@
+= Auto Merge Forward
+
+This action merges the commits of the branch that triggered the workflow forward into the next branch, but only when every one of those commits came from a pull request opened by a trusted user, by default `dependabot[bot]`.
+
+It replaces `.github/actions/auto-merge-forward`, which is deprecated.
+
+== Usage
+
+When a Dependabot commit is merged into `6.4.x`, a workflow on `6.4.x` merges it into `6.5.x`.
+That push triggers the workflow on `6.5.x`, which merges it into `7.0.x`, and so on until `main`.
+
+[source,yaml]
+----
+name: Auto Merge Forward Dependabot Commits
+
+on:
+  push:
+    branches: [ '[0-9]+.[0-9]+.x' ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: auto-merge-forward-${{ github.ref_name }}
+
+jobs:
+  auto-merge-forward-dependabot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # a token other than GITHUB_TOKEN, otherwise the push does not trigger the next branch's workflow
+          token: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
+      - run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+      - uses: spring-io/spring-security-release-tools/auto-merge-forward@<sha>
+----
+
+The next branch is the lowest `N.N.x` branch on `origin` above the current one, for example `6.5.x` -> `7.0.x`, or `main` if there is none.
+The workflow does nothing on `main`, and fails on a branch that is not named `N.N.x`.
+
+Because `-s ours` keeps each branch's own files, changes to this workflow are not merged forward, so it needs to be present on each branch.
+
+== Commit Source Verification
+
+A commit's author name and email are set by whoever creates the commit, so they cannot be used to tell that a commit really came from Dependabot.
+Anyone who can push can write `git commit --author='dependabot[bot] <...>'`.
+
+Instead, a merge only happens if every commit to merge:
+
+1. has a signature that GitHub reports as verified, and
+2. belongs to a merged pull request that was opened by *from-username*.
+
+The pull request author is an account, so unlike the commit author it cannot be set by pushing a commit.
+A direct push, or a pull request from someone else, fails the check even if the commit claims to be from Dependabot.
+
+If a commit cannot be confirmed, nothing is merged.
+If GitHub cannot be reached, the action fails and nothing is merged.
+The check stops at the first commit that cannot be confirmed.
+
+A maintainer who adds commits to a Dependabot pull request and squash merges it is not detected, since the resulting commit is still attributed to the pull request's author.
+
+== Inputs
+
+- *from-username*: The GitHub username that must have opened the pull request of every commit. Defaults to `dependabot[bot]`.
+- *github-token*: The token used to look up commits and pull requests. Defaults to the workflow's `github.token`, which only needs `contents: read`.
+- *merge-strategy*: The merge strategy to use. Defaults to `ours`.
+- *dry-run*: Merge locally but do not push. Defaults to `false`.
+
+== Development
+
+Run `npm run bundle` to prepare the `dist` folder before pushing the changes.
