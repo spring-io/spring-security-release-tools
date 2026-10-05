@@ -30176,6 +30176,7 @@ const github = __importStar(__nccwpck_require__(5438));
  */
 async function run() {
     try {
+        core.warning('spring-io/spring-security-release-tools/.github/actions/auto-merge-forward is deprecated, use spring-io/spring-security-release-tools/auto-merge-forward instead');
         const fromAuthor = core.getInput('from-author');
         const branches = core
             .getInput('branches')

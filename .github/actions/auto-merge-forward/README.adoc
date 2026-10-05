@@ -1,5 +1,9 @@
 = Auto Merge Forward
 
+WARNING: This action is deprecated and will receive no further changes.
+Use `spring-io/spring-security-release-tools/auto-merge-forward` instead.
+It infers the branch to merge into, and it verifies the source of each commit with GitHub instead of trusting the author name or email of the commit.
+
 This action is used to automatically merge forward commits between branches.
 
 Consider the following workflow configuration:

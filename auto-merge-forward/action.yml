@@ -1,0 +1,29 @@
+name: 'Auto Merge Forward'
+description: 'Merges the commits of the branch that triggered the workflow into the next branch when they all come from pull requests opened by a given user'
+author: 'spring-projects'
+
+branding:
+  icon: 'git-merge'
+  color: 'green'
+
+inputs:
+  from-username:
+    description: 'Only merge if every commit belongs to a merged pull request opened by this GitHub username'
+    required: false
+    default: 'dependabot[bot]'
+  github-token:
+    description: 'The token used to look up commits and pull requests, it only needs to read the repository'
+    required: false
+    default: ${{ github.token }}
+  merge-strategy:
+    description: 'The merge strategy to use'
+    required: false
+    default: 'ours'
+  dry-run:
+    description: 'Whether to skip pushing the changes'
+    required: false
+    default: 'false'
+
+runs:
+  using: node24
+  main: dist/index.js
