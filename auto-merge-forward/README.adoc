@@ -47,10 +47,13 @@ Because `-s ours` keeps each branch's own files, changes to this workflow are no
 A commit's author name and email are set by whoever creates the commit, so they cannot be used to tell that a commit really came from Dependabot.
 Anyone who can push can write `git commit --author='dependabot[bot] <...>'`.
 
-Instead, a merge only happens if every commit to merge:
+Instead, a merge only happens if every commit to merge belongs to a merged pull request that was opened by *from-username*, and either:
 
-1. has a signature that GitHub reports as verified, and
-2. belongs to a merged pull request that was opened by *from-username*.
+1. has a signature that GitHub reports as verified, or
+2. is the result GitHub recorded for merging that pull request (`merge_commit_sha`), and the pull request was merged by a user (`merged_by`).
+
+The second case covers rebase merges, which rewrite the commit and are not signed by GitHub.
+Neither `merge_commit_sha` nor `merged_by` can be set by pushing a commit, and merging requires write access.
 
 The pull request author is an account, so unlike the commit author it cannot be set by pushing a commit.
 A direct push, or a pull request from someone else, fails the check even if the commit claims to be from Dependabot.

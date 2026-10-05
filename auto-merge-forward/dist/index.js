@@ -30150,10 +30150,15 @@ const core = __importStar(__nccwpck_require__(7484));
  * Finds the first commit whose source cannot be confirmed with GitHub.
  *
  * The author name and email of a commit are set by whoever creates it, so on
- * their own they prove nothing. A commit is trusted here only if GitHub
- * verified its signature and it belongs to a merged pull request that was
- * opened by `username`. The pull request author is an account, not a string
- * in the commit, so it cannot be forged by pushing a commit.
+ * their own they prove nothing. A commit is trusted here only if it belongs to
+ * a merged pull request that was opened by `username`. The pull request author
+ * is an account, not a string in the commit, so it cannot be forged by pushing
+ * a commit.
+ *
+ * Rebase merges rewrite commits, and GitHub does not sign the result, so an
+ * unsigned commit is accepted only if GitHub itself recorded it as the result
+ * of merging that pull request (`merge_commit_sha`) and recorded a user as the
+ * one who merged it (`merged_by`). Neither can be set by pushing a commit.
  *
  * Stops at the first commit that cannot be confirmed to save API calls.
  * Errors from the API are not caught: if GitHub cannot be asked, no commit is
@@ -30169,22 +30174,49 @@ async function findUntrustedCommit(octokit, owner, repo, shas, username) {
             ref: sha
         });
         const verification = commit.commit.verification;
-        if (!verification?.verified) {
-            core.info(`Commit ${sha} is not verified by GitHub (${verification?.reason ?? 'no verification'})`);
-            return sha;
-        }
+        const signed = !!verification?.verified;
         const { data: pulls } = await octokit.rest.repos.listPullRequestsAssociatedWithCommit({
             owner,
             repo,
             commit_sha: sha,
             per_page: 100
         });
-        if (!pulls.some(pr => !!pr.merged_at && pr.user?.login === username)) {
+        const candidates = pulls.filter(pr => !!pr.merged_at && pr.user?.login === username);
+        if (candidates.length === 0) {
             core.info(`Commit ${sha} is not in a merged pull request by ${username}`);
+            return sha;
+        }
+        if (signed) {
+            continue;
+        }
+        if (!(await isMergeResult(octokit, owner, repo, sha, candidates))) {
+            core.info(`Commit ${sha} is not verified by GitHub (${verification?.reason ?? 'no verification'}) and is not the merge result of a pull request merged by a user`);
             return sha;
         }
     }
     return undefined;
+}
+/**
+ * Whether GitHub recorded `sha` as the result of merging one of the pull
+ * requests, and a user as the one who merged it.
+ *
+ * `merged_by` is only returned when fetching a single pull request.
+ */
+async function isMergeResult(octokit, owner, repo, sha, candidates) {
+    for (const candidate of candidates) {
+        if (candidate.merge_commit_sha !== sha) {
+            continue;
+        }
+        const { data: pull } = await octokit.rest.pulls.get({
+            owner,
+            repo,
+            pull_number: candidate.number
+        });
+        if (pull.merge_commit_sha === sha && pull.merged_by?.type === 'User') {
+            return true;
+        }
+    }
+    return false;
 }
 
 
