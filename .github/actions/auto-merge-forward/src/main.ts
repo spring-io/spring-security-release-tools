@@ -8,6 +8,9 @@ import * as github from '@actions/github'
  */
 export async function run(): Promise<void> {
   try {
+    core.warning(
+      'spring-io/spring-security-release-tools/.github/actions/auto-merge-forward is deprecated, use spring-io/spring-security-release-tools/auto-merge-forward instead'
+    )
     const fromAuthor = core.getInput('from-author')
     const branches: string[] = core
       .getInput('branches')

@@ -1,5 +1,5 @@
 name: 'Auto Merge Forward'
-description: 'Automatically merge commits from older branches into more recents ones'
+description: 'Deprecated, use spring-io/spring-security-release-tools/auto-merge-forward. Automatically merge commits from older branches into more recents ones'
 author: 'marcusdacoregio'
 
 # Define your inputs here.
