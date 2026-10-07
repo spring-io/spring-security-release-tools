@@ -12,6 +12,6 @@ run-name: Merge Dependabot PR ${{ github.ref_name }}
 jobs:
   merge-dependabot-pr:
     permissions: write-all
-    uses: spring-io/spring-github-workflows/.github/workflows/spring-merge-dependabot-pr.yml@798bca4d6aecf03e5166d85789c33c20a65499e1 # main
+    uses: spring-io/spring-github-workflows/.github/workflows/spring-merge-dependabot-pr.yml@0b29122fc5dacb27ad714f64888cd8408295f2f7 # main
     with:
       mergeArguments: --auto --rebase
