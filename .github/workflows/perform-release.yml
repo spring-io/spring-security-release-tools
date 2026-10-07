@@ -84,7 +84,7 @@ jobs:
         run: echo "version=$(./gradlew -q getPreviousReleaseMilestone -PcurrentVersion=$VERSION -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
       - id: next-release-milestone
         name: Get Next Release Milestone
-        uses: spring-io/spring-release-actions/compute-next-version@1b8671612c3eb3d9b9763e2d7b66f1a80d00ee95 # 0.0.6
+        uses: spring-io/spring-release-actions/compute-next-version@6795980b9d960a13d420e114d50f1c8abe730769 # 0.0.7
         with:
           version: ${{ inputs.project-version }}
           token: ${{ github.token }}
