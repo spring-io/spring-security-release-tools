@@ -16,16 +16,28 @@
 
 package org.springframework.gradle.develocity;
 
+import com.gradle.develocity.agent.gradle.DevelocityConfiguration;
+import com.gradle.develocity.agent.gradle.scan.BuildScanConfiguration;
+import com.gradle.develocity.agent.gradle.scan.BuildScanPublishingConfiguration;
+import com.gradle.develocity.agent.gradle.scan.BuildScanPublishingConfiguration.PublishingContext;
+import org.gradle.StartParameter;
+import org.gradle.api.Action;
 import org.gradle.api.initialization.Settings;
+import org.gradle.api.plugins.ExtensionContainer;
 import org.gradle.api.plugins.PluginManager;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.ProviderFactory;
+import org.gradle.api.specs.Spec;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -43,41 +55,71 @@ public class DevelocityPluginTests {
 
 	private final PluginManager pluginManager = mock(PluginManager.class);
 
+	private final StartParameter startParameter = mock(StartParameter.class);
+
+	private final ExtensionContainer extensions = mock(ExtensionContainer.class);
+
+	private final DevelocityConfiguration develocity = mock(DevelocityConfiguration.class);
+
+	private final BuildScanConfiguration buildScan = mock(BuildScanConfiguration.class);
+
 	private final DevelocityPlugin plugin = new DevelocityPlugin();
 
 	@BeforeEach
 	public void setUp() {
 		when(this.settings.getProviders()).thenReturn(this.providers);
 		when(this.settings.getPluginManager()).thenReturn(this.pluginManager);
+		when(this.settings.getStartParameter()).thenReturn(this.startParameter);
+		when(this.settings.getExtensions()).thenReturn(this.extensions);
+		when(this.extensions.getByType(DevelocityConfiguration.class)).thenReturn(this.develocity);
+		when(this.develocity.getBuildScan()).thenReturn(this.buildScan);
 	}
 
 	@Test
-	public void applyWhenReleaseChannelUnspecifiedThenDoesNotApplyDevelocityPlugins() {
+	public void applyWhenReleaseChannelUnspecifiedThenDisablesBuildScans() {
 		givenReleaseChannel(null);
 
 		this.plugin.apply(this.settings);
 
-		verifyNoInteractions(this.pluginManager);
+		verify(this.pluginManager).apply("com.gradle.develocity");
+		verify(this.pluginManager, never()).apply("io.spring.ge.conventions");
+		verifyBuildScansDisabled();
 	}
 
 	@Test
-	public void applyWhenReleaseChannelIsOssThenAppliesDevelocityPlugins() {
+	public void applyWhenReleaseChannelIsOssThenAppliesDevelocityConventions() {
 		givenReleaseChannel("oss");
 
 		this.plugin.apply(this.settings);
 
 		verify(this.pluginManager).apply("com.gradle.develocity");
 		verify(this.pluginManager).apply("io.spring.ge.conventions");
+		verifyNoInteractions(this.startParameter, this.develocity);
 	}
 
 	@ParameterizedTest
 	@ValueSource(strings = { "lts", "internal", "hotfix" })
-	public void applyWhenReleaseChannelIsNotOssThenDoesNotApplyDevelocityPlugins(String releaseChannel) {
+	public void applyWhenReleaseChannelIsNotOssThenDisablesBuildScans(String releaseChannel) {
 		givenReleaseChannel(releaseChannel);
 
 		this.plugin.apply(this.settings);
 
-		verifyNoInteractions(this.pluginManager);
+		verify(this.pluginManager).apply("com.gradle.develocity");
+		verify(this.pluginManager, never()).apply("io.spring.ge.conventions");
+		verifyBuildScansDisabled();
+	}
+
+	@SuppressWarnings("unchecked")
+	private void verifyBuildScansDisabled() {
+		verify(this.startParameter).setBuildScan(false);
+		verify(this.startParameter).setNoBuildScan(true);
+		ArgumentCaptor<Action<BuildScanPublishingConfiguration>> action = ArgumentCaptor.forClass(Action.class);
+		verify(this.buildScan).publishing(action.capture());
+		BuildScanPublishingConfiguration publishing = mock(BuildScanPublishingConfiguration.class);
+		action.getValue().execute(publishing);
+		ArgumentCaptor<Spec<PublishingContext>> spec = ArgumentCaptor.forClass(Spec.class);
+		verify(publishing).onlyIf(spec.capture());
+		assertThat(spec.getValue().isSatisfiedBy(mock(PublishingContext.class))).isFalse();
 	}
 
 	@SuppressWarnings("unchecked")
