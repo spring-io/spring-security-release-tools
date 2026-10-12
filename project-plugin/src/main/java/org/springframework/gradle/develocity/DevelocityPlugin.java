@@ -16,12 +16,19 @@
 
 package org.springframework.gradle.develocity;
 
+import com.gradle.develocity.agent.gradle.DevelocityConfiguration;
+import org.gradle.StartParameter;
 import org.gradle.api.Plugin;
 import org.gradle.api.initialization.Settings;
 import org.springframework.gradle.ReleaseChannel;
 
 /**
- * Applies Develocity build scan conventions, for the "oss" release channel.
+ * Applies the Develocity plugin so that a {@code develocity {}} block always parses, and
+ * applies the Spring Develocity conventions for the "oss" release channel only.
+ * <p>
+ * For any other release channel, build scans are disabled: {@code --scan} is ignored and
+ * publishing is refused, so that nothing is sent to a Develocity server (including
+ * scans.gradle.com).
  * <p>
  * The release channel is read from the {@code releaseChannel} project property.
  *
@@ -36,12 +43,21 @@ public class DevelocityPlugin implements Plugin<Settings> {
 
 	@Override
 	public void apply(Settings settings) {
+		settings.getPluginManager().apply(DEVELOCITY_PLUGIN_ID);
 		ReleaseChannel channel = ReleaseChannel.from(settings);
-		if (channel != ReleaseChannel.OSS) {
+		if (channel == ReleaseChannel.OSS) {
+			settings.getPluginManager().apply(DEVELOCITY_CONVENTIONS_PLUGIN_ID);
 			return;
 		}
-		settings.getPluginManager().apply(DEVELOCITY_PLUGIN_ID);
-		settings.getPluginManager().apply(DEVELOCITY_CONVENTIONS_PLUGIN_ID);
+		disableBuildScans(settings);
+	}
+
+	private void disableBuildScans(Settings settings) {
+		StartParameter startParameter = settings.getStartParameter();
+		startParameter.setBuildScan(false);
+		startParameter.setNoBuildScan(true);
+		DevelocityConfiguration develocity = settings.getExtensions().getByType(DevelocityConfiguration.class);
+		develocity.getBuildScan().publishing((publishing) -> publishing.onlyIf((context) -> false));
 	}
 
 }
