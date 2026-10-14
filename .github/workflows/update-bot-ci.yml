@@ -4,6 +4,9 @@ on:
   push:
     branches-ignore:
       - 'dependabot/**' # update-bot-pr.yml rebuilds dist/ for these
+    paths:
+      - 'update-bot/**'
+      - '.github/workflows/update-bot-ci.yml'
 
 permissions:
   contents: read
