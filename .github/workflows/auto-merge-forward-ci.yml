@@ -83,12 +83,14 @@ jobs:
           steps.diff.outputs.changed == 'true' &&
           github.event_name == 'pull_request' &&
           github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add package-lock.json dist src
           git commit -m "Build auto-merge-forward package-lock.json and dist/"
-          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          git push origin "HEAD:${HEAD_REF}"
 
       - name: Fail if build output is still missing
         if: >
