@@ -1,9 +1,15 @@
-# This workflow computes the dist/ folder for Dependabot PRs in addition to
-# building the PR
+# Dependabot can bump update-bot's npm dependencies, but it can't rebuild the
+# checked-in update-bot/dist/index.js that consumers actually run. This workflow
+# tests and rebuilds update-bot for Dependabot pull requests that touch
+# update-bot/ and uploads the rebuilt dist/ as an artifact.
+#
+# It is unprivileged on purpose: it runs the PR's code, so it has no write access.
+# update-bot-push-dist.yml (triggered by this workflow's completion) is what
+# commits the artifact back onto the PR branch.
 name: Pull Request - Update Bot
 
 on:
-  pull_request_target:
+  pull_request:
     paths:
       - 'update-bot/**'
 
@@ -21,13 +27,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          persist-credentials: false
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: update-bot/.node-version
           cache: npm
@@ -48,48 +51,3 @@ jobs:
           name: dist
           path: update-bot/dist
           if-no-files-found: error
-
-  push:
-    name: Commit dist/
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
-    steps:
-      # Deliberately the base branch, not the pull request: this job holds a
-      # write token, so none of the PR's files are ever checked out here. The
-      # commit below is assembled with git plumbing instead.
-      - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-
-      - name: Replace dist/
-        run: rm -rf update-bot/dist
-
-      - name: Download dist/
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: dist
-          path: update-bot/dist
-
-      # Starts from the PR head's tree, swaps in the built dist/, and commits
-      # that on top of the PR head without touching the working tree.
-      - name: Commit dist/ if changed
-        env:
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          HEAD_REF: ${{ github.event.pull_request.head.ref }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git fetch --no-tags --depth=1 origin "$HEAD_SHA"
-          export GIT_INDEX_FILE="$RUNNER_TEMP/index"
-          git read-tree "$HEAD_SHA"
-          git rm -r -q --cached --ignore-unmatch update-bot/dist
-          git add -f update-bot/dist
-          tree=$(git write-tree)
-          if [ "$tree" = "$(git rev-parse "$HEAD_SHA^{tree}")" ]; then
-            echo "dist/ is already up to date."
-            exit 0
-          fi
-          commit=$(git commit-tree "$tree" -p "$HEAD_SHA" -m "Update update-bot dist/")
-          git push origin "$commit:refs/heads/$HEAD_REF"
