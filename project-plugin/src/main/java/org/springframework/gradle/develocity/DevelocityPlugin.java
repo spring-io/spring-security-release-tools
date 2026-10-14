@@ -43,19 +43,21 @@ public class DevelocityPlugin implements Plugin<Settings> {
 
 	@Override
 	public void apply(Settings settings) {
-		settings.getPluginManager().apply(DEVELOCITY_PLUGIN_ID);
 		ReleaseChannel channel = ReleaseChannel.from(settings);
 		if (channel == ReleaseChannel.OSS) {
+			settings.getPluginManager().apply(DEVELOCITY_PLUGIN_ID);
 			settings.getPluginManager().apply(DEVELOCITY_CONVENTIONS_PLUGIN_ID);
 			return;
 		}
+		// the start parameters must be changed before the Develocity plugin reads them
+		StartParameter startParameter = settings.getStartParameter();
+		startParameter.setBuildScan(false);
+		startParameter.setNoBuildScan(true);
+		settings.getPluginManager().apply(DEVELOCITY_PLUGIN_ID);
 		disableBuildScans(settings);
 	}
 
 	private void disableBuildScans(Settings settings) {
-		StartParameter startParameter = settings.getStartParameter();
-		startParameter.setBuildScan(false);
-		startParameter.setNoBuildScan(true);
 		DevelocityConfiguration develocity = settings.getExtensions().getByType(DevelocityConfiguration.class);
 		develocity.getBuildScan().publishing((publishing) -> publishing.onlyIf((context) -> false));
 	}
