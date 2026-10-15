@@ -25,14 +25,11 @@ jobs:
     if: ${{ inputs.should-deploy-docs == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ inputs.branch-name }}
-          fetch-depth: 1
       - name: Dispatch (partial build)
         if: ${{ inputs.build-type == 'partial' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
           BRANCH_NAME: ${{ inputs.branch-name }}
           REF_NAME: ${{ github.ref_name }}
         run: gh workflow run deploy-docs.yml -r "$BRANCH_NAME" -f build-refname="$REF_NAME"
@@ -40,4 +37,6 @@ jobs:
         if: ${{ inputs.build-type == 'full' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh workflow run deploy-docs.yml -r $(git rev-parse --abbrev-ref HEAD)
+          GH_REPO: ${{ github.repository }}
+          BRANCH_NAME: ${{ inputs.branch-name }}
+        run: gh workflow run deploy-docs.yml -r "$BRANCH_NAME"
