@@ -52,9 +52,13 @@ jobs:
   deploy-docs:
     name: Deploy Docs
     needs: [ check-support-window ]
-    uses: $/.github/workflows/dispatch-deploy-docs.yml
-    with:
-      build-type: full
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch Deploy Docs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh workflow run deploy-docs.yml -r docs-build
   update-milestones:
     name: Update Milestones
     needs: [ compute-release, deploy-docs ]
