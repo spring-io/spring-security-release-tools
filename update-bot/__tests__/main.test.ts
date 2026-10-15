@@ -1,16 +1,40 @@
-import * as core from '@actions/core'
-import * as exec from '@actions/exec'
-import * as github from '@actions/github'
-import * as glob from '@actions/glob'
+import { jest } from '@jest/globals'
+import type * as coreTypes from '@actions/core'
+import type * as execTypes from '@actions/exec'
+import type * as githubTypes from '@actions/github'
+import type * as globTypes from '@actions/glob'
 import * as fs from 'fs'
-import { getLatestRelease } from '../src/release'
-import { run } from '../src/main'
+import type { LatestRelease } from '../src/release.js'
 
-jest.mock('@actions/core')
-jest.mock('@actions/exec')
-jest.mock('@actions/glob')
-jest.mock('@actions/github')
-jest.mock('../src/release')
+// ESM modules can't be reassigned or automocked, so each mocked module is
+// registered with an explicit factory before main.js is imported.
+const mockedCore = {
+  getInput: jest.fn<typeof coreTypes.getInput>(),
+  setFailed: jest.fn<typeof coreTypes.setFailed>(),
+  info: jest.fn<typeof coreTypes.info>(),
+  warning: jest.fn<typeof coreTypes.warning>(),
+  error: jest.fn<typeof coreTypes.error>(),
+  summary: {
+    addHeading: jest.fn().mockReturnThis(),
+    addTable: jest.fn().mockReturnThis(),
+    write: jest.fn<() => Promise<void>>().mockResolvedValue(undefined)
+  }
+}
+const mockedExec = { exec: jest.fn<typeof execTypes.exec>() }
+const mockedGlob = { create: jest.fn<typeof globTypes.create>() }
+const mockedGithub = {
+  getOctokit: jest.fn<typeof githubTypes.getOctokit>(),
+  context: { repo: { owner: '', repo: '' } }
+}
+const mockedGetLatestRelease = jest.fn<() => Promise<LatestRelease>>()
+
+jest.unstable_mockModule('@actions/core', () => mockedCore)
+jest.unstable_mockModule('@actions/exec', () => mockedExec)
+jest.unstable_mockModule('@actions/glob', () => mockedGlob)
+jest.unstable_mockModule('@actions/github', () => mockedGithub)
+jest.unstable_mockModule('../src/release.js', () => ({
+  getLatestRelease: mockedGetLatestRelease
+}))
 
 // Only readFileSync/writeFileSync/existsSync are overridden (rather than
 // automocking 'fs' outright): @actions/core reads fs.promises at import
@@ -18,26 +42,19 @@ jest.mock('../src/release')
 // the real implementation - @actions/github's Context reads
 // GITHUB_EVENT_PATH as a side effect of importing it, before any test gets a
 // chance to mock it.
-jest.mock('fs', () => {
-  const actual = jest.requireActual('fs')
-  return {
-    ...actual,
-    readFileSync: jest.fn(actual.readFileSync),
-    writeFileSync: jest.fn(),
-    existsSync: jest.fn(actual.existsSync)
-  }
-})
+const actualFs = await import('fs')
+const readFileSyncSpy = jest.fn<typeof fs.readFileSync>(actualFs.readFileSync)
+const writeFileSyncSpy = jest.fn<typeof fs.writeFileSync>()
+const existsSyncSpy = jest.fn<typeof fs.existsSync>(actualFs.existsSync)
+jest.unstable_mockModule('fs', () => ({
+  ...actualFs,
+  default: actualFs,
+  readFileSync: readFileSyncSpy,
+  writeFileSync: writeFileSyncSpy,
+  existsSync: existsSyncSpy
+}))
 
-const mockedCore = core as jest.Mocked<typeof core>
-const mockedExec = exec as jest.Mocked<typeof exec>
-const mockedGlob = glob as jest.Mocked<typeof glob>
-const mockedGithub = github as jest.Mocked<typeof github>
-const mockedGetLatestRelease = getLatestRelease as jest.MockedFunction<
-  typeof getLatestRelease
->
-const readFileSyncSpy = fs.readFileSync as jest.Mock
-const writeFileSyncSpy = fs.writeFileSync as jest.Mock
-const existsSyncSpy = fs.existsSync as jest.Mock
+const { run } = await import('../src/main.js')
 
 const GRADLE_FILE = 'gradle/libs.versions.toml'
 const SETTINGS_FILE = 'settings.gradle'
@@ -136,9 +153,7 @@ function mockOctokit(
   } as any
   mockedGithub.getOctokit.mockReturnValue(octokit)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ;(mockedGithub as any).context = {
-    repo: { owner: 'consumer', repo: 'consumer-repo' }
-  }
+  mockedGithub.context.repo = { owner: 'consumer', repo: 'consumer-repo' }
   return octokit
 }
 
@@ -146,11 +161,6 @@ beforeEach(() => {
   jest.clearAllMocks()
   fileContents = {}
   mockCurrentBranch('main')
-  ;(mockedCore as unknown as { summary: unknown }).summary = {
-    addHeading: jest.fn().mockReturnThis(),
-    addTable: jest.fn().mockReturnThis(),
-    write: jest.fn().mockResolvedValue(undefined)
-  }
 })
 
 describe('run', () => {

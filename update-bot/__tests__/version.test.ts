@@ -3,7 +3,7 @@ import {
   parseVersionFromWorkflow,
   updateGradleVersion,
   updateWorkflowRefs
-} from '../src/version'
+} from '../src/version.js'
 
 const REPO = 'spring-io/spring-security-release-tools'
 

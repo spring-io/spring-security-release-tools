@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "author": "",
   "private": true,
+  "type": "module",
   "exports": {
     ".": "./dist/index.js"
   },
@@ -12,19 +13,19 @@
   },
   "scripts": {
     "bundle": "npm run format:write && npm run package",
-    "ci-test": "jest",
+    "ci-test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "coverage": "make-coverage-badge --output-path ./badges/coverage.svg",
     "format:write": "prettier --write **/*.ts",
     "format:check": "prettier --check **/*.ts",
     "lint": "npx eslint . -c ./.github/linters/.eslintrc.yml",
-    "package": "ncc build src/index.ts --license licenses.txt",
+    "package": "ncc build src/index.ts --license licenses.txt && node scripts/add-require-shim.mjs",
     "package:watch": "npm run package -- --watch",
-    "test": "jest",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "all": "npm run format:write && npm run lint && npm run test && npm run coverage && npm run package"
   },
   "license": "MIT",
   "jest": {
-    "preset": "ts-jest",
+    "preset": "ts-jest/presets/default-esm",
     "verbose": true,
     "clearMocks": true,
     "testEnvironment": "node",
@@ -40,7 +41,12 @@
       "/dist/"
     ],
     "transform": {
-      "^.+\\.ts$": "ts-jest"
+      "^.+\\.ts$": [
+        "ts-jest",
+        {
+          "useESM": true
+        }
+      ]
     },
     "coverageReporters": [
       "json-summary",
@@ -50,7 +56,13 @@
     "collectCoverage": true,
     "collectCoverageFrom": [
       "./src/**"
-    ]
+    ],
+    "extensionsToTreatAsEsm": [
+      ".ts"
+    ],
+    "moduleNameMapper": {
+      "^(\\.{1,2}/.*)\\.js$": "$1"
+    }
   },
   "dependencies": {
     "@actions/core": "^1.10.1",
