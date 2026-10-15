@@ -16,7 +16,7 @@
 #
 # Private: the leading underscore marks this as internal to this repository (not
 # a workflow for others to call).
-name: Action dist
+name: CI - Actions - Dist Check
 
 on:
   workflow_call:

@@ -1,4 +1,4 @@
-name: Deploy Docs
+name: Shared - Deploy Docs
 
 on:
   workflow_call:

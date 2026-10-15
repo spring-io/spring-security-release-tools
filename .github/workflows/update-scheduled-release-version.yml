@@ -1,5 +1,5 @@
 # DEPRECATED: This workflow is deprecated with no replacement; release orchestration is now centralized.
-name: Update Scheduled Release Version
+name: Shared - Update Scheduled Release Version
 
 on:
   workflow_call:

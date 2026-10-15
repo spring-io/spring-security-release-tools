@@ -1,5 +1,5 @@
 # DEPRECATED: This workflow is deprecated in favor of release-announcements-stage.yml.
-name: "Release - Publish Release Notes"
+name: Local - Release - Publish Release Notes
 
 permissions:
   contents: write

@@ -1,4 +1,4 @@
-name: Test
+name: Shared - Test
 permissions: {}
 on:
   workflow_call:

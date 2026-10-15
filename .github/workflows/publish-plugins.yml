@@ -1,4 +1,4 @@
-name: Publish Plugins
+name: Shared - Publish Plugins
 permissions: {}
 on:
   workflow_call:
