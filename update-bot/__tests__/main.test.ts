@@ -83,7 +83,7 @@ function mockInputs(overrides: Record<string, string> = {}): void {
 
 function mockFiles(gradleFiles: string[], workflowFiles: string[]): void {
   mockedGlob.create.mockImplementation(async patterns => {
-    const isGradle = (patterns as string).includes('*.gradle')
+    const isGradle = patterns.includes('*.gradle')
     return {
       glob: jest.fn().mockResolvedValue(isGradle ? gradleFiles : workflowFiles)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

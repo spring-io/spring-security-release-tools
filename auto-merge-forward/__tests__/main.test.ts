@@ -56,7 +56,7 @@ function heads(...names: string[]): string {
 }
 
 function commands(): string[] {
-  return execMock.mock.calls.map(([, args]) => (args as string[]).join(' '))
+  return execMock.mock.calls.map(([, args]) => args.join(' '))
 }
 
 function stateChanging(): string[] {
