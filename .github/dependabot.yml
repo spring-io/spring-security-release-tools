@@ -1,6 +1,15 @@
 version: 2
 
 updates:
+  - package-ecosystem: npm
+    target-branch: 1.0.x
+    directory: /
+    milestone: 21 # 1.0.x
+    schedule:
+      interval: weekly
+    labels:
+      - 'type: dependency-upgrade'
+
   - package-ecosystem: gradle
     target-branch: 1.0.x
     directory: /
