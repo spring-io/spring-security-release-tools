@@ -1,0 +1,90 @@
+# Reusable workflow that tests a TypeScript GitHub Action and verifies that its
+# checked-in dist/ matches what `npm run bundle` produces. In a TypeScript
+# action, dist/index.js is what `uses:` actually runs, so a stale dist/ is a bug.
+#
+# A stale dist/ fails the job, with one exception: a Dependabot pull request for
+# this action's own dependencies. Dependabot can bump package-lock.json but can't
+# rebuild dist/, so there the rebuilt dist/ is uploaded as the `dist`
+# artifact and the job passes. This workflow is unprivileged (it runs the PR's
+# code); _push-dist.yml is what commits the artifact onto the PR branch.
+#
+# A Dependabot PR for one action never gets another action's stale dist/ waved
+# through, so every artifact in a successful run belongs to the PR's action.
+#
+# Each action manages its own dependencies, so build-and-deploy.yml calls this
+# once per action.
+#
+# Private: the leading underscore marks this as internal to this repository (not
+# a workflow for others to call).
+name: Action dist
+
+on:
+  workflow_call:
+    inputs:
+      path:
+        description: Directory of the action, relative to the repository root.
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Test and Check dist/
+    runs-on: ubuntu-latest
+    env:
+      # Dependabot names its branches dependabot/npm_and_yarn/<directory>/<dependency>-<version>.
+      OWN_DEPENDABOT_PR: ${{ github.event_name == 'pull_request' && github.actor == 'dependabot[bot]' && startsWith(github.head_ref, format('dependabot/npm_and_yarn/{0}/', inputs.path)) }}
+    defaults:
+      run:
+        working-directory: ${{ inputs.path }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: ${{ inputs.path }}/.node-version
+          cache: npm
+          cache-dependency-path: ${{ inputs.path }}/package-lock.json
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Tests
+        run: npm run test -- --passWithNoTests
+
+      - name: Build dist/
+        run: npm run bundle
+
+      - name: Check for uncommitted build output
+        id: diff
+        run: |
+          git add --intent-to-add .
+          if git diff --ignore-space-at-eol --text --quiet .; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            git diff --ignore-space-at-eol --text --stat .
+          fi
+
+      # Only the action's own Dependabot PR uploads, so a successful run has at
+      # most one `dist` artifact, and _push-dist.yml knows which action it is for.
+      - name: Upload dist/
+        if: ${{ env.OWN_DEPENDABOT_PR == 'true' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dist
+          path: ${{ inputs.path }}/dist
+          if-no-files-found: error
+
+      - name: Fail if dist/ is out of date
+        if: ${{ env.OWN_DEPENDABOT_PR != 'true' && steps.diff.outputs.changed == 'true' }}
+        run: |
+          echo "::error::The build produced changes not present in the branch. Run 'npm run bundle' in ${{ inputs.path }} and commit the result."
+          exit 1

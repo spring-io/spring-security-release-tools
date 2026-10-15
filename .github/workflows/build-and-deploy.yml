@@ -1,9 +1,19 @@
-name: Build and Deploy
-permissions: {}
+name: CI
+
 on:
   push:
-    branches: [ main ]
+    branches:
+      - 'main'
+      - '*.x'
+  pull_request:
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
@@ -16,9 +26,19 @@ jobs:
       contents: read
     uses: ./.github/workflows/test.yml
     secrets: inherit
+  actions:
+    name: Action (${{ matrix.path }})
+    strategy:
+      fail-fast: false
+      matrix:
+        path: [ update-bot, auto-merge-forward ]
+    uses: ./.github/workflows/_action-dist.yml
+    with:
+      path: ${{ matrix.path }}
   deploy-artifacts:
     name: Deploy Artifacts
-    needs: [ build, test ]
+    needs: [ build, test, actions ]
+    if: ${{ github.event_name != 'pull_request' }}
     uses: ./.github/workflows/deploy-artifacts.yml
     with:
       should-deploy-artifacts: ${{ needs.build.outputs.should-deploy-artifacts }}
@@ -34,7 +54,7 @@ jobs:
   send-notification:
     name: Send Notification
     needs: [ publish-plugins ]
-    if: ${{ failure() || cancelled() }}
+    if: ${{ (failure() || cancelled()) && github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
     steps:
       - name: Send Notification
