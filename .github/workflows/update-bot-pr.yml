@@ -3,14 +3,9 @@
 # tests and rebuilds update-bot for Dependabot pull requests that touch
 # update-bot/ and uploads the rebuilt dist/ as an artifact.
 #
-# Building runs the PR's code, so that job is read-only. A separate job holds the
-# write token: it never checks out or runs anything from the PR, and just commits
-# the built dist/ onto the PR branch. (Dependabot-triggered runs get a read-only
-# token by default, but a job-level `permissions` block can raise it.)
-#
-# Commits pushed with GITHUB_TOKEN don't trigger other workflows, so
-# update-bot-ci.yml ignores dependabot/** branches and this workflow does the
-# test and build verification for them.
+# It is unprivileged on purpose: it runs the PR's code, so it has no write access.
+# update-bot-push-dist.yml (triggered by this workflow's completion) is what
+# commits the artifact back onto the PR branch.
 name: Pull Request - Update Bot
 
 on:
@@ -33,10 +28,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          # Check out the PR branch specifically, using Dependabot's token
-          ref: ${{ github.event.pull_request.head.ref.sha }}
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -54,16 +45,9 @@ jobs:
       - name: Build dist/
         run: npm run bundle
 
-      - name: Commit and push changes
-        run: |
-          git config --local user.email "github-actions[bot]@://github.com"
-          git config --local user.name "github-actions[bot]"
-          
-          # Only commit if changes exist in the dist folder
-          if [ -n "$(git status --porcelain dist/)" ]; then
-            git add dist/
-            git commit -m "chore: rebuild dist folder after dependency upgrade"
-            git push
-          else
-            echo "No changes detected in dist/"
-          fi
+      - name: Upload dist/
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dist
+          path: update-bot/dist
+          if-no-files-found: error
