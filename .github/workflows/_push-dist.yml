@@ -7,7 +7,7 @@
 #
 # This is the only privileged piece. It never runs the PR's code: it only copies
 # artifact contents into the dist/ of the action named by the PR's branch.
-name: Push dist
+name: CI - Actinos - Dist Push
 
 on:
   workflow_run:

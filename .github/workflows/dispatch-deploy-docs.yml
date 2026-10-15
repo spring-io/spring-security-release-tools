@@ -1,4 +1,4 @@
-name: Dispatch Deploy Docs
+name: Shared - Dispatch Deploy Docs
 
 on:
   workflow_call:

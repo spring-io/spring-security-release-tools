@@ -1,4 +1,4 @@
-name: Perform Release
+name: Shared - Perform Release
 
 on:
   workflow_call:

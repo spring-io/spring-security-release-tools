@@ -1,4 +1,4 @@
-name: Release Announcements - Publish
+name: Shared - Release Announcements - Publish
 
 on:
   workflow_call:

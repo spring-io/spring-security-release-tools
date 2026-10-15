@@ -1,4 +1,4 @@
-name: Deploy Artifacts
+name: Shared - Deploy Artifacts
 permissions: {}
 on:
   workflow_call:
