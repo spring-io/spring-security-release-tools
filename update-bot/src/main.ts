@@ -3,14 +3,14 @@ import * as exec from '@actions/exec'
 import * as github from '@actions/github'
 import * as glob from '@actions/glob'
 import * as fs from 'fs'
-import { GithubActionsUpdate, parseGithubActionsUpdates } from './dependabot'
-import { getLatestRelease, LatestRelease } from './release'
+import { GithubActionsUpdate, parseGithubActionsUpdates } from './dependabot.js'
+import { getLatestRelease, LatestRelease } from './release.js'
 import {
   parseVersionFromGradle,
   parseVersionFromWorkflow,
   updateGradleVersion,
   updateWorkflowRefs
-} from './version'
+} from './version.js'
 
 const REPOSITORY = 'spring-io/spring-security-release-tools'
 const DEPENDABOT_CONFIG_PATH = '.github/dependabot.yml'

@@ -2,7 +2,7 @@ import {
   computeNextBranch,
   isSafeBranchName,
   parseRemoteBranches
-} from '../src/next-branch'
+} from '../src/next-branch.js'
 
 describe('computeNextBranch', () => {
   const branches = ['5.8.x', '6.4.x', '6.5.x', '7.0.x', '7.1.x', 'main']

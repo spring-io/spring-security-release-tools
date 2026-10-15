@@ -1,12 +1,12 @@
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import * as github from '@actions/github'
-import { findUntrustedCommit } from './verify-commit-source'
+import { findUntrustedCommit } from './verify-commit-source.js'
 import {
   computeNextBranch,
   isSafeBranchName,
   parseRemoteBranches
-} from './next-branch'
+} from './next-branch.js'
 
 const DEFAULT_BRANCH = 'main'
 

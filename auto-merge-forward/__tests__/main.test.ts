@@ -5,24 +5,47 @@
  * `exec.exec` records the commands that change state.
  */
 
-import * as core from '@actions/core'
-import * as exec from '@actions/exec'
-import * as github from '@actions/github'
-import * as main from '../src/main'
-import { findUntrustedCommit } from '../src/verify-commit-source'
+import { jest } from '@jest/globals'
+import type * as coreTypes from '@actions/core'
+import type * as execTypes from '@actions/exec'
+import type * as githubTypes from '@actions/github'
+import type { findUntrustedCommit } from '../src/verify-commit-source.js'
 
-jest.mock('@actions/exec')
-jest.mock('../src/verify-commit-source')
-
+// ESM modules can't be spied on or reassigned, so each mocked module is
+// registered with an explicit factory before main.js is imported.
 let inputs: Record<string, string>
 let commitCount: number
 let remoteBranches: string
 let shallow: string
-let setFailedMock: jest.SpyInstance
 
-const execMock = exec.exec as jest.Mock
-const getExecOutputMock = exec.getExecOutput as jest.Mock
-const findUntrustedMock = findUntrustedCommit as jest.Mock
+const setFailedMock = jest.fn<typeof coreTypes.setFailed>()
+const getInputMock = jest.fn<typeof coreTypes.getInput>()
+const execMock = jest.fn<(cmd: string, args: string[]) => Promise<number>>()
+const getExecOutputMock = jest.fn<typeof execTypes.getExecOutput>()
+const findUntrustedMock = jest.fn<typeof findUntrustedCommit>()
+const mockedGithub = {
+  getOctokit: jest.fn<typeof githubTypes.getOctokit>(),
+  context: {
+    ref: '',
+    repo: { owner: 'spring-projects', repo: 'spring-session' }
+  }
+}
+
+jest.unstable_mockModule('@actions/core', () => ({
+  info: jest.fn(),
+  setFailed: setFailedMock,
+  getInput: getInputMock
+}))
+jest.unstable_mockModule('@actions/exec', () => ({
+  exec: execMock,
+  getExecOutput: getExecOutputMock
+}))
+jest.unstable_mockModule('@actions/github', () => mockedGithub)
+jest.unstable_mockModule('../src/verify-commit-source.js', () => ({
+  findUntrustedCommit: findUntrustedMock
+}))
+
+const main = await import('../src/main.js')
 
 function shas(count: number): string {
   return Array.from({ length: count }, (_, i) => `sha${i}\n`).join('')
@@ -33,7 +56,7 @@ function heads(...names: string[]): string {
 }
 
 function commands(): string[] {
-  return execMock.mock.calls.map(([, args]) => (args as string[]).join(' '))
+  return execMock.mock.calls.map(([, args]) => args.join(' '))
 }
 
 function stateChanging(): string[] {
@@ -49,15 +72,10 @@ describe('run', () => {
     commitCount = 0
     remoteBranches = heads('6.4.x', '6.5.x', '7.0.x', 'main')
     shallow = 'false'
-    github.context.ref = 'refs/heads/6.5.x'
+    mockedGithub.context.ref = 'refs/heads/6.5.x'
 
-    jest.spyOn(core, 'info').mockImplementation()
-    setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation()
-    jest
-      .spyOn(core, 'getInput')
-      .mockImplementation((name: string) => inputs[name] ?? '')
-    process.env.GITHUB_REPOSITORY = 'spring-projects/spring-session'
-    jest.spyOn(github, 'getOctokit').mockReturnValue({} as never)
+    getInputMock.mockImplementation((name: string) => inputs[name] ?? '')
+    mockedGithub.getOctokit.mockReturnValue({} as never)
     findUntrustedMock.mockResolvedValue(undefined)
     execMock.mockResolvedValue(0)
     getExecOutputMock.mockImplementation(
@@ -95,7 +113,7 @@ describe('run', () => {
   })
 
   it('merges into main after the newest N.N.x branch', async () => {
-    github.context.ref = 'refs/heads/7.0.x'
+    mockedGithub.context.ref = 'refs/heads/7.0.x'
     commitCount = 1
 
     await main.run()
@@ -105,7 +123,7 @@ describe('run', () => {
   })
 
   it('does nothing on main', async () => {
-    github.context.ref = 'refs/heads/main'
+    mockedGithub.context.ref = 'refs/heads/main'
 
     await main.run()
 
@@ -214,7 +232,7 @@ describe('run', () => {
   })
 
   it('fails when not triggered by a branch', async () => {
-    github.context.ref = 'refs/tags/v1.0.0'
+    mockedGithub.context.ref = 'refs/tags/v1.0.0'
 
     await main.run()
 
@@ -224,7 +242,7 @@ describe('run', () => {
   })
 
   it('fails on a branch that is not N.N.x', async () => {
-    github.context.ref = 'refs/heads/feature'
+    mockedGithub.context.ref = 'refs/heads/feature'
 
     await main.run()
 
