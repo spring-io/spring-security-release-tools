@@ -1,4 +1,4 @@
-import { parseGithubActionsUpdates } from '../src/dependabot'
+import { parseGithubActionsUpdates } from '../src/dependabot.js'
 
 describe('parseGithubActionsUpdates', () => {
   it('ignores entries for other package ecosystems', () => {

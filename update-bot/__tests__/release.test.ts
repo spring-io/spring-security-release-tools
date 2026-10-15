@@ -1,5 +1,6 @@
+import { jest } from '@jest/globals'
 import * as github from '@actions/github'
-import { getLatestRelease } from '../src/release'
+import { getLatestRelease } from '../src/release.js'
 
 function mockOctokit(overrides: {
   tagName: string
