@@ -1,5 +1,6 @@
+import { jest } from '@jest/globals'
 import * as github from '@actions/github'
-import { findUntrustedCommit } from '../src/verify-commit-source'
+import { findUntrustedCommit } from '../src/verify-commit-source.js'
 
 type Verification = { verified: boolean; reason: string } | null
 type Pull = {
