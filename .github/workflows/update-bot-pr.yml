@@ -3,9 +3,14 @@
 # tests and rebuilds update-bot for Dependabot pull requests that touch
 # update-bot/ and uploads the rebuilt dist/ as an artifact.
 #
-# It is unprivileged on purpose: it runs the PR's code, so it has no write access.
-# update-bot-push-dist.yml (triggered by this workflow's completion) is what
-# commits the artifact back onto the PR branch.
+# Building runs the PR's code, so that job is read-only. A separate job holds the
+# write token: it never checks out or runs anything from the PR, and just commits
+# the built dist/ onto the PR branch. (Dependabot-triggered runs get a read-only
+# token by default, but a job-level `permissions` block can raise it.)
+#
+# Commits pushed with GITHUB_TOKEN don't trigger other workflows, so
+# update-bot-ci.yml ignores dependabot/** branches and this workflow does the
+# test and build verification for them.
 name: Pull Request - Update Bot
 
 on:
@@ -51,3 +56,49 @@ jobs:
           name: dist
           path: update-bot/dist
           if-no-files-found: error
+
+  push:
+    name: Commit dist/
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      # The default branch, not the pull request: none of the PR's files are
+      # checked out here. The commit below is assembled with git plumbing.
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Replace dist/
+        run: rm -rf update-bot/dist
+
+      - name: Download dist/
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: dist
+          path: update-bot/dist
+
+      # Starts from the PR head's tree, swaps in the built dist/, and commits
+      # that on top of the PR head without touching the working tree.
+      - name: Commit dist/ if changed
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch --no-tags --depth=1 origin "$HEAD_SHA"
+          export GIT_INDEX_FILE="$RUNNER_TEMP/index"
+          git read-tree "$HEAD_SHA"
+          git rm -r -q --cached --ignore-unmatch update-bot/dist
+          git add -f update-bot/dist
+          tree=$(git write-tree)
+          if [ "$tree" = "$(git rev-parse "$HEAD_SHA^{tree}")" ]; then
+            echo "dist/ is already up to date."
+            exit 0
+          fi
+          commit=$(git commit-tree "$tree" -p "$HEAD_SHA" -m "Update update-bot dist/")
+          git push origin "$commit:refs/heads/$HEAD_REF"
