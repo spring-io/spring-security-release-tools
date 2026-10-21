@@ -13,7 +13,8 @@
     "strict": true,
     "skipLibCheck": true,
     "isolatedModules": true,
-    "newLine": "lf"
+    "newLine": "lf",
+    "types": ["node"]
   },
   "exclude": ["./dist", "./node_modules", "./__tests__", "./coverage"]
 }
