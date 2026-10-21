@@ -65,7 +65,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Close Milestone
-        uses: spring-io/spring-release-actions/close-milestone@6795980b9d960a13d420e114d50f1c8abe730769  # 0.0.7
+        uses: spring-io/spring-release-actions/close-milestone@3f7412aeec60ad13127b2a536a1b19a2803a5b81  # 0.0.8
         with:
           version: ${{ inputs.version }}
           token: ${{ github.token }}
