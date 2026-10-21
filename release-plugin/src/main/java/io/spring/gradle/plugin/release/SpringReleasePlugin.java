@@ -16,6 +16,8 @@
 
 package io.spring.gradle.plugin.release;
 
+import io.spring.gradle.plugin.release.workflows.UpdateWorkflowsTask;
+import io.spring.gradle.plugin.release.workflows.VerifyWorkflowsTask;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 
@@ -34,6 +36,7 @@ public class SpringReleasePlugin implements Plugin<Project> {
 	static final String CURRENT_VERSION_PROPERTY = "currentVersion";
 	static final String CREATE_RELEASE_PROPERTY = "createRelease";
 	static final String BRANCH_PROPERTY = "branch";
+	static final String VERIFY_WORKFLOWS_PROPERTY = "verifyWorkflows";
 
 	@Override
 	public void apply(Project project) {
@@ -88,6 +91,31 @@ public class SpringReleasePlugin implements Plugin<Project> {
 
 		// Close release milestone using GitHub API
 		CloseMilestoneTask.register(project);
+
+		// Verify that workflows are pinned and match their specs
+		VerifyWorkflowsTask.register(project);
+		project.getTasks().named(VerifyWorkflowsTask.TASK_NAME, (task) -> task.setGroup(TASK_GROUP));
+
+		// Render workflow specs and run the workflow generator (local use only)
+		UpdateWorkflowsTask.register(project);
+		project.getTasks().named(UpdateWorkflowsTask.TASK_NAME, (task) -> task.setGroup(TASK_GROUP));
+
+		// Make check verify the workflows too, for builds that ask for it with
+		// -PverifyWorkflows, so that adopting this plugin doesn't break anyone's build.
+		// Not project.findProperty, which would also find the task of the same name
+		if (verifyWorkflowsRequested(project.getProviders().gradleProperty(VERIFY_WORKFLOWS_PROPERTY).getOrNull())) {
+			verifyOnCheck(project);
+		}
+	}
+
+	static boolean verifyWorkflowsRequested(String value) {
+		return value != null && !"false".equalsIgnoreCase(value.trim());
+	}
+
+	static void verifyOnCheck(Project project) {
+		project.getTasks()
+			.matching((task) -> task.getName().equals("check"))
+			.configureEach((check) -> check.dependsOn(VerifyWorkflowsTask.TASK_NAME));
 	}
 
 }

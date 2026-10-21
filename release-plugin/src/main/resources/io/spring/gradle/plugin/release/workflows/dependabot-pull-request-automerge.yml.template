@@ -1,0 +1,19 @@
+<<#workflow.generator.workflows.release-tools.dependabot.automerge>>
+name: Dependabot - Auto-merge PR
+
+on:
+  pull_request:
+    branches:
+      - main
+      - '*.x'
+      - 'docs-build'
+
+run-name: Merge Dependabot PR ${{ github.ref_name }}
+
+jobs:
+  merge-dependabot-pr:
+    permissions: write-all
+    uses: spring-io/spring-github-workflows/.github/workflows/spring-merge-dependabot-pr.yml@0c67c5e7c6641a18e76c520114ed0251303e77ed # main
+    with:
+      mergeArguments: --auto --rebase
+<</workflow.generator.workflows.release-tools.dependabot.automerge>>

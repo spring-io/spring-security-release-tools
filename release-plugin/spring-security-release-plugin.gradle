@@ -31,6 +31,8 @@ dependencies {
 	implementation project(":github-api")
 	implementation project(":sagan-api")
 	implementation project(":spring-security-release-tools-core")
+	implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml"
+	implementation "com.samskivert:jmustache"
 
 	testImplementation "org.junit.jupiter:junit-jupiter"
 	testRuntimeOnly "org.junit.platform:junit-platform-launcher"
@@ -42,4 +44,23 @@ dependencies {
 shadowJar {
 	archiveClassifier = ""
 	relocate "com.fasterxml", "shaded.com.fasterxml"
+	relocate "com.samskivert", "shaded.com.samskivert"
+}
+
+// the workflows this plugin renders refer to the reusable workflows and actions in this
+// repository, at the commit of the release being built, so versions.json is completed
+// from the version and commit that this build is of
+def commitSha = providers.exec {
+	commandLine "git", "rev-parse", "HEAD"
+}.standardOutput.asText.map { it.trim() }
+
+processResources {
+	inputs.property("version", provider { project.version.toString() })
+	inputs.property("commitSha", commitSha)
+	filesMatching("**/workflows/versions.json") {
+		filter { line ->
+			line.replace('${project.version}', project.version.toString())
+				.replace('${project.sha}', commitSha.get())
+		}
+	}
 }

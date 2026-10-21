@@ -1,0 +1,7 @@
+ci.yml.template
+dependabot-auto-merge-forward.yml.template
+dependabot-pull-request-automerge.yml.template
+dependabot-pull-request-build.yml.template
+pull-request-build.yml.template
+release-announcements-publish.yml.template
+release-announcements-stage.yml.template

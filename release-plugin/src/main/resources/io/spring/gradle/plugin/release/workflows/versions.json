@@ -1,0 +1,17 @@
+{
+	"generator": {
+		"version": "v0.0.7",
+		"sha256": "879777424183fc51d200fb32919f04913233a50e6a1860cbd40fcea95f1ad9c2"
+	},
+	"actions": {
+		"actions/cache": { "ref": "v6.1.0", "sha": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9" },
+		"actions/checkout": { "ref": "v7.0.1", "sha": "3d3c42e5aac5ba805825da76410c181273ba90b1" },
+		"actions/download-artifact": { "ref": "v8.0.2", "sha": "9000827ccba6bdab643e8b6fd33ac0654aef8333" },
+		"actions/setup-java": { "ref": "v6.0.1", "sha": "de7274f081f381c8f8158605e0321c36c376e2e6" },
+		"actions/upload-artifact": { "ref": "v7.0.2", "sha": "cf430e030ddbb5b0abf93d22962f4752f3646cd9" },
+		"spring-io/spring-gradle-build-action": { "ref": "v2.0.6", "sha": "c8668747d7c264864c8c7f7026d0d277d14a78dc" },
+		"spring-io/spring-release-actions": { "ref": "0.0.8", "sha": "3f7412aeec60ad13127b2a536a1b19a2803a5b81" },
+		"spring-io/spring-security-actions": { "ref": "0.0.5", "sha": "8f2e7bb51b5bd78abeeab91e4dbea1520fa68265" },
+		"spring-io/spring-security-release-tools": { "ref": "v${project.version}", "sha": "${project.sha}" }
+	}
+}

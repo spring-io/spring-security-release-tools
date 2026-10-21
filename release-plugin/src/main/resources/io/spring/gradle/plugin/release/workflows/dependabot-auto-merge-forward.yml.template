@@ -1,0 +1,31 @@
+<<#workflow.generator.workflows.release-tools.dependabot.automergeforward>>
+name: Dependabot - Merge-forward
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ '[0-9]+.[0-9]+.x' ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependabot-merge-forward-${{ github.ref_name }}
+
+jobs:
+  merge-forward-dependabot:
+    name: Merge Forward Dependabot Commits
+    runs-on: ubuntu-latest
+    if: ${{ github.event.repository.fork == false }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout
+        with:
+          token: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
+      - name: Setup GitHub User
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+      - name: Merge Forward
+        uses: spring-io/spring-security-release-tools/auto-merge-forward
+<</workflow.generator.workflows.release-tools.dependabot.automergeforward>>

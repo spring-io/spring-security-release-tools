@@ -1,0 +1,37 @@
+name: Pull Request - Build
+
+on: pull_request
+
+permissions:
+  contents: read
+
+env:
+<<#workflow.generator.workflows.release-tools.verify>>
+  ORG_GRADLE_PROJECT_verifyWorkflows: true
+<</workflow.generator.workflows.release-tools.verify>>
+  JAVA_VERSION: '<< workflow.generator.project.java.versions.primary >>'
+
+jobs:
+  build:
+    name: Build
+    runs-on: ${{ vars.UBUNTU_RUNS_ON }}
+    if: github.event.pull_request.head.repo.fork == false && github.actor != 'dependabot[bot]'
+    steps:
+      - uses: actions/checkout
+      - id: environment
+        name: Compute Build Environment
+        uses: spring-io/spring-security-actions/compute-build-environment
+      - uses: spring-io/spring-security-actions/pr-build
+        env:
+          ORG_GRADLE_PROJECT_releaseChannel: ${{ steps.environment.outputs.release-channel }}
+          ORG_GRADLE_PROJECT_artifactoryUsername: ${{ secrets[steps.environment.outputs.dependencies-username] }}
+          ORG_GRADLE_PROJECT_artifactoryPassword: ${{ secrets[steps.environment.outputs.dependencies-password] }}
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+  build-check:
+    name: Build
+    needs: build
+    if: failure() || cancelled()
+    runs-on: ubuntu-latest
+    steps:
+      - run: exit 1
