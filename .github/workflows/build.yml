@@ -1,5 +1,5 @@
-name: Shared - Build
-permissions: {}
+name: Local - Build
+
 on:
   workflow_call:
     inputs:

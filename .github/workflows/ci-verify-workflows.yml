@@ -1,0 +1,45 @@
+name: Shared - CI - Verify Workflows
+
+on:
+  workflow_call:
+    inputs:
+      java-version:
+        description: Java version to run Gradle with
+        type: string
+        default: '25'
+      runner:
+        description: Runner to verify on
+        type: string
+        default: ubuntu-latest
+      release-channel:
+        description: The release channel; oss or internal
+        type: string
+        default: oss
+    secrets:
+      artifactory-username:
+        description: Username for resolving dependencies, if the release channel requires one
+        required: false
+      artifactory-password:
+        description: Password for resolving dependencies, if the release channel requires one
+        required: false
+
+jobs:
+  verify-workflows:
+    name: Verify Workflows
+    runs-on: ${{ inputs.runner }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up JDK ${{ inputs.java-version }}
+        uses: spring-io/spring-gradle-build-action@c8668747d7c264864c8c7f7026d0d277d14a78dc  # v2.0.6
+        with:
+          java-version: ${{ inputs.java-version }}
+          distribution: temurin
+      - name: Verify Workflows
+        uses: spring-io/spring-security-actions/run-gradle@09c8d127933065382da35646c7d4d3a8f9352368 # 0.0.4
+        env:
+          ORG_GRADLE_PROJECT_releaseChannel: ${{ inputs.release-channel }}
+          ORG_GRADLE_PROJECT_artifactoryUsername: ${{ secrets.artifactory-username }}
+          ORG_GRADLE_PROJECT_artifactoryPassword: ${{ secrets.artifactory-password }}
+        with:
+          gradle-args: verifyWorkflows --stacktrace

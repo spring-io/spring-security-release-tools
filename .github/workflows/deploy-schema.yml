@@ -1,4 +1,4 @@
-name: Shared - Deploy Schema
+name: Local - Deploy Schema
 
 on:
   workflow_call:

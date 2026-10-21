@@ -1,0 +1,43 @@
+name: Shared - CI - Deploy Schema
+
+on:
+  workflow_call:
+    inputs:
+      java-version:
+        description: Java version to build the schema with
+        type: string
+        default: '25'
+      runner:
+        description: Runner to deploy on
+        type: string
+        default: ubuntu-latest
+    secrets:
+      docs-ssh-key:
+        description: SSH key for deploying to the docs host
+        required: true
+      docs-username:
+        description: Username for the docs host
+        required: true
+      docs-host:
+        description: The docs host
+        required: true
+
+jobs:
+  deploy-schema:
+    name: Deploy Schema
+    runs-on: ${{ inputs.runner }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up JDK ${{ inputs.java-version }}
+        uses: spring-io/spring-gradle-build-action@c8668747d7c264864c8c7f7026d0d277d14a78dc  # v2.0.6
+        with:
+          java-version: ${{ inputs.java-version }}
+          distribution: temurin
+      - name: Deploy Schema
+        run: |
+          ./gradlew deploySchema -PdeployDocsSshKey="$DOCS_SSH_KEY" -PdeployDocsSshUsername="$DOCS_USERNAME" -PdeployDocsHost="$DOCS_HOST" --stacktrace --info
+        env:
+          DOCS_SSH_KEY: ${{ secrets.docs-ssh-key }}
+          DOCS_USERNAME: ${{ secrets.docs-username }}
+          DOCS_HOST: ${{ secrets.docs-host }}

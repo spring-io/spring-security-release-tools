@@ -1,0 +1,53 @@
+name: Shared - CI - Build
+
+on:
+  workflow_call:
+    inputs:
+      java-version:
+        description: Java version to build with
+        type: string
+        default: '25'
+      runner:
+        description: Runner to build on
+        type: string
+        default: ubuntu-latest
+      release-channel:
+        description: The release channel; oss or internal
+        type: string
+        default: oss
+    secrets:
+      artifactory-username:
+        description: Username for resolving dependencies, if the release channel requires one
+        required: false
+      artifactory-password:
+        description: Password for resolving dependencies, if the release channel requires one
+        required: false
+      signing-key:
+        description: GPG private key for signing artifacts
+        required: false
+      signing-password:
+        description: Passphrase of the GPG private key
+        required: false
+
+jobs:
+  build:
+    name: Build
+    runs-on: ${{ inputs.runner }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build Project
+        uses: spring-io/spring-security-actions/build@b41ca15ccd8edb72711bf0b4051481fcc1ef3978 # main
+        env:
+          ORG_GRADLE_PROJECT_releaseChannel: ${{ inputs.release-channel }}
+          ORG_GRADLE_PROJECT_artifactoryUsername: ${{ secrets.artifactory-username }}
+          ORG_GRADLE_PROJECT_artifactoryPassword: ${{ secrets.artifactory-password }}
+          ORG_GRADLE_PROJECT_signingKey: ${{ secrets.signing-key }}
+          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.signing-password }}
+        with:
+          java-version: ${{ inputs.java-version }}
+      - name: Upload Local Repository
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: local-repository
+          path: build/publications/repos
