@@ -23,7 +23,7 @@ jobs:
     steps:
       - id: support-window
         name: Compute Support Window
-        uses: spring-io/spring-release-actions/compute-support-window@6795980b9d960a13d420e114d50f1c8abe730769  # 0.0.7
+        uses: spring-io/spring-release-actions/compute-support-window@3f7412aeec60ad13127b2a536a1b19a2803a5b81  # 0.0.8
         with:
           version: ${{ inputs.version }}
       - name: Cancel if Repository Doesn't Match Support Window
@@ -45,7 +45,7 @@ jobs:
     steps:
       - id: next-release-milestone
         name: Get Next Release Milestone
-        uses: spring-io/spring-release-actions/compute-next-version@6795980b9d960a13d420e114d50f1c8abe730769  # 0.0.7
+        uses: spring-io/spring-release-actions/compute-next-version@3f7412aeec60ad13127b2a536a1b19a2803a5b81  # 0.0.8
         with:
           version: ${{ inputs.version }}
           token: ${{ github.token }}
@@ -65,12 +65,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Close Milestone
-        uses: spring-io/spring-release-actions/close-milestone@6795980b9d960a13d420e114d50f1c8abe730769  # 0.0.7
+        uses: spring-io/spring-release-actions/close-milestone@3f7412aeec60ad13127b2a536a1b19a2803a5b81  # 0.0.8
         with:
           version: ${{ inputs.version }}
           token: ${{ github.token }}
       - name: Schedule Next Release (if not already scheduled)
-        uses: spring-io/spring-release-actions/schedule-milestone@6795980b9d960a13d420e114d50f1c8abe730769  # 0.0.7
+        uses: spring-io/spring-release-actions/schedule-milestone@3f7412aeec60ad13127b2a536a1b19a2803a5b81  # 0.0.8
         with:
           version: ${{ needs.compute-release.outputs.next-milestone-version }}
           version-type: ${{ needs.compute-release.outputs.next-milestone-version-type }}
