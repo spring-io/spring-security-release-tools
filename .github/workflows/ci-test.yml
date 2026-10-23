@@ -38,4 +38,4 @@ jobs:
           ORG_GRADLE_PROJECT_artifactoryPassword: ${{ secrets.artifactory-password }}
         with:
           java-version: ${{ inputs.java-version }}
-          gradle-args: -Psnapshot -PtestToolchain=${{ inputs.java-version }}
+          gradle-args: test -Psnapshot -PtestToolchain=${{ inputs.java-version }}
