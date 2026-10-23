@@ -69,7 +69,7 @@ class WorkflowRendererTests {
 
 	@Test
 	void renderWhenShippedCiTemplateThenDeploySchemaFollowsGeneratorConfig() {
-		String ci = WorkflowTemplates.shipped().get("ci.yml").content();
+		String ci = WorkflowTemplates.shipped().get("workflows/ci.yml").content();
 		Map<String, Object> project = Map.of("java", Map.of("versions", Map.of("primary", 17)));
 		WorkflowRenderer without = new WorkflowRenderer(WorkflowVersions.shipped(),
 				Map.of("workflow", Map.of("generator", Map.of("project", project))));

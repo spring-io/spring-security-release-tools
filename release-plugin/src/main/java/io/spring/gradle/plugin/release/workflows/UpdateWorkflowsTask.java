@@ -44,12 +44,13 @@ import org.gradle.jvm.toolchain.JavaToolchainService;
 import org.gradle.work.DisableCachingByDefault;
 
 /**
- * Brings the project's workflows up to date: renders every template, the plugin's
- * defaults, for a project with a {@code workflow-generator.yml}, and any in
- * {@code .github/specs/workflows} (which replace a default of the same name), into
- * {@code .github/workflows}, then runs the workflow generator, which writes the release
- * train workflows. A template that renders to nothing removes its workflow. Run it
- * locally, after changing a spec or updating this plugin, and commit the result.
+ * Brings the project's workflows and actions up to date: renders every template, the
+ * plugin's defaults, for a project with a {@code workflow-generator.yml}, and any in
+ * {@code .github/specs/workflows} or {@code .github/specs/actions} (which replace a
+ * default of the same name), into {@code .github/workflows} and {@code .github/actions},
+ * then runs the workflow generator, which writes the release train workflows. A template
+ * that renders to nothing removes its workflow. Run it locally, after changing a spec or
+ * updating this plugin, and commit the result.
  * <p>
  * The generator is an internal project. It is downloaded on first use, so a GitHub token
  * with access to it is needed ({@code -PgitHubAccessToken} or {@code GITHUB_TOKEN}), and
@@ -65,6 +66,9 @@ public abstract class UpdateWorkflowsTask extends DefaultTask {
 
 	@Internal
 	public abstract DirectoryProperty getProjectDirectory();
+
+	@Internal
+	public abstract DirectoryProperty getGitHubDirectory();
 
 	@Internal
 	public abstract DirectoryProperty getWorkflowsDirectory();
@@ -125,7 +129,7 @@ public abstract class UpdateWorkflowsTask extends DefaultTask {
 
 	private void renderSpecs(WorkflowVersions versions) throws IOException {
 		Path specs = getSpecsDirectory().get().getAsFile().toPath();
-		Path workflows = getWorkflowsDirectory().get().getAsFile().toPath();
+		Path github = getGitHubDirectory().get().getAsFile().toPath();
 		Path config = getConfigFile().get().getAsFile().toPath();
 		WorkflowRenderer renderer = new WorkflowRenderer(versions, WorkflowSupport.config(config));
 		// render everything before writing anything, so a spec that can't be rendered
@@ -135,7 +139,7 @@ public abstract class UpdateWorkflowsTask extends DefaultTask {
 			.load(specs, Files.exists(config))
 			.entrySet()) {
 			try {
-				rendered.put(workflows.resolve(template.getKey()), renderer.render(template.getValue().content()));
+				rendered.put(github.resolve(template.getKey()), renderer.render(template.getValue().content()));
 			}
 			catch (IllegalStateException ex) {
 				throw new GradleException(template.getValue().source() + ": " + ex.getMessage(), ex);
@@ -155,7 +159,7 @@ public abstract class UpdateWorkflowsTask extends DefaultTask {
 				changed.put(workflow, entry.getValue());
 			}
 		}
-		write(workflows, changed);
+		write(changed);
 		for (Path workflow : removed) {
 			Files.delete(workflow);
 			getLogger().lifecycle("Removed {}", workflow);
@@ -163,20 +167,19 @@ public abstract class UpdateWorkflowsTask extends DefaultTask {
 	}
 
 	/**
-	 * Write every workflow beside where it belongs first, and only then move them into
-	 * place, so that a failure to write, such as a full disk, leaves the workflows as
-	 * they were. Moving is not atomic across files, but is as unlikely to fail as it
-	 * gets.
+	 * Write every workflow or action beside where it belongs first, and only then move
+	 * them into place, so that a failure to write, such as a full disk, leaves the
+	 * workflows as they were. Moving is not atomic across files, but is as unlikely to
+	 * fail as it gets.
 	 */
-	private void write(Path workflows, Map<Path, String> changed) throws IOException {
-		if (changed.isEmpty()) {
-			return;
+	private void write(Map<Path, String> changed) throws IOException {
+		for (Path workflow : changed.keySet()) {
+			Files.createDirectories(workflow.getParent());
 		}
-		Files.createDirectories(workflows);
 		Map<Path, Path> staged = new LinkedHashMap<>();
 		try {
 			for (Map.Entry<Path, String> entry : changed.entrySet()) {
-				Path temporary = Files.createTempFile(workflows, ".updateWorkflows-", ".tmp");
+				Path temporary = Files.createTempFile(entry.getKey().getParent(), ".updateWorkflows-", ".tmp");
 				staged.put(entry.getKey(), temporary);
 				Files.writeString(temporary, entry.getValue());
 			}
@@ -248,9 +251,10 @@ public abstract class UpdateWorkflowsTask extends DefaultTask {
 
 			var github = project.getLayout().getProjectDirectory().dir(".github");
 			task.getProjectDirectory().set(project.getLayout().getProjectDirectory());
+			task.getGitHubDirectory().set(github);
 			task.getWorkflowsDirectory().set(github.dir("workflows"));
 			task.getActionsDirectory().set(github.dir("actions"));
-			task.getSpecsDirectory().set(github.dir("specs/workflows"));
+			task.getSpecsDirectory().set(github.dir("specs"));
 			task.getConfigFile().set(github.file("workflow-generator.yml"));
 			task.getLocalVersionsFile().set(github.file("specs/versions.json"));
 			task.getGeneratorCacheDirectory()

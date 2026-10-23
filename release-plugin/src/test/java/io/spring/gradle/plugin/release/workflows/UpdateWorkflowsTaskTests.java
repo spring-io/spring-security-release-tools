@@ -61,6 +61,17 @@ class UpdateWorkflowsTaskTests {
 	}
 
 	@Test
+	void updateWhenDefaultsApplyThenReleaseTrainActionsRenderedAndPinned() throws Exception {
+		task().update();
+		WorkflowVersions.Action actions = WorkflowVersions.shipped().action("spring-io/spring-security-actions");
+		for (String name : new String[] { "build", "test" }) {
+			assertThat(new File(this.projectDir, ".github/actions/release-train-" + name + "/action.yml")).content()
+				.contains("spring-io/spring-security-actions/run-gradle@" + actions.sha() + " # " + actions.ref())
+				.contains("ORG_GRADLE_PROJECT_releaseChannel");
+		}
+	}
+
+	@Test
 	void updateWhenRunTwiceThenSecondRunProducesTheSameWorkflows() throws Exception {
 		write(".github/specs/workflows/ci.yml.template", "steps:\n  - uses: actions/checkout\n");
 		task().update();

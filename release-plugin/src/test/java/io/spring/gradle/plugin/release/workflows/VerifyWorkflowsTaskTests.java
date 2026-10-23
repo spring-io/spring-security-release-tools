@@ -61,7 +61,7 @@ class VerifyWorkflowsTaskTests {
 	void verifyWhenDefaultTemplatesNotRenderedThenFailsNamingTheTemplate() {
 		assertThatExceptionOfType(GradleException.class).isThrownBy(() -> task().verify())
 			.withMessageContaining("dependabot-pull-request-build.yml is missing")
-			.withMessageContaining("the default dependabot-pull-request-build.yml.template");
+			.withMessageContaining("the default workflows/dependabot-pull-request-build.yml.template");
 	}
 
 	@Test

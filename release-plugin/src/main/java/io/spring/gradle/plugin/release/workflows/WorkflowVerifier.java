@@ -42,7 +42,8 @@ final class WorkflowVerifier {
 	static final String SPEC_SUFFIX = ".template";
 
 	/**
-	 * What the workflow generator names the workflows and actions it writes.
+	 * What the workflow generator names the workflows it writes. Actions with this prefix
+	 * are rendered from templates, so they are checked like any other.
 	 */
 	static final String GENERATED_PREFIX = "release-train-";
 
@@ -101,16 +102,17 @@ final class WorkflowVerifier {
 	/**
 	 * Report every template whose rendering differs from the workflow checked in
 	 * alongside it. A template that renders to nothing means there should be no workflow.
-	 * @param templates the templates, keyed by the workflow each renders to
-	 * @param workflows the directory holding the rendered workflows
+	 * @param templates the templates, keyed by where each renders to
+	 * @param github the {@code .github} directory holding the rendered workflows and
+	 * actions
 	 * @param renderer the renderer to use
 	 * @return the problems found, empty if none
 	 */
-	static List<String> verifyRendered(Map<String, WorkflowTemplates.Template> templates, Path workflows,
+	static List<String> verifyRendered(Map<String, WorkflowTemplates.Template> templates, Path github,
 			WorkflowRenderer renderer) {
 		List<String> problems = new ArrayList<>();
 		templates.forEach((name, template) -> {
-			Path workflow = workflows.resolve(name);
+			Path workflow = github.resolve(name);
 			try {
 				boolean exists = Files.exists(workflow);
 				String expected = renderer.render(template.content());
@@ -151,7 +153,7 @@ final class WorkflowVerifier {
 	}
 
 	private static boolean generated(Path relative) {
-		return relative.getName(0).toString().startsWith(GENERATED_PREFIX);
+		return relative.getNameCount() == 1 && relative.getName(0).toString().startsWith(GENERATED_PREFIX);
 	}
 
 	private static String read(Path file) {

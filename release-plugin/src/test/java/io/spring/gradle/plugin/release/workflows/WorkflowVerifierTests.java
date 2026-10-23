@@ -66,20 +66,20 @@ class WorkflowVerifierTests {
 	@Test
 	void verifyRenderedWhenInSyncThenNoProblems() throws IOException {
 		WorkflowRenderer renderer = renderer();
-		write("specs/ci.yml.template", "uses: a/b\n");
+		write("specs/workflows/ci.yml.template", "uses: a/b\n");
 		write("workflows/ci.yml", renderer.render("uses: a/b\n"));
 		assertThat(WorkflowVerifier.verifyRendered(WorkflowTemplates.project(this.directory.resolve("specs")),
-				this.directory.resolve("workflows"), renderer))
+				this.directory, renderer))
 			.isEmpty();
 	}
 
 	@Test
 	void verifyRenderedWhenStaleOrMissingThenReported() throws IOException {
-		write("specs/ci.yml.template", "uses: a/b\n");
-		write("specs/pr.yml.template", "uses: a/b\n");
+		write("specs/workflows/ci.yml.template", "uses: a/b\n");
+		write("specs/workflows/pr.yml.template", "uses: a/b\n");
 		write("workflows/ci.yml", "uses: a/b@" + "f".repeat(40) + " # v0\n");
 		assertThat(WorkflowVerifier.verifyRendered(WorkflowTemplates.project(this.directory.resolve("specs")),
-				this.directory.resolve("workflows"), renderer()))
+				this.directory, renderer()))
 			.hasSize(2)
 			.anyMatch((problem) -> problem.contains("ci.yml is out of date"))
 			.anyMatch((problem) -> problem.contains("pr.yml is missing"));
@@ -87,9 +87,9 @@ class WorkflowVerifierTests {
 
 	@Test
 	void verifyRenderedWhenSpecCannotBeRenderedThenReported() throws IOException {
-		write("specs/ci.yml.template", "uses: unknown/repo\n");
+		write("specs/workflows/ci.yml.template", "uses: unknown/repo\n");
 		assertThat(WorkflowVerifier.verifyRendered(WorkflowTemplates.project(this.directory.resolve("specs")),
-				this.directory.resolve("workflows"), renderer()))
+				this.directory, renderer()))
 			.singleElement()
 			.satisfies((problem) -> assertThat(problem).contains("ci.yml.template").contains("unknown/repo"));
 	}
@@ -113,24 +113,23 @@ class WorkflowVerifierTests {
 	}
 
 	@Test
-	void verifyPinsWhenWorkflowIsGeneratedThenLeftAlone() throws IOException {
+	void verifyPinsWhenWorkflowIsGeneratedThenLeftAloneButActionsAreChecked() throws IOException {
 		write("workflows/release-train-build.yml", "uses: a/b@main\n");
 		write("actions/release-train-build/action.yml", "uses: a/b@main\n");
 		write("actions/mine/action.yml", "uses: a/b@main\n");
 		assertThat(WorkflowVerifier.verifyPins(this.directory.resolve("workflows"), versions())).isEmpty();
-		assertThat(WorkflowVerifier.verifyPins(this.directory.resolve("actions"), versions())).singleElement()
-			.satisfies((problem) -> assertThat(problem).contains("mine").contains("a/b@main"));
+		assertThat(WorkflowVerifier.verifyPins(this.directory.resolve("actions"), versions())).hasSize(2)
+			.anyMatch((problem) -> problem.contains("mine") && problem.contains("a/b@main"))
+			.anyMatch((problem) -> problem.contains("release-train-build") && problem.contains("a/b@main"));
 	}
 
 	@Test
 	void verifyRenderedWhenTemplateRendersToNothingThenWorkflowMustBeAbsent() throws IOException {
-		write("specs/ci.yml.template", "<<#x>>\nuses: a/b\n<</x>>\n");
+		write("specs/workflows/ci.yml.template", "<<#x>>\nuses: a/b\n<</x>>\n");
 		Map<String, WorkflowTemplates.Template> templates = WorkflowTemplates.project(this.directory.resolve("specs"));
-		assertThat(WorkflowVerifier.verifyRendered(templates, this.directory.resolve("workflows"), renderer()))
-			.isEmpty();
+		assertThat(WorkflowVerifier.verifyRendered(templates, this.directory, renderer())).isEmpty();
 		write("workflows/ci.yml", "uses: a/b@" + SHA + " # v1\n");
-		assertThat(WorkflowVerifier.verifyRendered(templates, this.directory.resolve("workflows"), renderer()))
-			.singleElement()
+		assertThat(WorkflowVerifier.verifyRendered(templates, this.directory, renderer())).singleElement()
 			.satisfies((problem) -> assertThat(problem).contains("ci.yml should not exist"));
 	}
 

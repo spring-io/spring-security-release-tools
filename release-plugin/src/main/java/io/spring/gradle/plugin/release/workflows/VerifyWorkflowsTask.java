@@ -46,6 +46,9 @@ public abstract class VerifyWorkflowsTask extends DefaultTask {
 	public static final String TASK_NAME = "verifyWorkflows";
 
 	@Internal
+	public abstract DirectoryProperty getGitHubDirectory();
+
+	@Internal
 	public abstract DirectoryProperty getWorkflowsDirectory();
 
 	@Internal
@@ -71,7 +74,8 @@ public abstract class VerifyWorkflowsTask extends DefaultTask {
 		List<String> problems = new ArrayList<>();
 		problems.addAll(WorkflowVerifier.verifyPins(workflows, versions));
 		problems.addAll(WorkflowVerifier.verifyPins(actions, versions));
-		problems.addAll(WorkflowVerifier.verifyRendered(WorkflowTemplates.load(specs, Files.exists(config)), workflows,
+		problems.addAll(WorkflowVerifier.verifyRendered(WorkflowTemplates.load(specs, Files.exists(config)),
+				getGitHubDirectory().get().getAsFile().toPath(),
 				new WorkflowRenderer(versions, WorkflowSupport.config(config))));
 		if (!problems.isEmpty()) {
 			throw new GradleException("Workflow verification found " + problems.size() + " problem(s):\n  "
@@ -85,9 +89,10 @@ public abstract class VerifyWorkflowsTask extends DefaultTask {
 			task.doNotTrackState("Reads the whole .github directory");
 
 			var github = project.getLayout().getProjectDirectory().dir(".github");
+			task.getGitHubDirectory().set(github);
 			task.getWorkflowsDirectory().set(github.dir("workflows"));
 			task.getActionsDirectory().set(github.dir("actions"));
-			task.getSpecsDirectory().set(github.dir("specs/workflows"));
+			task.getSpecsDirectory().set(github.dir("specs"));
 			task.getConfigFile().set(github.file("workflow-generator.yml"));
 			task.getLocalVersionsFile().set(github.file("specs/versions.json"));
 		});

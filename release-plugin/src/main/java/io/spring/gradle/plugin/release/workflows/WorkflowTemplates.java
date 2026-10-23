@@ -22,19 +22,23 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
- * The workflow templates to render, keyed by the name of the workflow each renders to
- * (for example {@code dependabot-pull-request-build.yml}).
+ * The templates to render, keyed by where each renders to, relative to the
+ * {@code .github} directory (for example {@code workflows/ci.yml} or
+ * {@code actions/release-train-build/action.yml}).
  * <p>
  * The plugin ships default templates, which apply to a project that is managed by the
  * workflow generator, that is, one with a {@code workflow-generator.yml}. A project
- * replaces a default by having a template of the same name,
- * {@code <workflow>.yml.template}, in {@code .github/specs/workflows}, and adds a
- * workflow by having a template that has no default.
+ * replaces a default by having a template of the same name, either
+ * {@code .github/specs/workflows/<workflow>.yml.template} or
+ * {@code .github/specs/actions/<action>/action.yml.template}, and adds a workflow or
+ * action by having a template that has no default.
  *
  * @author Josh Cummings
  */
@@ -43,6 +47,12 @@ final class WorkflowTemplates {
 	private static final String DIRECTORY = "/io/spring/gradle/plugin/release/workflows/";
 
 	private static final String INDEX = DIRECTORY + "templates.index";
+
+	private static final String WORKFLOWS = "workflows";
+
+	private static final String ACTIONS = "actions";
+
+	private static final String ACTION_TEMPLATE = "action.yml" + WorkflowVerifier.SPEC_SUFFIX;
 
 	private WorkflowTemplates() {
 	}
@@ -57,7 +67,7 @@ final class WorkflowTemplates {
 	}
 
 	/**
-	 * @param specs the project's template directory, which need not exist
+	 * @param specs the project's {@code .github/specs} directory, which need not exist
 	 * @param defaults whether the shipped templates apply
 	 * @return the shipped templates, if they apply, replaced or added to by the project's
 	 */
@@ -71,19 +81,22 @@ final class WorkflowTemplates {
 	}
 
 	/**
-	 * @param specs the project's template directory, which need not exist
+	 * @param specs the project's {@code .github/specs} directory, which need not exist
 	 * @return only the project's own templates
 	 */
 	static Map<String, Template> project(Path specs) {
 		Map<String, Template> templates = new TreeMap<>();
-		if (!Files.isDirectory(specs)) {
-			return templates;
-		}
-		try (Stream<Path> files = Files.list(specs)) {
-			for (Path file : files.filter(Files::isRegularFile).toList()) {
+		try {
+			for (Path file : list(specs.resolve(WORKFLOWS), Files::isRegularFile)) {
 				String name = file.getFileName().toString();
 				if (name.endsWith(WorkflowVerifier.SPEC_SUFFIX)) {
-					templates.put(workflow(name), new Template(file.toString(), Files.readString(file)));
+					templates.put(key(WORKFLOWS + "/" + name), template(file));
+				}
+			}
+			for (Path directory : list(specs.resolve(ACTIONS), Files::isDirectory)) {
+				Path file = directory.resolve(ACTION_TEMPLATE);
+				if (Files.isRegularFile(file)) {
+					templates.put(key(ACTIONS + "/" + directory.getFileName() + "/" + ACTION_TEMPLATE), template(file));
 				}
 			}
 		}
@@ -93,6 +106,19 @@ final class WorkflowTemplates {
 		return templates;
 	}
 
+	private static Template template(Path file) throws IOException {
+		return new Template(file.toString(), Files.readString(file));
+	}
+
+	private static List<Path> list(Path directory, Predicate<Path> filter) throws IOException {
+		if (!Files.isDirectory(directory)) {
+			return List.of();
+		}
+		try (Stream<Path> files = Files.list(directory)) {
+			return files.filter(filter).toList();
+		}
+	}
+
 	/**
 	 * @return only the templates that ship with the plugin
 	 */
@@ -100,14 +126,14 @@ final class WorkflowTemplates {
 		Map<String, Template> templates = new TreeMap<>();
 		for (String name : read(INDEX).split("\\R")) {
 			if (!name.isBlank()) {
-				templates.put(workflow(name.trim()), new Template(
-						"the default " + name.trim() + " in the release plugin", read(DIRECTORY + name.trim())));
+				templates.put(key(name.trim()), new Template("the default " + name.trim() + " in the release plugin",
+						read(DIRECTORY + name.trim())));
 			}
 		}
 		return templates;
 	}
 
-	private static String workflow(String template) {
+	private static String key(String template) {
 		return template.substring(0, template.length() - WorkflowVerifier.SPEC_SUFFIX.length());
 	}
 

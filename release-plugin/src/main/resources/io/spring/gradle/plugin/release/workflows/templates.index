@@ -1,7 +1,9 @@
-ci.yml.template
-dependabot-auto-merge-forward.yml.template
-dependabot-pull-request-automerge.yml.template
-dependabot-pull-request-build.yml.template
-pull-request-build.yml.template
-release-announcements-publish.yml.template
-release-announcements-stage.yml.template
+workflows/ci.yml.template
+workflows/dependabot-auto-merge-forward.yml.template
+workflows/dependabot-pull-request-automerge.yml.template
+workflows/dependabot-pull-request-build.yml.template
+workflows/pull-request-build.yml.template
+workflows/release-announcements-publish.yml.template
+workflows/release-announcements-stage.yml.template
+actions/release-train-build/action.yml.template
+actions/release-train-test/action.yml.template
