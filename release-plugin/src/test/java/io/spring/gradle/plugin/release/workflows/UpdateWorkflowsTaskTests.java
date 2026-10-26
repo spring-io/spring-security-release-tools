@@ -72,6 +72,16 @@ class UpdateWorkflowsTaskTests {
 	}
 
 	@Test
+	void updateWhenDefaultsApplyThenCodeqlWorkflowRenderedAndPinned() throws Exception {
+		task().update();
+		WorkflowVersions.Action actions = WorkflowVersions.shipped().action("spring-io/github-actions");
+		assertThat(new File(this.projectDir, ".github/workflows/codeql.yml")).content()
+			.contains("spring-io/github-actions/.github/workflows/codeql-analysis.yml@" + actions.sha() + " # "
+					+ actions.ref())
+			.contains("security-events: write");
+	}
+
+	@Test
 	void updateWhenRunTwiceThenSecondRunProducesTheSameWorkflows() throws Exception {
 		write(".github/specs/workflows/ci.yml.template", "steps:\n  - uses: actions/checkout\n");
 		task().update();

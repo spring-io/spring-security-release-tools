@@ -1,4 +1,5 @@
 workflows/ci.yml.template
+workflows/codeql.yml.template
 workflows/dependabot-auto-merge-forward.yml.template
 workflows/dependabot-pull-request-automerge.yml.template
 workflows/dependabot-pull-request-build.yml.template
