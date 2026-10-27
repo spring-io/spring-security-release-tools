@@ -103,6 +103,24 @@ class VerifyWorkflowsTaskTests {
 	}
 
 	@Test
+	void verifyWhenCodeqlWorkflowRenderedOnMainThenSucceedsWithNoBranch() throws IOException {
+		Files.writeString(new File(this.projectDir, ".github/workflow-generator.yml").toPath(),
+				"workflow:\n  generator:\n    project:\n      java:\n        versions:\n          primary: 25\n"
+						+ "    workflows:\n      release-tools:\n        update-antora-ui: false\n");
+		UpdateWorkflowsTask update = (UpdateWorkflowsTask) this.project.getTasks()
+			.getByName(UpdateWorkflowsTask.TASK_NAME);
+		update.getSkipGenerator().set(true);
+		update.getBranch().set("main");
+		update.update();
+		File codeql = new File(this.projectDir, ".github/workflows/codeql.yml");
+		assertThat(codeql).exists();
+		task().verify();
+		Files.writeString(codeql.toPath(), Files.readString(codeql.toPath()).replace("read-all", "write-all"));
+		assertThatExceptionOfType(GradleException.class).isThrownBy(() -> task().verify())
+			.withMessageContaining("codeql.yml");
+	}
+
+	@Test
 	void pluginWhenAppliedThenVerifyWorkflowsRegistered() {
 		assertThat(this.project.getTasks().findByName(VerifyWorkflowsTask.TASK_NAME)).isNotNull();
 	}

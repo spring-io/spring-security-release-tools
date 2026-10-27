@@ -45,6 +45,13 @@ final class WorkflowSupport {
 	 */
 	static final Set<String> GENERATED = Set.of("workflows/update-antora-ui-spring.yml");
 
+	/**
+	 * The templates that only render on a branch that ends in {@code main}, which
+	 * {@link VerifyWorkflowsTask} can't tell in CI, so it checks them wherever they are
+	 * checked in, as if on {@code main}.
+	 */
+	static final Set<String> MAIN_ONLY = Set.of("workflows/codeql.yml");
+
 	private static final String ANTORA_UI = "update-antora-ui";
 
 	private static final ObjectMapper YAML = new YAMLMapper();
@@ -99,25 +106,42 @@ final class WorkflowSupport {
 	}
 
 	/**
-	 * Add to the model what can only be known when generating. The Antora UI is kept up
-	 * to date from the main branch alone, since a scheduled workflow only runs from the
-	 * default branch, so on any other branch {@code update-antora-ui} is turned off.
-	 * Where it is on, {@code workflow.generator.project.supported-branches} is the
-	 * branches that are supported.
 	 * @param config the model from {@link #config}
+	 * @return the model as it is on a branch that ends in {@code main}
+	 */
+	static Map<String, Object> onMain(Map<String, Object> config) {
+		return merge(config, branch(true));
+	}
+
+	private static Map<String, Object> branch(boolean main) {
+		return Map.of("workflow", Map.of("generator", Map.of("branch", Map.of("main", main))));
+	}
+
+	/**
+	 * Add to the model what can only be known when generating. A branch that ends in
+	 * {@code main}, which includes the ones that mirror it, is one where
+	 * {@code workflow.generator.branch.main} is true, and the workflows that only belong
+	 * there are rendered. The Antora UI is kept up to date from such a branch alone,
+	 * since a scheduled workflow only runs from the default branch, so on any other
+	 * branch {@code update-antora-ui} is turned off. Where it is on,
+	 * {@code workflow.generator.project.supported-branches} is the branches that are
+	 * supported.
+	 * @param model the model from {@link #config}
 	 * @param branch the branch being generated on, or {@code null} if unknown
 	 * @param supported finds the supported branches, only called if they are needed
 	 * @return the model to render from
 	 */
 	@SuppressWarnings("unchecked")
-	static Map<String, Object> generate(Map<String, Object> config, String branch, Supplier<List<String>> supported) {
+	static Map<String, Object> generate(Map<String, Object> model, String branch, Supplier<List<String>> supported) {
+		boolean main = branch != null && branch.endsWith("main");
+		Map<String, Object> config = merge(model, branch(main));
 		Map<String, Object> tools = (Map<String, Object>) ((Map<String, Object>) ((Map<String, Object>) config
 			.get("workflow")).get("generator")).get("workflows");
 		boolean enabled = Boolean.TRUE.equals(((Map<String, Object>) tools.get("release-tools")).get(ANTORA_UI));
 		if (!enabled) {
 			return config;
 		}
-		if (branch == null || !branch.endsWith("main")) {
+		if (!main) {
 			return merge(config, releaseTools(Map.of(ANTORA_UI, false)));
 		}
 		return merge(config, Map.of("workflow",

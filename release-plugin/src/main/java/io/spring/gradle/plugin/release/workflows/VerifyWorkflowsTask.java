@@ -79,8 +79,11 @@ public abstract class VerifyWorkflowsTask extends DefaultTask {
 		Map<String, WorkflowTemplates.Template> templates = new TreeMap<>(
 				WorkflowTemplates.load(specs, Files.exists(config)));
 		templates.keySet().removeAll(WorkflowSupport.GENERATED);
+		templates.keySet()
+			.removeIf((name) -> WorkflowSupport.MAIN_ONLY.contains(name)
+					&& !Files.exists(getGitHubDirectory().get().getAsFile().toPath().resolve(name)));
 		problems.addAll(WorkflowVerifier.verifyRendered(templates, getGitHubDirectory().get().getAsFile().toPath(),
-				new WorkflowRenderer(versions, WorkflowSupport.config(config))));
+				new WorkflowRenderer(versions, WorkflowSupport.onMain(WorkflowSupport.config(config)))));
 		if (!problems.isEmpty()) {
 			throw new GradleException("Workflow verification found " + problems.size() + " problem(s):\n  "
 					+ String.join("\n  ", problems));
