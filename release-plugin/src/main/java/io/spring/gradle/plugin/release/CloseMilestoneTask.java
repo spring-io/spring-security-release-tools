@@ -44,7 +44,7 @@ public abstract class CloseMilestoneTask extends DefaultTask {
 	public abstract Property<String> getVersion();
 
 	@TaskAction
-	public void deleteRelease() {
+	public void closeMilestone() {
 		var gitHubAccessToken = getGitHubAccessToken().getOrNull();
 		var repository = getRepository().get();
 		var version = getVersion().get();

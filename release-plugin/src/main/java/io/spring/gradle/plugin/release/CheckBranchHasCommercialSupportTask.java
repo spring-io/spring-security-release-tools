@@ -48,7 +48,7 @@ public abstract class CheckBranchHasCommercialSupportTask extends DefaultTask {
 	public abstract Property<String> getGitHubAccessToken();
 
 	@TaskAction
-	public void checkMilestoneHasNoOpenIssues() {
+	public void checkBranchHasCommercialSupport() {
 		var gitHubAccessToken = getGitHubAccessToken().getOrNull();
 		var repository = getRepository().get();
 		var branch = getBranch().get();

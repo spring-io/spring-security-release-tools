@@ -16,8 +16,16 @@
 
 package io.spring.gradle.plugin.release;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
+
 import io.spring.gradle.plugin.core.ProjectUtils;
 import io.spring.gradle.plugin.core.RegularFileUtils;
+import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.provider.Property;
@@ -41,6 +49,12 @@ public abstract class GenerateChangelogTask extends JavaExec {
 
 	private static final String GENERATE_CHANGELOG_DEPENDENCY = "spring-io:github-changelog-generator:0.0.12";
 
+	// the checksum of the jar of GENERATE_CHANGELOG_DEPENDENCY, which is downloaded from
+	// GitHub and then run with the access token, so change the two together
+	private static final String GENERATE_CHANGELOG_SHA_256 = "f42a5b90e3b3cc02c74d289b36af36c317c71d4be67d86f575cc3a853d9e3c7e";
+
+	private static final String GENERATE_CHANGELOG_JAR = "github-changelog-generator.jar";
+
 	private static final String GENERATE_CHANGELOG_REPO_LAYOUT = "[organization]/[artifact]/releases/download/v[revision]/[artifact].[ext]";
 
 	private static final String GENERATE_CHANGELOG_REPO_URL = "https://github.com/";
@@ -53,6 +67,13 @@ public abstract class GenerateChangelogTask extends JavaExec {
 	@Input
 	@Optional
 	public abstract Property<String> getGitHubAccessToken();
+
+	/**
+	 * The SHA-256 the changelog generator's jar is expected to have. Set this along with
+	 * the {@code changelogGenerator} configuration to use a different version.
+	 */
+	@Input
+	public abstract Property<String> getChangelogGeneratorSha256();
 
 	@OutputFile
 	public abstract RegularFileProperty getReleaseNotesFile();
@@ -67,6 +88,7 @@ public abstract class GenerateChangelogTask extends JavaExec {
 			throw new IllegalStateException("Unable to create " + outputFile);
 		}
 
+		verifyGenerator();
 		args("--spring.config.location=scripts/release/release-notes-sections.yml");
 		if (gitHubAccessToken != null) {
 			// not an argument, which anyone on the machine could read in the process list
@@ -74,6 +96,28 @@ public abstract class GenerateChangelogTask extends JavaExec {
 		}
 		args(version, outputFile.toString());
 		super.exec();
+	}
+
+	private void verifyGenerator() {
+		var expected = getChangelogGeneratorSha256().get();
+		for (var file : getClasspath().getFiles()) {
+			if (file.getName().equals(GENERATE_CHANGELOG_JAR)) {
+				var actual = sha256(file.toPath());
+				if (!expected.equals(actual)) {
+					throw new GradleException("The changelog generator " + file + " has checksum " + actual + " but "
+							+ expected + " was expected");
+				}
+			}
+		}
+	}
+
+	private static String sha256(Path file) {
+		try {
+			return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(file)));
+		}
+		catch (NoSuchAlgorithmException | IOException ex) {
+			throw new GradleException("Unable to compute the checksum of " + file, ex);
+		}
 	}
 
 	public static void register(Project project) {
@@ -94,6 +138,7 @@ public abstract class GenerateChangelogTask extends JavaExec {
 			// @formatter:on
 
 			task.getVersion().set(versionProvider);
+			task.getChangelogGeneratorSha256().convention(GENERATE_CHANGELOG_SHA_256);
 			task.getGitHubAccessToken()
 				.set(ProjectUtils.getProperty(project, SpringReleasePlugin.GITHUB_ACCESS_TOKEN_PROPERTY));
 			task.getReleaseNotesFile().set(project.getLayout().getBuildDirectory().file(GENERATE_CHANGELOG_PATH));

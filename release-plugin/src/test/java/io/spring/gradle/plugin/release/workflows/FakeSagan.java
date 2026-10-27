@@ -36,6 +36,13 @@ final class FakeSagan implements AutoCloseable {
 	final List<String> requests = new ArrayList<>();
 
 	FakeSagan() throws IOException {
+		this(null);
+	}
+
+	/**
+	 * @param extraGeneration the name of one more generation, which is in OSS support
+	 */
+	FakeSagan(String extraGeneration) throws IOException {
 		LocalDate today = LocalDate.now();
 		String generations = """
 				{"_embedded":{"generations":[
@@ -47,15 +54,22 @@ final class FakeSagan implements AutoCloseable {
 				""".formatted(today.plusMonths(4), today.plusYears(1), today.plusYears(2), today.minusYears(2),
 				today.minusMonths(1), today.plusYears(1), today.minusMonths(1), today.plusYears(1), today.plusYears(2),
 				today.minusYears(1), today.plusMonths(6), today.plusYears(1));
+		if (extraGeneration != null) {
+			generations = generations.replace("\"generations\":[\n",
+					"\"generations\":[\n{\"name\":\"" + extraGeneration + "\",\"initialReleaseDate\":\""
+							+ today.minusYears(1) + "\",\"ossSupportEndDate\":\"" + today.plusYears(1)
+							+ "\",\"commercialSupportEndDate\":\"" + today.plusYears(2) + "\"},\n");
+		}
+		String body = generations;
 		this.server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
 		this.server.createContext("/", (exchange) -> {
 			synchronized (this.requests) {
 				this.requests.add(exchange.getRequestURI().getPath());
 			}
-			byte[] body = generations.getBytes(StandardCharsets.UTF_8);
+			byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
 			exchange.getResponseHeaders().add("Content-Type", "application/json");
-			exchange.sendResponseHeaders(200, body.length);
-			exchange.getResponseBody().write(body);
+			exchange.sendResponseHeaders(200, bytes.length);
+			exchange.getResponseBody().write(bytes);
 			exchange.close();
 		});
 		this.server.start();

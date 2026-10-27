@@ -60,7 +60,8 @@ public final class RegularFileUtils {
 
 	public static void mkdirs(DirectoryProperty property) {
 		Directory directory = property.get();
-		if (!directory.getAsFile().mkdirs()) {
+		var file = directory.getAsFile();
+		if (!file.isDirectory() && !file.mkdirs()) {
 			throw new IllegalArgumentException("Unable to create directories for " + directory);
 		}
 	}

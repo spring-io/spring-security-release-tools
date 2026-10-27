@@ -19,10 +19,12 @@ package io.spring.gradle.plugin.release.workflows;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.attribute.PosixFilePermissions;
 
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.testfixtures.ProjectBuilder;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -207,6 +209,50 @@ class UpdateWorkflowsTaskTests {
 			.withMessageContaining("Could not find the supported branches")
 			.withMessageContaining("update-antora-ui");
 		assertThat(new File(this.projectDir, ".github/workflows/pull-request-build.yml")).doesNotExist();
+	}
+
+	@Test
+	void updateWhenSupportedBranchNameIsUnexpectedThenNothingIsRendered() throws Exception {
+		try (FakeSagan sagan = new FakeSagan("7.9.x' - 'evil")) {
+			UpdateWorkflowsTask task = task("main");
+			task.getSaganApiUrl().set(sagan.url());
+			assertThatExceptionOfType(GradleException.class).isThrownBy(task::update)
+				.withMessageContaining("unexpected branch name '7.9.x' - 'evil'");
+		}
+		assertThat(new File(this.projectDir, ".github/workflows/update-antora-ui-spring.yml")).doesNotExist();
+	}
+
+	@Test
+	void updateWhenReleaseToolsIsNotAMapThenSaysWhatToFix() throws Exception {
+		write(".github/workflow-generator.yml", "workflow:\n  generator:\n    workflows: true\n");
+		assertThatExceptionOfType(GradleException.class).isThrownBy(() -> task().update())
+			.withMessageContaining("'workflow.generator.workflows' must be a map");
+	}
+
+	@Test
+	void updateWhenConfigIsNotYamlMapThenSaysWhichFile() throws Exception {
+		write(".github/workflow-generator.yml", "- just\n- a list\n");
+		assertThatExceptionOfType(GradleException.class).isThrownBy(() -> task().update())
+			.withMessageContaining("workflow-generator.yml could not be read");
+	}
+
+	@Test
+	void updateWhenWritingThenNewWorkflowsAreReadableByEveryone() throws Exception {
+		Assumptions.assumeTrue(Files.getFileStore(this.projectDir.toPath()).supportsFileAttributeView("posix"));
+		task().update();
+		assertThat(Files.getPosixFilePermissions(new File(this.projectDir, ".github/workflows/ci.yml").toPath()))
+			.isEqualTo(PosixFilePermissions.fromString("rw-r--r--"));
+	}
+
+	@Test
+	void updateWhenReplacingAWorkflowThenItKeepsItsPermissions() throws Exception {
+		Assumptions.assumeTrue(Files.getFileStore(this.projectDir.toPath()).supportsFileAttributeView("posix"));
+		write(".github/workflows/ci.yml", "name: Old\n");
+		File workflow = new File(this.projectDir, ".github/workflows/ci.yml");
+		Files.setPosixFilePermissions(workflow.toPath(), PosixFilePermissions.fromString("rw-rw-r--"));
+		task().update();
+		assertThat(Files.getPosixFilePermissions(workflow.toPath()))
+			.isEqualTo(PosixFilePermissions.fromString("rw-rw-r--"));
 	}
 
 	@Test

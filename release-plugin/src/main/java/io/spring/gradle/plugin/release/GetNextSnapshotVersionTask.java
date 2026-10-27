@@ -58,7 +58,7 @@ public abstract class GetNextSnapshotVersionTask extends DefaultTask {
 			task.setGroup(SpringReleasePlugin.TASK_GROUP);
 			task.setDescription(
 					"Calculates the next snapshot version based on the current version and outputs the version number");
-			task.doNotTrackState("API call to GitHub needs to check for new milestones every time");
+			task.doNotTrackState("Trivial computation whose result is printed to stdout every time");
 
 			var versionProvider = ProjectUtils.getProperty(project, SpringReleasePlugin.CURRENT_VERSION_PROPERTY)
 				.orElse(project.getRootProject().getVersion().toString());

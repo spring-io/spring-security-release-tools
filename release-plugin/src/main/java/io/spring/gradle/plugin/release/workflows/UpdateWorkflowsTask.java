@@ -20,10 +20,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
@@ -63,6 +67,10 @@ import org.gradle.work.DisableCachingByDefault;
 public abstract class UpdateWorkflowsTask extends DefaultTask {
 
 	public static final String TASK_NAME = "updateWorkflows";
+
+	private static final long GENERATOR_TIMEOUT_MINUTES = 10;
+
+	private static final Set<PosixFilePermission> WORKFLOW_PERMISSIONS = PosixFilePermissions.fromString("rw-r--r--");
 
 	@Internal
 	public abstract DirectoryProperty getProjectDirectory();
@@ -202,6 +210,7 @@ public abstract class UpdateWorkflowsTask extends DefaultTask {
 				Path temporary = Files.createTempFile(entry.getKey().getParent(), ".updateWorkflows-", ".tmp");
 				staged.put(entry.getKey(), temporary);
 				Files.writeString(temporary, entry.getValue());
+				permit(temporary, entry.getKey());
 			}
 			for (Map.Entry<Path, Path> entry : staged.entrySet()) {
 				Files.move(entry.getValue(), entry.getKey(), StandardCopyOption.REPLACE_EXISTING);
@@ -213,6 +222,18 @@ public abstract class UpdateWorkflowsTask extends DefaultTask {
 				Files.deleteIfExists(temporary);
 			}
 		}
+	}
+
+	/**
+	 * A temporary file is readable by its owner alone, so give it the permissions of the
+	 * file it replaces, or the usual ones for a new file, where the file system has them.
+	 */
+	private void permit(Path temporary, Path target) throws IOException {
+		if (!Files.getFileStore(temporary).supportsFileAttributeView("posix")) {
+			return;
+		}
+		Files.setPosixFilePermissions(temporary,
+				Files.exists(target) ? Files.getPosixFilePermissions(target) : WORKFLOW_PERMISSIONS);
 	}
 
 	private String generatorJava(WorkflowVersions.Generator generator) {
@@ -241,12 +262,16 @@ public abstract class UpdateWorkflowsTask extends DefaultTask {
 		Path jar = WorkflowGeneratorJar.resolve(generator, getGeneratorCacheDirectory().get().getAsFile().toPath(),
 				github);
 		getLogger().lifecycle("Running workflow generator {}", generator.version());
+		Process process = new ProcessBuilder(java, "-jar", jar.toString())
+			.directory(getProjectDirectory().get().getAsFile())
+			.inheritIO()
+			.start();
 		try {
-			Process process = new ProcessBuilder(java, "-jar", jar.toString())
-				.directory(getProjectDirectory().get().getAsFile())
-				.inheritIO()
-				.start();
-			int exit = process.waitFor();
+			if (!process.waitFor(GENERATOR_TIMEOUT_MINUTES, TimeUnit.MINUTES)) {
+				throw new GradleException("The workflow generator did not finish in " + GENERATOR_TIMEOUT_MINUTES
+						+ " minutes, so it was stopped");
+			}
+			int exit = process.exitValue();
 			if (exit != 0) {
 				throw new GradleException("The workflow generator exited with " + exit);
 			}
@@ -254,6 +279,12 @@ public abstract class UpdateWorkflowsTask extends DefaultTask {
 		catch (InterruptedException ex) {
 			Thread.currentThread().interrupt();
 			throw new GradleException("Interrupted while running the workflow generator", ex);
+		}
+		finally {
+			// never leave it running, whether it timed out, the build was interrupted, or
+			// it has already exited
+			process.descendants().forEach(ProcessHandle::destroyForcibly);
+			process.destroyForcibly();
 		}
 	}
 

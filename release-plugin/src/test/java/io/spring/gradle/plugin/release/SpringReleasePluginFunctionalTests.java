@@ -67,6 +67,19 @@ public class SpringReleasePluginFunctionalTests {
 	}
 
 	@Test
+	public void generateChangelogWhenGeneratorJarHasUnexpectedChecksumThenFailsBeforeRunning() throws Exception {
+		var jar = new File(this.projectDir, "github-changelog-generator.jar");
+		java.nio.file.Files.writeString(jar.toPath(), "not the generator");
+		var task = ProjectUtils.findTaskByType(this.project, GenerateChangelogTask.class);
+		task.setClasspath(this.project.files(jar));
+		task.getVersion().set("1.0.0");
+		task.getReleaseNotesFile().set(new File(this.projectDir, "release-notes.md"));
+		org.assertj.core.api.Assertions.assertThatExceptionOfType(org.gradle.api.GradleException.class)
+			.isThrownBy(task::exec)
+			.withMessageContaining("has checksum");
+	}
+
+	@Test
 	public void getNextReleaseMilestoneTaskWhenPluginAppliedThenConfigured() {
 		var task = ProjectUtils.findTaskByType(this.project, GetNextReleaseMilestoneTask.class);
 		assertThat(task.getVersion().get()).isEqualTo(this.project.getVersion());

@@ -27,7 +27,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.spring.api.SaganApi;
@@ -60,6 +62,12 @@ final class WorkflowSupport {
 	static final Set<String> MAIN_ONLY = Set.of("workflows/codeql.yml");
 
 	private static final String ANTORA_UI = "update-antora-ui";
+
+	/**
+	 * What a branch name may contain to be rendered into a workflow, which doesn't escape
+	 * values, so that a name from the API can't change the workflow's structure.
+	 */
+	private static final Pattern BRANCH_NAME = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._/-]*");
 
 	private static final ObjectMapper YAML = new YAMLMapper();
 
@@ -97,11 +105,33 @@ final class WorkflowSupport {
 				Map<String, Object> read = YAML.readValue(in, Map.class);
 				config = (read != null) ? read : Map.of();
 			}
+			catch (JsonProcessingException ex) {
+				throw new GradleException(file + " could not be read: " + rootMessage(ex), ex);
+			}
 			catch (IOException ex) {
 				throw new UncheckedIOException(ex);
 			}
 		}
-		return merge(defaults(), config);
+		Map<String, Object> merged = merge(defaults(), config);
+		requireMaps(file, merged, "workflow", "generator", "workflows", "release-tools");
+		return merged;
+	}
+
+	/**
+	 * Check that each key in turn, starting from {@code model}, is a map, as the model is
+	 * read as one and a project's own configuration may have put something else there.
+	 */
+	@SuppressWarnings("unchecked")
+	private static void requireMaps(Path file, Map<String, Object> model, String... path) {
+		Map<String, Object> current = model;
+		StringBuilder at = new StringBuilder();
+		for (String key : path) {
+			at.append((at.length() > 0) ? "." : "").append(key);
+			if (!(current.get(key) instanceof Map)) {
+				throw new GradleException(file + ": '" + at + "' must be a map of settings");
+			}
+			current = (Map<String, Object>) current.get(key);
+		}
 	}
 
 	private static Map<String, Object> defaults() {
@@ -131,7 +161,14 @@ final class WorkflowSupport {
 
 	static List<String> supportedBranches(String slug, String saganApiUrl) {
 		try {
-			return new SpringReleases(null, new SaganApi(saganApiUrl, null, null)).getOssSupportedBranches(slug);
+			List<String> branches = new SpringReleases(null, new SaganApi(saganApiUrl, null, null))
+				.getOssSupportedBranches(slug);
+			for (String branch : branches) {
+				if (!BRANCH_NAME.matcher(branch).matches()) {
+					throw new IllegalStateException("unexpected branch name '" + branch + "'");
+				}
+			}
+			return branches;
 		}
 		catch (RuntimeException ex) {
 			throw new GradleException("Could not find the supported branches of " + slug + " at " + saganApiUrl + " ("
