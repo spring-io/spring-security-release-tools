@@ -9,6 +9,7 @@ env:
 <<#workflow.generator.workflows.release-tools.verify>>
   ORG_GRADLE_PROJECT_verifyWorkflows: true
 <</workflow.generator.workflows.release-tools.verify>>
+  ORG_GRADLE_PROJECT_branch: ${{ github.base_ref }}
   JAVA_VERSION: '<< workflow.generator.project.java.versions.primary >>'
 
 jobs:

@@ -16,8 +16,10 @@
 
 package io.spring.gradle.plugin.release.workflows;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
@@ -28,6 +30,12 @@ import java.util.function.Supplier;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import io.spring.api.SaganApi;
+import io.spring.gradle.plugin.core.ProjectUtils;
+import io.spring.release.SpringReleases;
+import org.gradle.api.GradleException;
+import org.gradle.api.Project;
+import org.gradle.api.provider.Property;
 
 /**
  * What {@link VerifyWorkflowsTask} and {@link UpdateWorkflowsTask} both need to read from
@@ -39,16 +47,15 @@ final class WorkflowSupport {
 
 	/**
 	 * The templates that render from what {@link #generate} adds to the model, which
-	 * changes with the branch and over time, so {@link VerifyWorkflowsTask}, which is
-	 * offline and has no branch in CI, can't reproduce them. Only
-	 * {@link UpdateWorkflowsTask} renders these.
+	 * changes with the branch and over time, so {@link VerifyWorkflowsTask} can't
+	 * reproduce them if it doesn't know the branch, or can't reach the API.
 	 */
 	static final Set<String> GENERATED = Set.of("workflows/update-antora-ui-spring.yml");
 
 	/**
 	 * The templates that only render on a branch that ends in {@code main}, which
-	 * {@link VerifyWorkflowsTask} can't tell in CI, so it checks them wherever they are
-	 * checked in, as if on {@code main}.
+	 * {@link VerifyWorkflowsTask} can't tell when it doesn't know the branch, so then it
+	 * checks them wherever they are checked in, as if on {@code main}.
 	 */
 	static final Set<String> MAIN_ONLY = Set.of("workflows/codeql.yml");
 
@@ -103,6 +110,59 @@ final class WorkflowSupport {
 
 	private static Map<String, Object> releaseTools(Map<String, Object> values) {
 		return Map.of("workflow", Map.of("generator", Map.of("workflows", Map.of("release-tools", values))));
+	}
+
+	/**
+	 * Set where the branch, the project's name at {@code api.spring.io} and that API are
+	 * found, so that {@link UpdateWorkflowsTask} and {@link VerifyWorkflowsTask} see the
+	 * same thing. The branch is {@code -Pbranch} or else the one checked out, the project
+	 * is {@code -PossRepoName} or else the root project's name without
+	 * {@code -commercial}.
+	 */
+	static void conventions(Project project, Property<String> branch, Property<String> slug,
+			Property<String> saganApiUrl) {
+		saganApiUrl.convention("https://api.spring.io");
+		slug.convention(ProjectUtils.getProperty(project, "ossRepoName")
+			.orElse(project.getRootProject().getName().replaceFirst("-commercial$", "")));
+		branch.convention(ProjectUtils.getProperty(project, "branch")
+			.orElse(project.getProviders()
+				.provider(() -> currentBranch(project.getLayout().getProjectDirectory().getAsFile()))));
+	}
+
+	static List<String> supportedBranches(String slug, String saganApiUrl) {
+		try {
+			return new SpringReleases(null, new SaganApi(saganApiUrl, null, null)).getOssSupportedBranches(slug);
+		}
+		catch (RuntimeException ex) {
+			throw new GradleException("Could not find the supported branches of " + slug + " at " + saganApiUrl + " ("
+					+ rootMessage(ex) + "). Try again, or turn off workflows.release-tools.update-antora-ui in"
+					+ " .github/workflow-generator.yml", ex);
+		}
+	}
+
+	private static String currentBranch(File directory) {
+		try {
+			Process process = new ProcessBuilder("git", "branch", "--show-current").directory(directory)
+				.redirectErrorStream(true)
+				.start();
+			String branch = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8).trim();
+			return (process.waitFor() == 0 && !branch.isEmpty()) ? branch : null;
+		}
+		catch (IOException ex) {
+			return null;
+		}
+		catch (InterruptedException ex) {
+			Thread.currentThread().interrupt();
+			return null;
+		}
+	}
+
+	static String rootMessage(Throwable ex) {
+		Throwable root = ex;
+		while (root.getCause() != null) {
+			root = root.getCause();
+		}
+		return (root.getMessage() != null) ? root.getMessage().lines().findFirst().get() : root.toString();
 	}
 
 	/**

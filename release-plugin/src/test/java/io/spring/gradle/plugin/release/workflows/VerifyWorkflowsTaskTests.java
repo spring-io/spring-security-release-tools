@@ -121,6 +121,64 @@ class VerifyWorkflowsTaskTests {
 	}
 
 	@Test
+	void verifyWhenBranchKnownAndOnMainThenCodeqlWorkflowRequired() throws IOException {
+		antoraUiOff();
+		render("7.0.x", null);
+		assertThatExceptionOfType(GradleException.class).isThrownBy(() -> task("main", null).verify())
+			.withMessageContaining("codeql.yml is missing");
+	}
+
+	@Test
+	void verifyWhenBranchKnownAndNotOnMainThenCodeqlWorkflowNotAllowed() throws IOException {
+		antoraUiOff();
+		render("main", null);
+		assertThatExceptionOfType(GradleException.class).isThrownBy(() -> task("7.0.x", null).verify())
+			.withMessageContaining("codeql.yml should not exist");
+	}
+
+	@Test
+	void verifyWhenBranchMirrorsMainThenCodeqlWorkflowRequired() throws IOException {
+		antoraUiOff();
+		render("embargoed/frozen/main", null);
+		task("embargoed/frozen/main", null).verify();
+	}
+
+	@Test
+	void verifyWhenOnMainThenAntoraUiWorkflowIsVerifiedAgainstTheSupportedBranches() throws IOException {
+		try (FakeSagan sagan = new FakeSagan()) {
+			render("main", sagan);
+			task("main", sagan).verify();
+			File workflow = new File(this.projectDir, ".github/workflows/update-antora-ui-spring.yml");
+			Files.writeString(workflow.toPath(),
+					Files.readString(workflow.toPath()).replace("          - '7.1.x'\n", ""));
+			assertThatExceptionOfType(GradleException.class).isThrownBy(() -> task("main", sagan).verify())
+				.withMessageContaining("update-antora-ui-spring.yml")
+				.withMessageContaining("run updateWorkflows");
+		}
+	}
+
+	@Test
+	void verifyWhenOnMainAndSupportedBranchesUnavailableThenAntoraUiWorkflowNotVerified() throws IOException {
+		try (FakeSagan sagan = new FakeSagan()) {
+			render("main", sagan);
+		}
+		VerifyWorkflowsTask task = task("main", null);
+		task.getSaganApiUrl().set("http://127.0.0.1:1");
+		Files.writeString(new File(this.projectDir, ".github/workflows/update-antora-ui-spring.yml").toPath(),
+				"name: Edited\n");
+		task.verify();
+	}
+
+	@Test
+	void verifyWhenNotOnMainThenAntoraUiWorkflowNotAllowed() throws IOException {
+		try (FakeSagan sagan = new FakeSagan()) {
+			render("main", sagan);
+		}
+		assertThatExceptionOfType(GradleException.class).isThrownBy(() -> task("7.0.x", null).verify())
+			.withMessageContaining("update-antora-ui-spring.yml should not exist");
+	}
+
+	@Test
 	void pluginWhenAppliedThenVerifyWorkflowsRegistered() {
 		assertThat(this.project.getTasks().findByName(VerifyWorkflowsTask.TASK_NAME)).isNotNull();
 	}
@@ -130,6 +188,32 @@ class VerifyWorkflowsTaskTests {
 			.getByName(UpdateWorkflowsTask.TASK_NAME);
 		update.getSkipGenerator().set(true);
 		update.update();
+	}
+
+	private void antoraUiOff() throws IOException {
+		Files.writeString(new File(this.projectDir, ".github/workflow-generator.yml").toPath(),
+				"workflow:\n  generator:\n    project:\n      java:\n        versions:\n          primary: 25\n"
+						+ "    workflows:\n      release-tools:\n        update-antora-ui: false\n");
+	}
+
+	private void render(String branch, FakeSagan sagan) throws IOException {
+		UpdateWorkflowsTask update = (UpdateWorkflowsTask) this.project.getTasks()
+			.getByName(UpdateWorkflowsTask.TASK_NAME);
+		update.getSkipGenerator().set(true);
+		update.getBranch().set(branch);
+		if (sagan != null) {
+			update.getSaganApiUrl().set(sagan.url());
+		}
+		update.update();
+	}
+
+	private VerifyWorkflowsTask task(String branch, FakeSagan sagan) {
+		VerifyWorkflowsTask task = task();
+		task.getBranch().set(branch);
+		if (sagan != null) {
+			task.getSaganApiUrl().set(sagan.url());
+		}
+		return task;
 	}
 
 	private VerifyWorkflowsTask task() {

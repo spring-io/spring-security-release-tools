@@ -41,5 +41,6 @@ jobs:
           ORG_GRADLE_PROJECT_releaseChannel: ${{ inputs.release-channel }}
           ORG_GRADLE_PROJECT_artifactoryUsername: ${{ secrets.artifactory-username }}
           ORG_GRADLE_PROJECT_artifactoryPassword: ${{ secrets.artifactory-password }}
+          ORG_GRADLE_PROJECT_branch: ${{ github.base_ref || github.ref_name }}
         with:
           gradle-args: verifyWorkflows --stacktrace

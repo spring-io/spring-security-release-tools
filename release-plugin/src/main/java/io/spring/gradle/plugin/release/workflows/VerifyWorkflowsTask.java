@@ -29,7 +29,10 @@ import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.RegularFileProperty;
+import org.gradle.api.provider.Property;
+import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Internal;
+import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.work.DisableCachingByDefault;
 
@@ -37,8 +40,12 @@ import org.gradle.work.DisableCachingByDefault;
  * Verifies that the project's workflows and actions are pinned to commit SHAs, that pins
  * the version manifest knows about match it, and that workflows rendered from specs are
  * up to date. The workflows the workflow generator writes are not checked; they are
- * verified by its rules. Works offline and does not change anything, so it is safe to run
- * in CI. To bring workflows up to date, run {@code updateWorkflows} locally.
+ * verified by its rules. It sees what {@code updateWorkflows} sees, including the branch,
+ * so a workflow that belongs only on {@code main} is expected there and an error
+ * elsewhere. It does not change anything, so it is safe to run in CI. On {@code main} it
+ * asks api.spring.io which branches are supported, and if it can't, doesn't verify the
+ * one workflow that depends on them. To bring workflows up to date, run
+ * {@code updateWorkflows} locally.
  *
  * @author Josh Cummings
  */
@@ -65,6 +72,21 @@ public abstract class VerifyWorkflowsTask extends DefaultTask {
 	@Internal
 	public abstract RegularFileProperty getLocalVersionsFile();
 
+	/**
+	 * The branch being verified, which decides which workflows should be there. Defaults
+	 * to the one checked out. If there is none, the workflows that depend on it are
+	 * verified if they are checked in, as if on {@code main}.
+	 */
+	@Input
+	@Optional
+	public abstract Property<String> getBranch();
+
+	@Input
+	public abstract Property<String> getProjectSlug();
+
+	@Input
+	public abstract Property<String> getSaganApiUrl();
+
 	@TaskAction
 	public void verify() throws IOException {
 		Path workflows = getWorkflowsDirectory().get().getAsFile().toPath();
@@ -76,14 +98,30 @@ public abstract class VerifyWorkflowsTask extends DefaultTask {
 		List<String> problems = new ArrayList<>();
 		problems.addAll(WorkflowVerifier.verifyPins(workflows, versions));
 		problems.addAll(WorkflowVerifier.verifyPins(actions, versions));
+		Map<String, Object> model = WorkflowSupport.config(config);
 		Map<String, WorkflowTemplates.Template> templates = new TreeMap<>(
 				WorkflowTemplates.load(specs, Files.exists(config)));
-		templates.keySet().removeAll(WorkflowSupport.GENERATED);
-		templates.keySet()
-			.removeIf((name) -> WorkflowSupport.MAIN_ONLY.contains(name)
-					&& !Files.exists(getGitHubDirectory().get().getAsFile().toPath().resolve(name)));
+		String branch = getBranch().getOrNull();
+		if (branch == null) {
+			model = WorkflowSupport.onMain(model);
+			templates.keySet().removeAll(WorkflowSupport.GENERATED);
+			templates.keySet()
+				.removeIf((name) -> WorkflowSupport.MAIN_ONLY.contains(name)
+						&& !Files.exists(getGitHubDirectory().get().getAsFile().toPath().resolve(name)));
+		}
+		else {
+			try {
+				model = WorkflowSupport.generate(model, branch,
+						() -> WorkflowSupport.supportedBranches(getProjectSlug().get(), getSaganApiUrl().get()));
+			}
+			catch (GradleException ex) {
+				getLogger().warn("Not verifying {}: {}", WorkflowSupport.GENERATED, ex.getMessage());
+				model = WorkflowSupport.generate(model, branch, List::of);
+				templates.keySet().removeAll(WorkflowSupport.GENERATED);
+			}
+		}
 		problems.addAll(WorkflowVerifier.verifyRendered(templates, getGitHubDirectory().get().getAsFile().toPath(),
-				new WorkflowRenderer(versions, WorkflowSupport.onMain(WorkflowSupport.config(config)))));
+				new WorkflowRenderer(versions, model)));
 		if (!problems.isEmpty()) {
 			throw new GradleException("Workflow verification found " + problems.size() + " problem(s):\n  "
 					+ String.join("\n  ", problems));
@@ -102,6 +140,7 @@ public abstract class VerifyWorkflowsTask extends DefaultTask {
 			task.getSpecsDirectory().set(github.dir("specs"));
 			task.getConfigFile().set(github.file("workflow-generator.yml"));
 			task.getLocalVersionsFile().set(github.file("specs/versions.json"));
+			WorkflowSupport.conventions(project, task.getBranch(), task.getProjectSlug(), task.getSaganApiUrl());
 		});
 	}
 
