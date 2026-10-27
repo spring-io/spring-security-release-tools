@@ -19,6 +19,7 @@ package io.spring.release;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
 import com.github.api.GitHubApi;
 import com.github.api.Milestone;
 import com.github.api.Repository;
+import io.spring.api.Generation;
 import io.spring.api.SaganApi;
 
 /**
@@ -187,6 +189,25 @@ public class SpringReleases {
 		var today = LocalDate.now();
 		var generation = this.saganApi.getGeneration(repo, branch);
 		return (!today.isBefore(generation.initialReleaseDate()) && !today.isAfter(generation.ossSupportEndDate()));
+	}
+
+	/**
+	 * Finds the branches that have OSS support: every generation that is inside its OSS
+	 * support window, oldest first, followed by {@code main}.
+	 * @param repo The GitHub repository name
+	 * @return the names of the OSS supported branches (e.g. 7.0.x, 7.1.x, main)
+	 */
+	public List<String> getOssSupportedBranches(String repo) {
+		var today = LocalDate.now();
+		var branches = this.saganApi.getGenerations(repo)
+			.stream()
+			.filter((generation) -> !today.isBefore(generation.initialReleaseDate())
+					&& !today.isAfter(generation.ossSupportEndDate()))
+			.sorted(Comparator.comparing(Generation::initialReleaseDate))
+			.map(Generation::name)
+			.collect(Collectors.toCollection(ArrayList::new));
+		branches.add("main");
+		return branches;
 	}
 
 	/**

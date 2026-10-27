@@ -16,7 +16,9 @@
 
 package io.spring.gradle.plugin.release.workflows;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -27,7 +29,9 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import io.spring.api.SaganApi;
 import io.spring.gradle.plugin.core.ProjectUtils;
+import io.spring.release.SpringReleases;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
@@ -92,6 +96,24 @@ public abstract class UpdateWorkflowsTask extends DefaultTask {
 	@Optional
 	public abstract Property<String> getGitHubAccessToken();
 
+	/**
+	 * The branch being updated, which decides whether the workflows that only run from
+	 * {@code main} are rendered. Defaults to the one checked out.
+	 */
+	@Input
+	@Optional
+	public abstract Property<String> getBranch();
+
+	/**
+	 * The name of the project at {@code api.spring.io}, from which the supported branches
+	 * come.
+	 */
+	@Input
+	public abstract Property<String> getProjectSlug();
+
+	@Input
+	public abstract Property<String> getSaganApiUrl();
+
 	@Input
 	public abstract Property<String> getGitHubApiUrl();
 
@@ -131,7 +153,8 @@ public abstract class UpdateWorkflowsTask extends DefaultTask {
 		Path specs = getSpecsDirectory().get().getAsFile().toPath();
 		Path github = getGitHubDirectory().get().getAsFile().toPath();
 		Path config = getConfigFile().get().getAsFile().toPath();
-		WorkflowRenderer renderer = new WorkflowRenderer(versions, WorkflowSupport.config(config));
+		WorkflowRenderer renderer = new WorkflowRenderer(versions, WorkflowSupport
+			.generate(WorkflowSupport.config(config), getBranch().getOrNull(), this::supportedBranches));
 		// render everything before writing anything, so a spec that can't be rendered
 		// leaves the workflows as they were
 		Map<Path, String> rendered = new LinkedHashMap<>();
@@ -163,6 +186,37 @@ public abstract class UpdateWorkflowsTask extends DefaultTask {
 		for (Path workflow : removed) {
 			Files.delete(workflow);
 			getLogger().lifecycle("Removed {}", workflow);
+		}
+	}
+
+	private List<String> supportedBranches() {
+		String slug = getProjectSlug().get();
+		try {
+			return new SpringReleases(null, new SaganApi(getSaganApiUrl().get(), null, null))
+				.getOssSupportedBranches(slug);
+		}
+		catch (RuntimeException ex) {
+			throw new GradleException("Could not find the supported branches of " + slug + " at "
+					+ getSaganApiUrl().get() + " (" + rootMessage(ex) + "). List them under"
+					+ " workflow.generator.project.supported-branches in .github/workflow-generator.yml, or turn off"
+					+ " workflows.release-tools.update-antora-ui", ex);
+		}
+	}
+
+	private static String currentBranch(File directory) {
+		try {
+			Process process = new ProcessBuilder("git", "branch", "--show-current").directory(directory)
+				.redirectErrorStream(true)
+				.start();
+			String branch = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8).trim();
+			return (process.waitFor() == 0 && !branch.isEmpty()) ? branch : null;
+		}
+		catch (IOException ex) {
+			return null;
+		}
+		catch (InterruptedException ex) {
+			Thread.currentThread().interrupt();
+			return null;
 		}
 	}
 
@@ -264,6 +318,14 @@ public abstract class UpdateWorkflowsTask extends DefaultTask {
 					.resolve("spring-security-release-tools/workflow-generator")
 					.toFile());
 			task.getGitHubApiUrl().convention("https://api.github.com");
+			task.getSaganApiUrl().convention("https://api.spring.io");
+			task.getProjectSlug()
+				.convention(ProjectUtils.getProperty(project, "ossRepoName")
+					.orElse(project.getRootProject().getName().replaceFirst("-commercial$", "")));
+			task.getBranch()
+				.convention(ProjectUtils.getProperty(project, "branch")
+					.orElse(project.getProviders()
+						.provider(() -> currentBranch(project.getLayout().getProjectDirectory().getAsFile()))));
 			task.getSkipGenerator().convention(false);
 			task.getGitHubAccessToken()
 				.set(ProjectUtils.getProperty(project, "gitHubAccessToken")

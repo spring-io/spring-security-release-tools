@@ -21,7 +21,10 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Supplier;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
@@ -33,6 +36,16 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
  * @author Josh Cummings
  */
 final class WorkflowSupport {
+
+	/**
+	 * The templates that render from what {@link #generate} adds to the model, which
+	 * changes with the branch and over time, so {@link VerifyWorkflowsTask}, which is
+	 * offline and has no branch in CI, can't reproduce them. Only
+	 * {@link UpdateWorkflowsTask} renders these.
+	 */
+	static final Set<String> GENERATED = Set.of("workflows/update-antora-ui-spring.yml");
+
+	private static final String ANTORA_UI = "update-antora-ui";
 
 	private static final ObjectMapper YAML = new YAMLMapper();
 
@@ -78,8 +91,37 @@ final class WorkflowSupport {
 	}
 
 	private static Map<String, Object> defaults() {
-		return Map.of("workflow",
-				Map.of("generator", Map.of("workflows", Map.of("release-tools", Map.of("verify", true)))));
+		return releaseTools(Map.of("verify", true, ANTORA_UI, true));
+	}
+
+	private static Map<String, Object> releaseTools(Map<String, Object> values) {
+		return Map.of("workflow", Map.of("generator", Map.of("workflows", Map.of("release-tools", values))));
+	}
+
+	/**
+	 * Add to the model what can only be known when generating. The Antora UI is kept up
+	 * to date from the main branch alone, since a scheduled workflow only runs from the
+	 * default branch, so on any other branch {@code update-antora-ui} is turned off.
+	 * Where it is on, {@code workflow.generator.project.supported-branches} is the
+	 * branches that are supported.
+	 * @param config the model from {@link #config}
+	 * @param branch the branch being generated on, or {@code null} if unknown
+	 * @param supported finds the supported branches, only called if they are needed
+	 * @return the model to render from
+	 */
+	@SuppressWarnings("unchecked")
+	static Map<String, Object> generate(Map<String, Object> config, String branch, Supplier<List<String>> supported) {
+		Map<String, Object> tools = (Map<String, Object>) ((Map<String, Object>) ((Map<String, Object>) config
+			.get("workflow")).get("generator")).get("workflows");
+		boolean enabled = Boolean.TRUE.equals(((Map<String, Object>) tools.get("release-tools")).get(ANTORA_UI));
+		if (!enabled) {
+			return config;
+		}
+		if (branch == null || !branch.endsWith("main")) {
+			return merge(config, releaseTools(Map.of(ANTORA_UI, false)));
+		}
+		return merge(config, Map.of("workflow",
+				Map.of("generator", Map.of("project", Map.of("supported-branches", supported.get())))));
 	}
 
 	@SuppressWarnings("unchecked")

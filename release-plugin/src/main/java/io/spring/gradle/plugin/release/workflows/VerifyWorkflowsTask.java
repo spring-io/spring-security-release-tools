@@ -21,6 +21,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
@@ -74,8 +76,10 @@ public abstract class VerifyWorkflowsTask extends DefaultTask {
 		List<String> problems = new ArrayList<>();
 		problems.addAll(WorkflowVerifier.verifyPins(workflows, versions));
 		problems.addAll(WorkflowVerifier.verifyPins(actions, versions));
-		problems.addAll(WorkflowVerifier.verifyRendered(WorkflowTemplates.load(specs, Files.exists(config)),
-				getGitHubDirectory().get().getAsFile().toPath(),
+		Map<String, WorkflowTemplates.Template> templates = new TreeMap<>(
+				WorkflowTemplates.load(specs, Files.exists(config)));
+		templates.keySet().removeAll(WorkflowSupport.GENERATED);
+		problems.addAll(WorkflowVerifier.verifyRendered(templates, getGitHubDirectory().get().getAsFile().toPath(),
 				new WorkflowRenderer(versions, WorkflowSupport.config(config))));
 		if (!problems.isEmpty()) {
 			throw new GradleException("Workflow verification found " + problems.size() + " problem(s):\n  "

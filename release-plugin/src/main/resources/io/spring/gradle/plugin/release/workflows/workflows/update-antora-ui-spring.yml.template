@@ -1,0 +1,48 @@
+<<#workflow.generator.workflows.release-tools.update-antora-ui>>
+name: Update Antora UI Spring
+
+on:
+  schedule:
+    - cron: '0 10 * * *' # Once per day at 10am UTC
+  workflow_dispatch: # Manual trigger
+
+permissions:
+  contents: read
+
+jobs:
+  update-antora-ui-spring:
+    name: Update on Supported Branches
+    if: ${{ github.event.repository.fork == false }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    strategy:
+      matrix:
+        branch:
+<<#workflow.generator.project.supported-branches>>
+          - '<< . >>'
+<</workflow.generator.project.supported-branches>>
+    steps:
+      - name: Update
+        uses: spring-io/spring-doc-actions/update-antora-spring-ui
+        with:
+          docs-branch: ${{ matrix.branch }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          antora-file-path: 'docs/antora-playbook.yml'
+  update-antora-ui-spring-docs-build:
+    name: Update on docs-build
+    if: ${{ github.event.repository.fork == false }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Update
+        uses: spring-io/spring-doc-actions/update-antora-spring-ui
+        with:
+          docs-branch: 'docs-build'
+          token: ${{ secrets.GITHUB_TOKEN }}
+<</workflow.generator.workflows.release-tools.update-antora-ui>>

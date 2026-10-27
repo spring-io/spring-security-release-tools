@@ -89,6 +89,20 @@ class VerifyWorkflowsTaskTests {
 	}
 
 	@Test
+	void verifyWhenAntoraUiWorkflowRenderedOnMainThenSucceedsWithNoBranchAndNoNetwork() throws IOException {
+		UpdateWorkflowsTask update = (UpdateWorkflowsTask) this.project.getTasks()
+			.getByName(UpdateWorkflowsTask.TASK_NAME);
+		update.getSkipGenerator().set(true);
+		update.getBranch().set("main");
+		try (FakeSagan sagan = new FakeSagan()) {
+			update.getSaganApiUrl().set(sagan.url());
+			update.update();
+		}
+		assertThat(new File(this.projectDir, ".github/workflows/update-antora-ui-spring.yml")).exists();
+		task().verify();
+	}
+
+	@Test
 	void pluginWhenAppliedThenVerifyWorkflowsRegistered() {
 		assertThat(this.project.getTasks().findByName(VerifyWorkflowsTask.TASK_NAME)).isNotNull();
 	}

@@ -144,6 +144,57 @@ class UpdateWorkflowsTaskTests {
 	}
 
 	@Test
+	void updateWhenNotOnMainThenAntoraUiWorkflowNotRendered() throws Exception {
+		task("7.0.x").update();
+		assertThat(new File(this.projectDir, ".github/workflows/update-antora-ui-spring.yml")).doesNotExist();
+	}
+
+	@Test
+	void updateWhenBranchUnknownThenAntoraUiWorkflowNotRendered() throws Exception {
+		task().update();
+		assertThat(new File(this.projectDir, ".github/workflows/update-antora-ui-spring.yml")).doesNotExist();
+	}
+
+	@Test
+	void updateWhenOnMainAndAntoraUiTurnedOffThenWorkflowNotRendered() throws Exception {
+		configure("update-antora-ui: false", "");
+		task("main").update();
+		assertThat(new File(this.projectDir, ".github/workflows/update-antora-ui-spring.yml")).doesNotExist();
+	}
+
+	@Test
+	void updateWhenOnMainThenMatrixIsTheBranchesTheProjectsApiSaysAndActionPinned() throws Exception {
+		this.project.getExtensions().getExtraProperties().set("ossRepoName", "spring-security");
+		try (FakeSagan sagan = new FakeSagan()) {
+			UpdateWorkflowsTask task = task("main");
+			task.getSaganApiUrl().set(sagan.url());
+			task.update();
+			assertThat(sagan.requests).containsExactly("/projects/spring-security/generations");
+		}
+		WorkflowVersions.Action docs = WorkflowVersions.shipped().action("spring-io/spring-doc-actions");
+		assertThat(new File(this.projectDir, ".github/workflows/update-antora-ui-spring.yml")).content()
+			.contains("        branch:\n          - '7.0.x'\n          - '7.1.x'\n          - 'main'\n    steps:")
+			.contains("spring-io/spring-doc-actions/update-antora-spring-ui@" + docs.sha() + " # " + docs.ref())
+			.contains("docs-branch: 'docs-build'");
+	}
+
+	@Test
+	void updateWhenNoOssRepoNameThenProjectIsTheRootProjectWithoutCommercial() throws Exception {
+		assertThat(((UpdateWorkflowsTask) this.project.getTasks().getByName("updateWorkflows")).getProjectSlug().get())
+			.isEqualTo(this.project.getRootProject().getName());
+	}
+
+	@Test
+	void updateWhenSupportedBranchesCannotBeFoundThenSaysHowToProceed() throws Exception {
+		UpdateWorkflowsTask task = task("main");
+		task.getSaganApiUrl().set("http://127.0.0.1:1");
+		assertThatExceptionOfType(GradleException.class).isThrownBy(task::update)
+			.withMessageContaining("Could not find the supported branches")
+			.withMessageContaining("update-antora-ui");
+		assertThat(new File(this.projectDir, ".github/workflows/pull-request-build.yml")).doesNotExist();
+	}
+
+	@Test
 	void updateWhenVerifyNotConfiguredThenVerificationIsOn() throws Exception {
 		task().update();
 		assertThat(new File(this.projectDir, ".github/workflows/ci.yml")).content()
@@ -215,7 +266,21 @@ class UpdateWorkflowsTaskTests {
 	private UpdateWorkflowsTask task() {
 		UpdateWorkflowsTask task = (UpdateWorkflowsTask) this.project.getTasks().getByName("updateWorkflows");
 		task.getSkipGenerator().set(true);
+		// a temporary directory is not a git checkout, so no branch unless asked for
 		return task;
+	}
+
+	private UpdateWorkflowsTask task(String branch) {
+		UpdateWorkflowsTask task = task();
+		task.getBranch().set(branch);
+		return task;
+	}
+
+	private void configure(String releaseTools, String project) throws IOException {
+		String config = "workflow:\n  generator:\n    project:\n      java:\n        versions:\n          primary: 25\n"
+				+ ((project.isEmpty()) ? "" : "      " + project + "\n");
+		write(".github/workflow-generator.yml", config + ((releaseTools.isEmpty()) ? ""
+				: "    workflows:\n      release-tools:\n        " + releaseTools + "\n"));
 	}
 
 	private void write(String path, String content) throws IOException {

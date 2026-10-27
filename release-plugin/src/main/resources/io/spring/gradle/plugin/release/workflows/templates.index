@@ -6,5 +6,6 @@ workflows/dependabot-pull-request-build.yml.template
 workflows/pull-request-build.yml.template
 workflows/release-announcements-publish.yml.template
 workflows/release-announcements-stage.yml.template
+workflows/update-antora-ui-spring.yml.template
 actions/release-train-build/action.yml.template
 actions/release-train-test/action.yml.template

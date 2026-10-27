@@ -353,6 +353,21 @@ public class SpringReleasesTests {
 	}
 
 	@Test
+	public void getOssSupportedBranchesWhenGenerationsThenOnlyThoseInOssWindowOldestFirstAndMain() {
+		var today = LocalDate.now();
+		var eol = new Generation("6.4.x", today.minusYears(3), today.minusYears(1), today.plusYears(1));
+		var current = new Generation("7.1.x", today.minusMonths(2), today.plusMonths(10), today.plusYears(2));
+		var previous = new Generation("7.0.x", today.minusMonths(8), today.plusMonths(4), today.plusYears(1));
+		var upcoming = new Generation("7.2.x", today.plusMonths(4), today.plusYears(1), today.plusYears(2));
+		when(this.saganApi.getGenerations(anyString())).thenReturn(List.of(eol, current, upcoming, previous));
+
+		assertThat(this.springReleases.getOssSupportedBranches(REPO)).containsExactly("7.0.x", "7.1.x", "main");
+
+		verify(this.saganApi).getGenerations(REPO);
+		verifyNoMoreInteractions(this.saganApi);
+	}
+
+	@Test
 	public void hasCommercialSupportWhenInsideCommercialSupportWindowThenTrue() {
 		var version = "6.1.0";
 		var today = LocalDate.now();
