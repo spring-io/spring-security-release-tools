@@ -9,9 +9,7 @@ on:
         type: string
 
 permissions:
-  actions: write
   contents: read
-  issues: write
 
 jobs:
 <<#workflow.generator.workflows.release-tools.deploy-schema>>
@@ -40,6 +38,10 @@ jobs:
 <</workflow.generator.workflows.release-tools.deploy-schema>>
   publish-release-announcements:
     name: Publish Release Announcements
+    permissions:
+      actions: write
+      contents: read
+      issues: write
 <<#workflow.generator.workflows.release-tools.deploy-schema>>
     needs: [ deploy-schema ]
     if: ${{ !failure() && !cancelled() }}

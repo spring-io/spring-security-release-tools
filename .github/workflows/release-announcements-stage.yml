@@ -15,15 +15,14 @@ on:
         type: string
 
 permissions:
-  actions: write
-  contents: write
-  issues: read
-  pull-requests: read
+  contents: read
 
 jobs:
   check-support-window:
     name: Check Support Window
     runs-on: ubuntu-latest
+    permissions:
+      actions: write
     steps:
       - id: support-window
         name: Compute Support Window
@@ -42,6 +41,10 @@ jobs:
     name: Stage Release Announcements
     needs: [ check-support-window ]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

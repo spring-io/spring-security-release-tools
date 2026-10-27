@@ -12,14 +12,14 @@ on:
         required: true
 
 permissions:
-  actions: write
   contents: read
-  issues: write
 
 jobs:
   check-support-window:
     name: Check Support Window
     runs-on: ubuntu-latest
+    permissions:
+      actions: write
     steps:
       - id: support-window
         name: Compute Support Window
@@ -38,6 +38,8 @@ jobs:
     name: Compute Release Coordinates
     needs: [ check-support-window ]
     runs-on: ubuntu-latest
+    permissions:
+      issues: read
     outputs:
       next-milestone-version: ${{ steps.next-release-milestone.outputs.version }}
       next-milestone-version-date: ${{ steps.next-release-milestone.outputs.version-date }}
@@ -53,6 +55,8 @@ jobs:
     name: Deploy Docs
     needs: [ check-support-window ]
     runs-on: ubuntu-latest
+    permissions:
+      actions: write
     steps:
       - name: Dispatch Deploy Docs
         env:
@@ -63,6 +67,8 @@ jobs:
     name: Update Milestones
     needs: [ compute-release, deploy-docs ]
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
     steps:
       - name: Close Milestone
         uses: spring-io/spring-release-actions/close-milestone@3f7412aeec60ad13127b2a536a1b19a2803a5b81  # 0.0.8
@@ -79,6 +85,7 @@ jobs:
     name: Announce Release
     needs: [ update-milestones ]
     runs-on: ubuntu-latest
+    permissions: {}
     steps:
       - name: Announce Release on GChat
         uses: spring-io/spring-release-actions/announce-on-gchat@6795980b9d960a13d420e114d50f1c8abe730769  # 0.0.7

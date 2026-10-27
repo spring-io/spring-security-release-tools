@@ -11,14 +11,16 @@ on:
         type: string
 
 permissions:
-  actions: write
-  contents: write
-  issues: read
-  pull-requests: read
+  contents: read
 
 jobs:
   stage-release-announcements:
     name: Stage Release Announcements
+    permissions:
+      actions: write
+      contents: write
+      issues: read
+      pull-requests: read
     uses: spring-io/spring-security-release-tools/.github/workflows/release-announcements-stage.yml
     with:
       version: ${{ inputs.version || github.ref_name }}
