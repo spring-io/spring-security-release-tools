@@ -60,6 +60,13 @@ public class SpringReleasePluginFunctionalTests {
 	}
 
 	@Test
+	public void createReleaseTaskWhenRepositoryNameSetThenRepositoryUsesIt() {
+		this.springRelease.getRepositoryName().set("spring-security-commercial");
+		var task = ProjectUtils.findTaskByType(this.project, CreateReleaseTask.class);
+		assertThat(task.getRepository().get().name()).isEqualTo("spring-security-commercial");
+	}
+
+	@Test
 	public void getNextReleaseMilestoneTaskWhenPluginAppliedThenConfigured() {
 		var task = ProjectUtils.findTaskByType(this.project, GetNextReleaseMilestoneTask.class);
 		assertThat(task.getVersion().get()).isEqualTo(this.project.getVersion());
