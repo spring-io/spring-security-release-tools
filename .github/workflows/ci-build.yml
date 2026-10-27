@@ -37,7 +37,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Build Project
-        uses: spring-io/spring-security-actions/build@b41ca15ccd8edb72711bf0b4051481fcc1ef3978 # main
+        uses: spring-io/spring-security-actions/build@d8f7823200918755444538cbb4219d96f2b7be33 # 0.0.12
         env:
           ORG_GRADLE_PROJECT_releaseChannel: ${{ inputs.release-channel }}
           ORG_GRADLE_PROJECT_artifactoryUsername: ${{ secrets.artifactory-username }}

@@ -37,7 +37,7 @@ jobs:
         with:
           version: ${{ inputs.version }}
       - name: Deploy Artifacts
-        uses: spring-io/spring-security-actions/ensure-artifacts@09c8d127933065382da35646c7d4d3a8f9352368 # 0.0.4
+        uses: spring-io/spring-security-actions/ensure-artifacts@d8f7823200918755444538cbb4219d96f2b7be33 # 0.0.12
         with:
           version: ${{ inputs.version }}
           username: ${{ secrets.artifactory-username }}

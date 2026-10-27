@@ -24,6 +24,6 @@ jobs:
         with:
           ref: ${{ inputs.version }}
       - name: Publish Release Notes
-        uses: spring-io/spring-security-actions/publish-release-notes@09c8d127933065382da35646c7d4d3a8f9352368 # 0.0.4
+        uses: spring-io/spring-security-actions/publish-release-notes@d8f7823200918755444538cbb4219d96f2b7be33 # 0.0.12
         with:
           tag: ${{ inputs.version }}

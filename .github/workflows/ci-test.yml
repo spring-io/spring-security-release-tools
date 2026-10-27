@@ -31,11 +31,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Test Project
-        uses: spring-io/spring-security-actions/test@09c8d127933065382da35646c7d4d3a8f9352368 # 0.0.4
+        uses: spring-io/spring-security-actions/test@d8f7823200918755444538cbb4219d96f2b7be33 # 0.0.12
         env:
           ORG_GRADLE_PROJECT_releaseChannel: ${{ inputs.release-channel }}
           ORG_GRADLE_PROJECT_artifactoryUsername: ${{ secrets.artifactory-username }}
           ORG_GRADLE_PROJECT_artifactoryPassword: ${{ secrets.artifactory-password }}
         with:
           java-version: ${{ inputs.java-version }}
-          gradle-args: test -Psnapshot -PtestToolchain=${{ inputs.java-version }}
+          gradle-args: -Psnapshot -PtestToolchain=${{ inputs.java-version }}
