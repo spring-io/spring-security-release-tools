@@ -24,4 +24,3 @@ jobs:
     uses: spring-io/spring-security-release-tools/.github/workflows/release-announcements-stage.yml
     with:
       version: ${{ inputs.version || github.ref_name }}
-    secrets: inherit

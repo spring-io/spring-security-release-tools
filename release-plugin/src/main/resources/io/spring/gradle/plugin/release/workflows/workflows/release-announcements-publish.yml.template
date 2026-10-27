@@ -49,4 +49,5 @@ jobs:
     uses: spring-io/spring-security-release-tools/.github/workflows/release-announcements-publish.yml
     with:
       version: ${{ inputs.version }}
-    secrets: inherit
+    secrets:
+      SPRING_RELEASE_GCHAT_WEBHOOK_URL: ${{ secrets.SPRING_RELEASE_GCHAT_WEBHOOK_URL }}
