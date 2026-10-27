@@ -69,7 +69,8 @@ public abstract class GenerateChangelogTask extends JavaExec {
 
 		args("--spring.config.location=scripts/release/release-notes-sections.yml");
 		if (gitHubAccessToken != null) {
-			args("--github.token=" + gitHubAccessToken);
+			// not an argument, which anyone on the machine could read in the process list
+			environment("GITHUB_TOKEN", gitHubAccessToken);
 		}
 		args(version, outputFile.toString());
 		super.exec();
