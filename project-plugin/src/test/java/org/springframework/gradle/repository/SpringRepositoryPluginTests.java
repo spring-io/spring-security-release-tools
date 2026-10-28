@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.StreamSupport;
 
+import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.repositories.ArtifactRepository;
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository;
@@ -33,6 +34,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Tests for {@link SpringRepositoryPlugin}.
@@ -192,6 +194,33 @@ public class SpringRepositoryPluginTests {
 			}
 		}
 		assertThat(names()).contains("spring-oss-snapshot", "spring-internal-release", "spring-lts-snapshot");
+	}
+
+	@Test
+	public void applyWhenForceHasWhitespaceThenEntriesTrimmed() {
+		force(" milestone , local ");
+		evaluate("1.0.0");
+
+		assertThat(names()).containsExactly("MavenLocal", "MavenRepo", "spring-oss-milestone", "spring-oss-release");
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = { "", " ", ",", " , " })
+	public void applyWhenForceBlankThenVersionDetectionApplies(String value) {
+		force(value);
+		evaluate("1.0.0-SNAPSHOT");
+
+		assertThat(names()).containsExactly("MavenRepo", "spring-oss-snapshot", "spring-oss-milestone",
+				"spring-oss-release");
+	}
+
+	@Test
+	public void applyWhenForceUnknownValueThenFailsListingAllowedValues() {
+		force("snapshots");
+
+		assertThatThrownBy(() -> evaluate("1.0.0")).hasRootCauseInstanceOf(GradleException.class)
+			.hasStackTraceContaining("Unknown value 'snapshots' for forceMavenRepositories")
+			.hasStackTraceContaining("[local, snapshot, milestone, release]");
 	}
 
 	private void force(String repositories) {

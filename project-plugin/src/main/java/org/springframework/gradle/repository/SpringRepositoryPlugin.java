@@ -16,11 +16,12 @@
 
 package org.springframework.gradle.repository;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Function;
 
+import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.dsl.RepositoryHandler;
@@ -43,6 +44,9 @@ import org.gradle.api.artifacts.dsl.RepositoryHandler;
 public abstract class SpringRepositoryPlugin implements Plugin<Project> {
 
 	private static final String FORCE_MAVEN_REPOSITORIES = "forceMavenRepositories";
+
+	private static final List<String> FORCE_MAVEN_REPOSITORY_VALUES = List.of("local", "snapshot", "milestone",
+			"release");
 
 	private static final String OSS_URL = "https://repo.spring.io";
 
@@ -67,11 +71,7 @@ public abstract class SpringRepositoryPlugin implements Plugin<Project> {
 		String ossReleaseUrl = "%s/%s".formatted(OSS_URL, OSS_RELEASE_REPOSITORY);
 		RepositorySpec spec = new RepositorySpec(null, null);
 
-		List<String> forceMavenRepositories = Collections.emptyList();
-		if (project.hasProperty(FORCE_MAVEN_REPOSITORIES)) {
-			forceMavenRepositories = List
-				.of(Objects.requireNonNull(project.findProperty(FORCE_MAVEN_REPOSITORIES)).toString().split(","));
-		}
+		List<String> forceMavenRepositories = getForceMavenRepositories(project);
 
 		String version = project.getVersion().toString();
 		boolean isSnapshot = Versions.isSnapshot(version) && forceMavenRepositories.isEmpty()
@@ -93,6 +93,24 @@ public abstract class SpringRepositoryPlugin implements Plugin<Project> {
 		}
 		repositories.maven(spec.repository("spring-oss-release", ossReleaseUrl));
 		this.internal.apply(project);
+	}
+
+	private static List<String> getForceMavenRepositories(Project project) {
+		Object value = project.findProperty(FORCE_MAVEN_REPOSITORIES);
+		if (value == null) {
+			return Collections.emptyList();
+		}
+		List<String> repositories = Arrays.stream(value.toString().split(","))
+			.map(String::trim)
+			.filter((repository) -> !repository.isEmpty())
+			.toList();
+		for (String repository : repositories) {
+			if (!FORCE_MAVEN_REPOSITORY_VALUES.contains(repository)) {
+				throw new GradleException("Unknown value '%s' for %s. Expected a comma-separated list of %s"
+					.formatted(repository, FORCE_MAVEN_REPOSITORIES, FORCE_MAVEN_REPOSITORY_VALUES));
+			}
+		}
+		return repositories;
 	}
 
 }
