@@ -54,8 +54,7 @@ public class SpringJavaPlugin implements Plugin<Project> {
 			pluginManager.apply("org.gradle.groovy");
 		}
 		if (project.file("src/main/kotlin").exists() || project.file("src/test/kotlin").exists()
-				|| project.file("src/integration-test/kotlin").exists()
-				|| project.getBuildFile().getName().endsWith(".kts")) {
+				|| project.file("src/integration-test/kotlin").exists()) {
 			pluginManager.apply("org.jetbrains.kotlin.jvm");
 		}
 		pluginManager.apply(SpringRepositoryPlugin.class);
