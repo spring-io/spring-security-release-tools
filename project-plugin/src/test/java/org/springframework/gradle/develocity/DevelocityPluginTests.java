@@ -22,12 +22,16 @@ import com.gradle.develocity.agent.gradle.scan.BuildScanPublishingConfiguration;
 import com.gradle.develocity.agent.gradle.scan.BuildScanPublishingConfiguration.PublishingContext;
 import org.gradle.StartParameter;
 import org.gradle.api.Action;
+import org.gradle.api.GradleException;
 import org.gradle.api.initialization.Settings;
 import org.gradle.api.plugins.ExtensionContainer;
 import org.gradle.api.plugins.PluginManager;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.ProviderFactory;
 import org.gradle.api.specs.Spec;
+import org.gradle.caching.configuration.BuildCache;
+import org.gradle.caching.configuration.BuildCacheConfiguration;
+import org.gradle.api.invocation.Gradle;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -35,6 +39,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -63,6 +68,10 @@ public class DevelocityPluginTests {
 
 	private final BuildScanConfiguration buildScan = mock(BuildScanConfiguration.class);
 
+	private final Gradle gradle = mock(Gradle.class);
+
+	private final BuildCacheConfiguration buildCache = mock(BuildCacheConfiguration.class);
+
 	private final DevelocityPlugin plugin = new DevelocityPlugin();
 
 	@BeforeEach
@@ -71,6 +80,8 @@ public class DevelocityPluginTests {
 		when(this.settings.getPluginManager()).thenReturn(this.pluginManager);
 		when(this.settings.getStartParameter()).thenReturn(this.startParameter);
 		when(this.settings.getExtensions()).thenReturn(this.extensions);
+		when(this.settings.getGradle()).thenReturn(this.gradle);
+		when(this.settings.getBuildCache()).thenReturn(this.buildCache);
 		when(this.extensions.getByType(DevelocityConfiguration.class)).thenReturn(this.develocity);
 		when(this.develocity.getBuildScan()).thenReturn(this.buildScan);
 	}
@@ -107,6 +118,57 @@ public class DevelocityPluginTests {
 		verify(this.pluginManager).apply("com.gradle.develocity");
 		verify(this.pluginManager, never()).apply("io.spring.ge.conventions");
 		verifyBuildScansDisabled();
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = { "lts", "internal", "hotfix" })
+	public void applyWhenReleaseChannelIsNotOssThenDisablesRemoteBuildCacheAfterSettingsEvaluated(
+			String releaseChannel) {
+		givenReleaseChannel(releaseChannel);
+		BuildCache remote = mock(BuildCache.class);
+		when(this.buildCache.getRemote()).thenReturn(remote);
+
+		this.plugin.apply(this.settings);
+
+		verifyNoInteractions(remote);
+		settingsEvaluated();
+		verify(remote).setEnabled(false);
+		verify(remote).setPush(false);
+	}
+
+	@Test
+	public void applyWhenNoRemoteBuildCacheConfiguredThenSettingsEvaluatedDoesNotFail() {
+		givenReleaseChannel("lts");
+		when(this.buildCache.getRemote()).thenReturn(null);
+
+		this.plugin.apply(this.settings);
+
+		settingsEvaluated();
+	}
+
+	@Test
+	public void applyWhenReleaseChannelIsOssThenDoesNotTouchBuildCache() {
+		givenReleaseChannel("oss");
+
+		this.plugin.apply(this.settings);
+
+		verifyNoInteractions(this.gradle, this.buildCache);
+	}
+
+	@Test
+	public void applyWhenReleaseChannelInvalidThenFailsListingAllowedValues() {
+		givenReleaseChannel("prod");
+
+		assertThatThrownBy(() -> this.plugin.apply(this.settings)).isInstanceOf(GradleException.class)
+			.hasMessageContaining("Invalid value 'prod' for releaseChannel")
+			.hasMessageContaining("oss, internal, hotfix, lts");
+	}
+
+	@SuppressWarnings("unchecked")
+	private void settingsEvaluated() {
+		ArgumentCaptor<Action<Settings>> action = ArgumentCaptor.forClass(Action.class);
+		verify(this.gradle).settingsEvaluated(action.capture());
+		action.getValue().execute(this.settings);
 	}
 
 	@SuppressWarnings("unchecked")

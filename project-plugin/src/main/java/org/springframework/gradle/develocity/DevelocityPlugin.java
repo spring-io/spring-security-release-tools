@@ -20,15 +20,17 @@ import com.gradle.develocity.agent.gradle.DevelocityConfiguration;
 import org.gradle.StartParameter;
 import org.gradle.api.Plugin;
 import org.gradle.api.initialization.Settings;
+import org.gradle.caching.configuration.BuildCache;
 import org.springframework.gradle.ReleaseChannel;
 
 /**
  * Applies the Develocity plugin so that a {@code develocity {}} block always parses, and
  * applies the Spring Develocity conventions for the "oss" release channel only.
  * <p>
- * For any other release channel, build scans are disabled: {@code --scan} is ignored and
- * publishing is refused, so that nothing is sent to a Develocity server (including
- * scans.gradle.com).
+ * For any other release channel, build scans are disabled ({@code --scan} is ignored and
+ * publishing is refused) and the remote build cache is disabled once settings are
+ * evaluated, so that this plugin does not send build data to a Develocity server
+ * (including scans.gradle.com).
  * <p>
  * The release channel is read from the {@code releaseChannel} project property.
  *
@@ -55,6 +57,18 @@ public class DevelocityPlugin implements Plugin<Settings> {
 		startParameter.setNoBuildScan(true);
 		settings.getPluginManager().apply(DEVELOCITY_PLUGIN_ID);
 		disableBuildScans(settings);
+		disableRemoteBuildCache(settings);
+	}
+
+	private void disableRemoteBuildCache(Settings settings) {
+		// settings.gradle may configure the remote cache after this plugin is applied
+		settings.getGradle().settingsEvaluated((evaluated) -> {
+			BuildCache remote = evaluated.getBuildCache().getRemote();
+			if (remote != null) {
+				remote.setEnabled(false);
+				remote.setPush(false);
+			}
+		});
 	}
 
 	private void disableBuildScans(Settings settings) {

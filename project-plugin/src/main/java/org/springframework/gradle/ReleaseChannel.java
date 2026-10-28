@@ -16,8 +16,11 @@
 
 package org.springframework.gradle;
 
+import java.util.Arrays;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
+import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.initialization.Settings;
 
@@ -28,23 +31,26 @@ public enum ReleaseChannel {
 	private static final String PROPERTY = "releaseChannel";
 
 	public static ReleaseChannel from(Project project) {
-		if (!project.hasProperty(PROPERTY)) {
-			return null;
-		}
-		String channel = (String) project.property(PROPERTY);
-		return from(channel);
+		Object channel = project.findProperty(PROPERTY);
+		return (channel != null) ? from(channel.toString()) : null;
 	}
 
 	public static ReleaseChannel from(Settings settings) {
 		String channel = settings.getProviders().gradleProperty(PROPERTY).getOrNull();
-		if (channel == null) {
-			return null;
-		}
-		return from(channel);
+		return (channel != null) ? from(channel) : null;
 	}
 
 	public static ReleaseChannel from(String channel) {
-		return ReleaseChannel.valueOf(channel.toUpperCase(Locale.US));
+		try {
+			return ReleaseChannel.valueOf(channel.trim().toUpperCase(Locale.US));
+		}
+		catch (IllegalArgumentException ex) {
+			String allowed = Arrays.stream(values())
+				.map((value) -> value.name().toLowerCase(Locale.US))
+				.collect(Collectors.joining(", "));
+			throw new GradleException(
+					"Invalid value '%s' for %s. Expected one of: %s".formatted(channel, PROPERTY, allowed), ex);
+		}
 	}
 
 }
