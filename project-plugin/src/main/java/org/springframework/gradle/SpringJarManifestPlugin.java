@@ -21,7 +21,10 @@ import java.util.Map;
 
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.plugins.JavaPluginExtension;
+import org.gradle.api.provider.Provider;
 import org.gradle.jvm.tasks.Jar;
+import org.gradle.jvm.toolchain.JavaLanguageVersion;
 
 /**
  * @author Steve Riesenberg
@@ -31,13 +34,27 @@ public class SpringJarManifestPlugin implements Plugin<Project> {
 	@Override
 	public void apply(Project project) {
 		project.getTasks().withType(Jar.class, (jar) -> jar.manifest((manifest) -> {
-			Map<String, String> attributes = new HashMap<>();
-			attributes.put("Build-Jdk-Spec", System.getProperty("java.specification.version"));
+			Map<String, Object> attributes = new HashMap<>();
+			attributes.put("Build-Jdk-Spec", buildJdkSpec(project));
 			attributes.put("Implementation-Title", project.getName());
 			attributes.put("Implementation-Version", project.getVersion().toString());
 			attributes.put("Automatic-Module-Name", project.getName().replace("-", "."));
 			manifest.attributes(attributes);
 		}));
+	}
+
+	/**
+	 * Reports the toolchain the project builds with so that the value does not depend on
+	 * which JDK happens to run Gradle, falling back to the running JDK when no toolchain
+	 * is configured.
+	 */
+	private static Provider<String> buildJdkSpec(Project project) {
+		return project.provider(() -> {
+			JavaPluginExtension java = project.getExtensions().findByType(JavaPluginExtension.class);
+			JavaLanguageVersion toolchain = (java != null) ? java.getToolchain().getLanguageVersion().getOrNull()
+					: null;
+			return (toolchain != null) ? toolchain.toString() : System.getProperty("java.specification.version");
+		});
 	}
 
 }
