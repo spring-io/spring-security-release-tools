@@ -17,6 +17,7 @@
 package org.springframework.gradle;
 
 import io.spring.javaformat.gradle.SpringJavaFormatPlugin;
+import org.gradle.api.GradleException;
 import org.gradle.api.JavaVersion;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -56,6 +57,12 @@ public class SpringJavaPlugin implements Plugin<Project> {
 		if (project.file("src/main/kotlin").exists() || project.file("src/test/kotlin").exists()
 				|| project.file("src/integration-test/kotlin").exists()) {
 			pluginManager.apply("org.jetbrains.kotlin.jvm");
+		}
+		if (project.getExtensions().findByType(JavaPluginExtension.class) == null) {
+			throw new GradleException(
+					"%s requires a JVM language plugin. Apply the java plugin (for example java-library), "
+						.formatted(getClass().getSimpleName())
+							+ "or add sources under src/main/java, src/main/groovy, or src/main/kotlin");
 		}
 		pluginManager.apply(SpringRepositoryPlugin.class);
 		pluginManager.apply(SpringManagementConfigurationPlugin.class);

@@ -19,12 +19,14 @@ package org.springframework.gradle;
 import java.io.File;
 import java.io.IOException;
 
+import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.testfixtures.ProjectBuilder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Tests for {@link SpringJavaPlugin}.
@@ -46,6 +48,25 @@ public class SpringJavaPluginTests {
 
 		assertThat(project.getPlugins().hasPlugin("org.jetbrains.kotlin.jvm")).isFalse();
 		assertThat(project.getPlugins().hasPlugin("java")).isTrue();
+	}
+
+	@Test
+	public void applyWhenNoJvmPluginAndNoSourcesThenFailsWithHelpfulMessage() {
+		Project project = ProjectBuilder.builder().withProjectDir(this.projectDir).build();
+
+		assertThatThrownBy(() -> project.getPluginManager().apply(SpringJavaPlugin.class))
+			.hasRootCauseInstanceOf(GradleException.class)
+			.hasStackTraceContaining("SpringJavaPlugin requires a JVM language plugin");
+	}
+
+	@Test
+	public void applyWhenJavaPluginAppliedAndNoSourcesThenSucceeds() {
+		Project project = ProjectBuilder.builder().withProjectDir(this.projectDir).build();
+		project.getPluginManager().apply("java-library");
+
+		project.getPluginManager().apply(SpringJavaPlugin.class);
+
+		assertThat(project.getPlugins().hasPlugin(SpringJavaPlugin.class)).isTrue();
 	}
 
 }

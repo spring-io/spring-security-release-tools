@@ -78,6 +78,15 @@ public class SpringProjectPluginTests {
 		assertThat(names(this.project)).doesNotContain("spring-internal-release", "spring-lts-release");
 	}
 
+	@Test
+	public void applyWhenChildProjectHasNoSourcesThenSucceeds() {
+		Project child = ProjectBuilder.builder().withParent(this.project).withName("empty").build();
+
+		child.getPluginManager().apply(SpringProjectPlugin.class);
+
+		assertThat(child.getPlugins().hasPlugin("java-library")).isTrue();
+	}
+
 	// gh-231
 	@Test
 	public void applyWhenVersionSetAfterApplyThenConfigurationUsesFinalVersion() throws IOException {
