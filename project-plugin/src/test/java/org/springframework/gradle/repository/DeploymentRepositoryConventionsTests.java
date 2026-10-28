@@ -20,14 +20,18 @@ import java.io.File;
 import java.net.URI;
 import java.util.Map;
 
+import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository;
 import org.gradle.testfixtures.ProjectBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Tests for {@link DeploymentRepositoryConventions}.
@@ -54,6 +58,14 @@ public class DeploymentRepositoryConventionsTests {
 	}
 
 	@Test
+	public void applyWhenEnvironmentBlankThenTreatedAsUnset() {
+		apply(Map.of("RELEASE_TRAIN_MAVEN_REPOSITORY_URL", "", "RELEASE_TRAIN_MAVEN_REPOSITORY_USERNAME", " ",
+				"RELEASE_TRAIN_MAVEN_REPOSITORY_PASSWORD", ""));
+
+		assertThat(this.project.getRepositories()).isEmpty();
+	}
+
+	@Test
 	public void applyWhenCredentialsSpecifiedThenNameUrlAndCredentialsSet() {
 		apply(Map.of("RELEASE_TRAIN_MAVEN_REPOSITORY_URL", "https://example.com/release-train",
 				"RELEASE_TRAIN_MAVEN_REPOSITORY_USERNAME", "user", "RELEASE_TRAIN_MAVEN_REPOSITORY_PASSWORD",
@@ -67,13 +79,37 @@ public class DeploymentRepositoryConventionsTests {
 	}
 
 	@Test
-	public void applyWhenOnlyUsernameSpecifiedThenNoCredentialsSet() {
-		apply(Map.of("RELEASE_TRAIN_MAVEN_REPOSITORY_URL", "https://example.com/release-train",
-				"RELEASE_TRAIN_MAVEN_REPOSITORY_USERNAME", "user"));
+	public void applyWhenOnlyUsernameSpecifiedThenFails() {
+		assertThatThrownBy(() -> apply(Map.of("RELEASE_TRAIN_MAVEN_REPOSITORY_URL", "https://example.com/release-train",
+				"RELEASE_TRAIN_MAVEN_REPOSITORY_USERNAME", "user")))
+			.isInstanceOf(GradleException.class)
+			.hasMessageContaining("must either both be set or both be unset");
+	}
+
+	@Test
+	public void applyWhenOnlyPasswordSpecifiedThenFails() {
+		assertThatThrownBy(() -> apply(Map.of("RELEASE_TRAIN_MAVEN_REPOSITORY_URL", "https://example.com/release-train",
+				"RELEASE_TRAIN_MAVEN_REPOSITORY_PASSWORD", "password")))
+			.isInstanceOf(GradleException.class)
+			.hasMessageContaining("must either both be set or both be unset");
+	}
+
+	@Test
+	public void applyWhenNoCredentialsThenRepositoryAddedWithoutCredentials() {
+		apply(Map.of("RELEASE_TRAIN_MAVEN_REPOSITORY_URL", "https://example.com/release-train"));
 
 		MavenArtifactRepository repository = (MavenArtifactRepository) this.project.getRepositories()
 			.getByName("spring-staged-deployment");
 		assertThat(repository.getCredentials().getUsername()).isNull();
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = { "http" + "://example.com/release-train", "file:///tmp/repo", "example.com/release-train",
+			"https:///path", "not a url" })
+	public void applyWhenUrlNotAbsoluteHttpsThenFails(String url) {
+		assertThatThrownBy(() -> apply(Map.of("RELEASE_TRAIN_MAVEN_REPOSITORY_URL", url)))
+			.isInstanceOf(GradleException.class)
+			.hasMessageContaining("RELEASE_TRAIN_MAVEN_REPOSITORY_URL");
 	}
 
 	private void apply(Map<String, String> env) {

@@ -16,8 +16,11 @@
 
 package org.springframework.gradle.repository;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.function.Function;
 
+import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.dsl.RepositoryHandler;
 
@@ -37,14 +40,37 @@ final class DeploymentRepositoryConventions {
 
 	void apply(Project project, Function<String, String> env) {
 		RepositoryHandler repositories = project.getRepositories();
-		String url = env.apply(RELEASE_TRAIN_MAVEN_REPOSITORY_URL);
+		String url = blankToNull(env.apply(RELEASE_TRAIN_MAVEN_REPOSITORY_URL));
 		if (url == null) {
 			return;
 		}
-		String username = env.apply(RELEASE_TRAIN_MAVEN_REPOSITORY_USERNAME);
-		String password = env.apply(RELEASE_TRAIN_MAVEN_REPOSITORY_PASSWORD);
+		validateUrl(url);
+		String username = blankToNull(env.apply(RELEASE_TRAIN_MAVEN_REPOSITORY_USERNAME));
+		String password = blankToNull(env.apply(RELEASE_TRAIN_MAVEN_REPOSITORY_PASSWORD));
+		if ((username == null) != (password == null)) {
+			throw new GradleException("%s and %s must either both be set or both be unset"
+				.formatted(RELEASE_TRAIN_MAVEN_REPOSITORY_USERNAME, RELEASE_TRAIN_MAVEN_REPOSITORY_PASSWORD));
+		}
 		RepositorySpec spec = new RepositorySpec(username, password);
 		repositories.maven(spec.repository(DEPLOYMENT_REPOSITORY_NAME, url));
+	}
+
+	// CI systems commonly pass unset secrets as empty strings
+	private static String blankToNull(String value) {
+		return (value == null || value.isBlank()) ? null : value;
+	}
+
+	private static void validateUrl(String url) {
+		URI uri;
+		try {
+			uri = new URI(url);
+		}
+		catch (URISyntaxException ex) {
+			throw new GradleException("%s is not a valid URL".formatted(RELEASE_TRAIN_MAVEN_REPOSITORY_URL), ex);
+		}
+		if (!"https".equalsIgnoreCase(uri.getScheme()) || uri.getHost() == null) {
+			throw new GradleException("%s must be an absolute https URL".formatted(RELEASE_TRAIN_MAVEN_REPOSITORY_URL));
+		}
 	}
 
 }
