@@ -17,7 +17,6 @@
 package org.springframework.gradle.checkstyle;
 
 import java.io.File;
-import java.util.Objects;
 
 import javax.annotation.Nullable;
 
@@ -27,6 +26,7 @@ import org.gradle.api.Project;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.quality.CheckstyleExtension;
 import org.gradle.api.plugins.quality.CheckstylePlugin;
+import org.springframework.gradle.properties.VersionProperties;
 
 /**
  * Adds and configures Checkstyle plugin.
@@ -62,18 +62,20 @@ public class SpringJavaCheckstylePlugin implements Plugin<Project> {
 				// NOTE: See gradle.properties#springJavaformatVersion for actual version
 				// number
 				project.getDependencies()
-					.add("checkstyle",
-							"io.spring.javaformat:spring-javaformat-checkstyle:" + getSpringJavaformatVersion(project));
+					.add("checkstyle", "io.spring.javaformat:spring-javaformat-checkstyle:" + VersionProperties
+						.get(project, SPRING_JAVAFORMAT_VERSION_PROPERTY, DEFAULT_SPRING_JAVAFORMAT_VERSION));
 				// NOTE: See gradle.properties#nohttpCheckstyleVersion for actual version
 				// number
 				project.getDependencies()
-					.add("checkstyle", "io.spring.nohttp:nohttp-checkstyle:" + getNohttpCheckstyleVersion(project));
+					.add("checkstyle", "io.spring.nohttp:nohttp-checkstyle:" + VersionProperties.get(project,
+							NOHTTP_CHECKSTYLE_VERSION_PROPERTY, DEFAULT_NOHTTP_CHECKSTYLE_VERSION));
 
 				CheckstyleExtension checkstyle = project.getExtensions().getByType(CheckstyleExtension.class);
 				checkstyle.getConfigDirectory().set(checkstyleDir);
 				// NOTE: See gradle.properties#checkstyleToolVersion for actual version
 				// number
-				checkstyle.setToolVersion(getCheckstyleToolVersion(project));
+				checkstyle.setToolVersion(VersionProperties.get(project, CHECKSTYLE_TOOL_VERSION_PROPERTY,
+						DEFAULT_CHECKSTYLE_TOOL_VERSION));
 			}
 
 			// Configure checkFormat task
@@ -86,33 +88,6 @@ public class SpringJavaCheckstylePlugin implements Plugin<Project> {
 				}
 			});
 		});
-	}
-
-	private static String getSpringJavaformatVersion(Project project) {
-		String springJavaformatVersion = DEFAULT_SPRING_JAVAFORMAT_VERSION;
-		if (project.hasProperty(SPRING_JAVAFORMAT_VERSION_PROPERTY)) {
-			springJavaformatVersion = Objects.requireNonNull(project.findProperty(SPRING_JAVAFORMAT_VERSION_PROPERTY))
-				.toString();
-		}
-		return springJavaformatVersion;
-	}
-
-	private static String getNohttpCheckstyleVersion(Project project) {
-		String nohttpCheckstyleVersion = DEFAULT_NOHTTP_CHECKSTYLE_VERSION;
-		if (project.hasProperty(NOHTTP_CHECKSTYLE_VERSION_PROPERTY)) {
-			nohttpCheckstyleVersion = Objects.requireNonNull(project.findProperty(NOHTTP_CHECKSTYLE_VERSION_PROPERTY))
-				.toString();
-		}
-		return nohttpCheckstyleVersion;
-	}
-
-	private static String getCheckstyleToolVersion(Project project) {
-		String checkstyleToolVersion = DEFAULT_CHECKSTYLE_TOOL_VERSION;
-		if (project.hasProperty(CHECKSTYLE_TOOL_VERSION_PROPERTY)) {
-			checkstyleToolVersion = Objects.requireNonNull(project.findProperty(CHECKSTYLE_TOOL_VERSION_PROPERTY))
-				.toString();
-		}
-		return checkstyleToolVersion;
 	}
 
 	@Nullable

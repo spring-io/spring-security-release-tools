@@ -16,13 +16,12 @@
 
 package org.springframework.gradle.jacoco;
 
-import java.util.Objects;
-
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.testing.jacoco.plugins.JacocoPlugin;
 import org.gradle.testing.jacoco.plugins.JacocoPluginExtension;
+import org.springframework.gradle.properties.VersionProperties;
 
 /**
  * Adds a version of jacoco to use and makes check depend on jacocoTestReport.
@@ -44,16 +43,9 @@ public class SpringJacocoPlugin implements Plugin<Project> {
 
 			JacocoPluginExtension jacoco = project.getExtensions().getByType(JacocoPluginExtension.class);
 			// NOTE: See gradle.properties#jacocoToolVersion for actual version number
-			jacoco.setToolVersion(getJacocoToolVersion(project));
+			jacoco.setToolVersion(
+					VersionProperties.get(project, JACOCO_TOOL_VERSION_PROPERTY, DEFAULT_JACOCO_TOOL_VERSION));
 		});
-	}
-
-	private static String getJacocoToolVersion(Project project) {
-		String jacocoToolVersion = DEFAULT_JACOCO_TOOL_VERSION;
-		if (project.hasProperty(JACOCO_TOOL_VERSION_PROPERTY)) {
-			jacocoToolVersion = Objects.requireNonNull(project.findProperty(JACOCO_TOOL_VERSION_PROPERTY)).toString();
-		}
-		return jacocoToolVersion;
 	}
 
 }
