@@ -31,10 +31,11 @@ public class SpringJarManifestPlugin implements Plugin<Project> {
 	@Override
 	public void apply(Project project) {
 		project.getTasks().withType(Jar.class, (jar) -> jar.manifest((manifest) -> {
-			Map<String, String> attributes = new HashMap<>();
+			Map<String, Object> attributes = new HashMap<>();
 			attributes.put("Build-Jdk-Spec", System.getProperty("java.specification.version"));
 			attributes.put("Implementation-Title", project.getName());
-			attributes.put("Implementation-Version", project.getVersion().toString());
+			// the version is commonly set after plugins are applied, so resolve it lazily
+			attributes.put("Implementation-Version", project.provider(project::getVersion).map(Object::toString));
 			attributes.put("Automatic-Module-Name", project.getName().replace("-", "."));
 			manifest.attributes(attributes);
 		}));

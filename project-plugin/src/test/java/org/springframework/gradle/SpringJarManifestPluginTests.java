@@ -17,6 +17,8 @@
 package org.springframework.gradle;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 
 import org.gradle.api.Project;
 import org.gradle.jvm.tasks.Jar;
@@ -48,13 +50,32 @@ public class SpringJarManifestPluginTests {
 	}
 
 	@Test
-	public void applyWhenJarTaskExistsThenSetsManifestAttributes() {
+	public void applyWhenJarTaskExistsThenSetsManifestAttributes() throws IOException {
 		Jar jar = (Jar) this.project.getTasks().getByName("jar");
 		var attributes = jar.getManifest().getAttributes();
 		assertThat(attributes).containsEntry("Implementation-Title", "jar-manifest-test");
-		assertThat(attributes).containsEntry("Implementation-Version", "1.0.0");
+		assertThat(attributes).containsKey("Implementation-Version");
+		assertThat(manifest(this.project)).contains("Implementation-Version: 1.0.0");
 		assertThat(attributes).containsEntry("Automatic-Module-Name", "jar.manifest.test");
 		assertThat(attributes).containsKey("Build-Jdk-Spec");
+	}
+
+	@Test
+	public void applyWhenVersionSetAfterApplyThenManifestHasFinalVersion() throws IOException {
+		Project late = ProjectBuilder.builder().withName("late").build();
+		late.getPluginManager().apply("java");
+		late.getPluginManager().apply(SpringJarManifestPlugin.class);
+
+		late.setVersion("2.0.0");
+
+		assertThat(manifest(late)).contains("Implementation-Version: 2.0.0");
+	}
+
+	private String manifest(Project project) throws IOException {
+		Jar jar = (Jar) project.getTasks().getByName("jar");
+		File file = new File(this.projectDir, "MANIFEST.MF");
+		jar.getManifest().writeTo(file);
+		return Files.readString(file.toPath());
 	}
 
 }

@@ -17,6 +17,8 @@
 package io.spring.gradle.plugin.module;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -24,6 +26,7 @@ import java.util.stream.StreamSupport;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.repositories.ArtifactRepository;
 import org.gradle.api.internal.project.ProjectInternal;
+import org.gradle.jvm.tasks.Jar;
 import org.gradle.testfixtures.ProjectBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -73,6 +76,23 @@ public class SpringProjectPluginTests {
 		((ProjectInternal) this.project).evaluate();
 
 		assertThat(names(this.project)).doesNotContain("spring-internal-release", "spring-lts-release");
+	}
+
+	// gh-231
+	@Test
+	public void applyWhenVersionSetAfterApplyThenConfigurationUsesFinalVersion() throws IOException {
+		Project child = ProjectBuilder.builder().withParent(this.project).withName("child").build();
+		this.project.getPluginManager().apply(SpringProjectPlugin.class);
+		child.getPluginManager().apply(SpringProjectPlugin.class);
+
+		child.setVersion("1.0.0-SNAPSHOT");
+		((ProjectInternal) child).evaluate();
+
+		assertThat(names(child)).contains("spring-oss-snapshot");
+		Jar jar = (Jar) child.getTasks().getByName("jar");
+		File manifest = new File(this.projectDir, "MANIFEST.MF");
+		jar.getManifest().writeTo(manifest);
+		assertThat(Files.readString(manifest.toPath())).contains("Implementation-Version: 1.0.0-SNAPSHOT");
 	}
 
 	private static Set<String> names(Project project) {
