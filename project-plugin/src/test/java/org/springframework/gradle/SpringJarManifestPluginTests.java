@@ -17,9 +17,13 @@
 package org.springframework.gradle;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 
 import org.gradle.api.Project;
+import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.jvm.tasks.Jar;
+import org.gradle.jvm.toolchain.JavaLanguageVersion;
 import org.gradle.testfixtures.ProjectBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -55,6 +59,26 @@ public class SpringJarManifestPluginTests {
 		assertThat(attributes).containsEntry("Implementation-Version", "1.0.0");
 		assertThat(attributes).containsEntry("Automatic-Module-Name", "jar.manifest.test");
 		assertThat(attributes).containsKey("Build-Jdk-Spec");
+	}
+
+	@Test
+	public void applyWhenNoToolchainThenBuildJdkSpecIsRunningJdk() throws IOException {
+		assertThat(manifest()).contains("Build-Jdk-Spec: " + System.getProperty("java.specification.version"));
+	}
+
+	@Test
+	public void applyWhenToolchainConfiguredThenBuildJdkSpecIsToolchainVersion() throws IOException {
+		JavaPluginExtension java = this.project.getExtensions().getByType(JavaPluginExtension.class);
+		java.getToolchain().getLanguageVersion().set(JavaLanguageVersion.of(11));
+
+		assertThat(manifest()).contains("Build-Jdk-Spec: 11");
+	}
+
+	private String manifest() throws IOException {
+		Jar jar = (Jar) this.project.getTasks().getByName("jar");
+		File file = new File(this.projectDir, "MANIFEST.MF");
+		jar.getManifest().writeTo(file);
+		return Files.readString(file.toPath());
 	}
 
 }
