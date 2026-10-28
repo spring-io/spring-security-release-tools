@@ -158,6 +158,21 @@ public class SpringRepositoryPluginTests {
 		assertThat(names()).containsExactly("MavenRepo", "spring-oss-release");
 	}
 
+	// Repositories depend on the project version, which a build script sets after its
+	// plugins block, so they must be added after evaluation rather than when applied.
+	@Test
+	public void applyWhenVersionSetAfterApplyThenRepositoriesAddedAfterEvaluateUsingFinalVersion() {
+		this.project.getPluginManager().apply(SpringRepositoryPlugin.class);
+
+		assertThat(names()).isEmpty();
+
+		this.project.setVersion("1.0.0-SNAPSHOT");
+		((ProjectInternal) this.project).evaluate();
+
+		assertThat(names()).containsExactly("MavenRepo", "spring-oss-snapshot", "spring-oss-milestone",
+				"spring-oss-release");
+	}
+
 	private void force(String repositories) {
 		this.project.getExtensions().getExtraProperties().set("forceMavenRepositories", repositories);
 	}
