@@ -23,6 +23,7 @@ import java.util.stream.StreamSupport;
 
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.repositories.ArtifactRepository;
+import org.gradle.api.artifacts.repositories.MavenArtifactRepository;
 import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.testfixtures.ProjectBuilder;
 import org.junit.jupiter.api.BeforeEach;
@@ -171,6 +172,26 @@ public class SpringRepositoryPluginTests {
 
 		assertThat(names()).containsExactly("MavenRepo", "spring-oss-snapshot", "spring-oss-milestone",
 				"spring-oss-release");
+	}
+
+	@Test
+	public void applyWhenArtifactoryPropertiesPresentThenOnlyNonOssRepositoriesHaveCredentials() {
+		this.project.getExtensions().getExtraProperties().set("artifactoryUsername", "user");
+		this.project.getExtensions().getExtraProperties().set("artifactoryPassword", "password");
+		this.project.getExtensions().getExtraProperties().set("releaseChannel", "lts");
+		evaluate("1.0.0-SNAPSHOT");
+
+		for (ArtifactRepository repository : this.project.getRepositories()) {
+			if (repository instanceof MavenArtifactRepository maven && maven.getName().startsWith("spring-oss-")) {
+				assertThat(maven.getCredentials().getUsername()).as(maven.getName()).isNull();
+				assertThat(maven.getCredentials().getPassword()).as(maven.getName()).isNull();
+			}
+			if (repository instanceof MavenArtifactRepository maven
+					&& (maven.getName().startsWith("spring-internal-") || maven.getName().startsWith("spring-lts-"))) {
+				assertThat(maven.getCredentials().getUsername()).as(maven.getName()).isEqualTo("user");
+			}
+		}
+		assertThat(names()).contains("spring-oss-snapshot", "spring-internal-release", "spring-lts-snapshot");
 	}
 
 	private void force(String repositories) {

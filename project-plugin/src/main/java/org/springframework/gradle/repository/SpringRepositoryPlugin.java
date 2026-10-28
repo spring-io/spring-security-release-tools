@@ -52,10 +52,6 @@ public abstract class SpringRepositoryPlugin implements Plugin<Project> {
 
 	private static final String OSS_RELEASE_REPOSITORY = "release";
 
-	private static final String ARTIFACTORY_USERNAME = "artifactoryUsername";
-
-	private static final String ARTIFACTORY_PASSWORD = "artifactoryPassword";
-
 	private final DeploymentRepositoryConventions deployment = new DeploymentRepositoryConventions();
 
 	private final InternalRepositoryConventions internal = new InternalRepositoryConventions();
@@ -69,7 +65,7 @@ public abstract class SpringRepositoryPlugin implements Plugin<Project> {
 		String ossSnapshotUrl = "%s/%s".formatted(OSS_URL, OSS_SNAPSHOT_REPOSITORY);
 		String ossMilestoneUrl = "%s/%s".formatted(OSS_URL, OSS_MILESTONE_REPOSITORY);
 		String ossReleaseUrl = "%s/%s".formatted(OSS_URL, OSS_RELEASE_REPOSITORY);
-		RepositorySpec spec = getRepositorySpec(project);
+		RepositorySpec spec = new RepositorySpec(null, null);
 
 		List<String> forceMavenRepositories = Collections.emptyList();
 		if (project.hasProperty(FORCE_MAVEN_REPOSITORIES)) {
@@ -97,12 +93,6 @@ public abstract class SpringRepositoryPlugin implements Plugin<Project> {
 		}
 		repositories.maven(spec.repository("spring-oss-release", ossReleaseUrl));
 		this.internal.apply(project);
-	}
-
-	private static RepositorySpec getRepositorySpec(Project project) {
-		String username = (String) project.findProperty(ARTIFACTORY_USERNAME);
-		String password = (String) project.findProperty(ARTIFACTORY_PASSWORD);
-		return new RepositorySpec(username, password);
 	}
 
 }
