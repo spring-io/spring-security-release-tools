@@ -33,7 +33,7 @@ public class SpringJacocoPlugin implements Plugin<Project> {
 
 	private static final String JACOCO_TOOL_VERSION_PROPERTY = "jacocoToolVersion";
 
-	private static final String DEFAULT_JACOCO_TOOL_VERSION = "0.8.7";
+	private static final String DEFAULT_JACOCO_TOOL_VERSION = "0.8.16";
 
 	@Override
 	public void apply(Project project) {

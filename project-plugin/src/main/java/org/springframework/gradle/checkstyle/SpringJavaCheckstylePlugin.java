@@ -40,7 +40,7 @@ public class SpringJavaCheckstylePlugin implements Plugin<Project> {
 
 	private static final String SPRING_JAVAFORMAT_VERSION_PROPERTY = "springJavaformatVersion";
 
-	private static final String DEFAULT_SPRING_JAVAFORMAT_VERSION = "0.0.38";
+	private static final String DEFAULT_SPRING_JAVAFORMAT_VERSION = "0.0.48";
 
 	private static final String NOHTTP_CHECKSTYLE_VERSION_PROPERTY = "nohttpCheckstyleVersion";
 
@@ -48,7 +48,7 @@ public class SpringJavaCheckstylePlugin implements Plugin<Project> {
 
 	private static final String CHECKSTYLE_TOOL_VERSION_PROPERTY = "checkstyleToolVersion";
 
-	private static final String DEFAULT_CHECKSTYLE_TOOL_VERSION = "8.34";
+	private static final String DEFAULT_CHECKSTYLE_TOOL_VERSION = "9.3";
 
 	private static final String SPRING_JAVAFORMAT_EXCLUDE_PACKAGES_PROPERTY = "springJavaformatExcludePackages";
 
