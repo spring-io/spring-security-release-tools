@@ -44940,6 +44940,5 @@ async function run() {
 
 ;// CONCATENATED MODULE: ./src/index.ts
 
-// eslint-disable-next-line @typescript-eslint/no-floating-promises
 run();
 
