@@ -121,7 +121,7 @@ function mockCurrentBranch(branch: string): void {
 
 interface OctokitOverrides {
   existingPulls?: { number: number; html_url: string }[]
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   createImpl?: (
     params: any
   ) => Promise<{ data: { number: number; html_url: string } }>
@@ -152,7 +152,7 @@ function mockOctokit(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any
   mockedGithub.getOctokit.mockReturnValue(octokit)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   mockedGithub.context.repo = { owner: 'consumer', repo: 'consumer-repo' }
   return octokit
 }
