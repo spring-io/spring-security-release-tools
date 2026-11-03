@@ -190,6 +190,22 @@ class VerifyWorkflowsTaskTests {
 		update.update();
 	}
 
+	@Test
+	void verifyWhenCiNamedThenVerifiesTheNamedFile() throws IOException {
+		Files.writeString(new File(this.projectDir, ".github/workflow-generator.yml").toPath(),
+				"workflow:\n  generator:\n    project:\n      java:\n        versions:\n          primary: 25\n"
+						+ "    workflows:\n      release-tools:\n        dependencies-antora-ui: false\n"
+						+ "        ci:\n          name: continuous-integration-workflow\n");
+		render("7.0.x", null);
+		File ci = new File(this.projectDir, ".github/workflows/continuous-integration-workflow.yml");
+		assertThat(ci).exists();
+		assertThat(new File(this.projectDir, ".github/workflows/ci.yml")).doesNotExist();
+		task("7.0.x", null).verify();
+		Files.writeString(ci.toPath(), Files.readString(ci.toPath()).replace("name: CI", "name: Changed"));
+		assertThatExceptionOfType(GradleException.class).isThrownBy(() -> task("7.0.x", null).verify())
+			.withMessageContaining("continuous-integration-workflow.yml is out of date");
+	}
+
 	private void antoraUiOff() throws IOException {
 		Files.writeString(new File(this.projectDir, ".github/workflow-generator.yml").toPath(),
 				"workflow:\n  generator:\n    project:\n      java:\n        versions:\n          primary: 25\n"

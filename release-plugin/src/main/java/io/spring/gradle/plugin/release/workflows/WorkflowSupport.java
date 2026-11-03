@@ -26,6 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
@@ -60,6 +61,19 @@ final class WorkflowSupport {
 	 * checks them wherever they are checked in, as if on {@code main}.
 	 */
 	static final Set<String> MAIN_ONLY = Set.of("workflows/codeql.yml");
+
+	/**
+	 * The workflows a project may give another file name, by the option that names each
+	 * under {@code workflows.release-tools}, and where each renders to by default.
+	 */
+	private static final Map<String, String> NAMEABLE = Map.of("ci", "workflows/ci.yml", "pr",
+			"workflows/pull-request-build.yml");
+
+	/**
+	 * What a workflow's name may contain, as it becomes a file name directly under
+	 * {@code .github/workflows}.
+	 */
+	private static final Pattern WORKFLOW_NAME = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]*");
 
 	private static final String ANTORA_UI = "dependencies-antora-ui";
 
@@ -132,6 +146,50 @@ final class WorkflowSupport {
 			}
 			current = (Map<String, Object>) current.get(key);
 		}
+	}
+
+	/**
+	 * Move the workflows that a project has given another name, so that it keeps its
+	 * workflow files, and with them their run history, and still gets updates to the
+	 * template. A workflow is named by {@code name} under its option, for example
+	 * {@code workflows.release-tools.ci.name: continuous-integration-workflow} for
+	 * {@code workflows/continuous-integration-workflow.yml}.
+	 * @param file the project's workflow generator configuration, for error messages
+	 * @param model the model from {@link #config}
+	 * @param templates the templates, keyed by where each renders to
+	 * @return the templates, keyed by where each renders to once named
+	 */
+	@SuppressWarnings("unchecked")
+	static Map<String, WorkflowTemplates.Template> named(Path file, Map<String, Object> model,
+			Map<String, WorkflowTemplates.Template> templates) {
+		Map<String, Object> tools = (Map<String, Object>) ((Map<String, Object>) ((Map<String, Object>) ((Map<String, Object>) model
+			.get("workflow")).get("generator")).get("workflows")).get("release-tools");
+		Map<String, WorkflowTemplates.Template> named = new TreeMap<>(templates);
+		NAMEABLE.forEach((option, key) -> {
+			String at = "workflow.generator.workflows.release-tools." + option;
+			Object setting = tools.get(option);
+			if (setting == null) {
+				return;
+			}
+			if (!(setting instanceof Map)) {
+				throw new GradleException(file + ": '" + at + "' must be a map of settings");
+			}
+			Object name = ((Map<String, Object>) setting).get("name");
+			if (name == null) {
+				return;
+			}
+			if (!(name instanceof String value) || !WORKFLOW_NAME.matcher(value).matches() || value.endsWith(".yml")
+					|| value.endsWith(".yaml")) {
+				throw new GradleException(file + ": '" + at + ".name' must be the name of the workflow file without"
+						+ " its extension, like 'continuous-integration-workflow', but was '" + name + "'");
+			}
+			WorkflowTemplates.Template template = named.remove(key);
+			if (template != null && named.putIfAbsent("workflows/" + value + ".yml", template) != null) {
+				throw new GradleException(
+						file + ": '" + at + ".name' is '" + value + "', which is already the name of another workflow");
+			}
+		});
+		return named;
 	}
 
 	private static Map<String, Object> defaults() {

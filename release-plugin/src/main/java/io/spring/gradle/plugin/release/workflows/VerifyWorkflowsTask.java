@@ -100,7 +100,7 @@ public abstract class VerifyWorkflowsTask extends DefaultTask {
 		problems.addAll(WorkflowVerifier.verifyPins(actions, versions));
 		Map<String, Object> model = WorkflowSupport.config(config);
 		Map<String, WorkflowTemplates.Template> templates = new TreeMap<>(
-				WorkflowTemplates.load(specs, Files.exists(config)));
+				WorkflowSupport.named(config, model, WorkflowTemplates.load(specs, Files.exists(config))));
 		String branch = getBranch().getOrNull();
 		if (branch == null) {
 			model = WorkflowSupport.onMain(model);

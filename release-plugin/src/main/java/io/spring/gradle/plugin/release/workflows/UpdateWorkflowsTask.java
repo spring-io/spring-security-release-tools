@@ -157,14 +157,15 @@ public abstract class UpdateWorkflowsTask extends DefaultTask {
 		Path specs = getSpecsDirectory().get().getAsFile().toPath();
 		Path github = getGitHubDirectory().get().getAsFile().toPath();
 		Path config = getConfigFile().get().getAsFile().toPath();
+		Map<String, Object> model = WorkflowSupport.config(config);
 		WorkflowRenderer renderer = new WorkflowRenderer(versions,
-				WorkflowSupport.generate(WorkflowSupport.config(config), getBranch().getOrNull(),
+				WorkflowSupport.generate(model, getBranch().getOrNull(),
 						() -> WorkflowSupport.supportedBranches(getProjectSlug().get(), getSaganApiUrl().get())));
 		// render everything before writing anything, so a spec that can't be rendered
 		// leaves the workflows as they were
 		Map<Path, String> rendered = new LinkedHashMap<>();
-		for (Map.Entry<String, WorkflowTemplates.Template> template : WorkflowTemplates
-			.load(specs, Files.exists(config))
+		for (Map.Entry<String, WorkflowTemplates.Template> template : WorkflowSupport
+			.named(config, model, WorkflowTemplates.load(specs, Files.exists(config)))
 			.entrySet()) {
 			try {
 				rendered.put(github.resolve(template.getKey()), renderer.render(template.getValue().content()));

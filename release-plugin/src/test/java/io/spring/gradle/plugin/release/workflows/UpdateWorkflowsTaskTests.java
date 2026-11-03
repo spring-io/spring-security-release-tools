@@ -253,6 +253,65 @@ class UpdateWorkflowsTaskTests {
 	}
 
 	@Test
+	void updateWhenCiAndPrNamedThenRenderedToThoseFilesAndNotTheDefaults() throws Exception {
+		configure("dependencies-antora-ui: false\n        ci:\n          name: continuous-integration-workflow"
+				+ "\n        pr:\n          name: pr-build-workflow", "");
+		task("7.0.x").update();
+		File workflows = new File(this.projectDir, ".github/workflows");
+		assertThat(new File(workflows, "continuous-integration-workflow.yml")).content().contains("name: CI");
+		assertThat(new File(workflows, "pr-build-workflow.yml")).content().contains("name: Pull Request - Build");
+		assertThat(new File(workflows, "ci.yml")).doesNotExist();
+		assertThat(new File(workflows, "pull-request-build.yml")).doesNotExist();
+	}
+
+	@Test
+	void updateWhenCiNamedAndProjectHasItsOwnCiSpecThenSpecRenderedToThatFile() throws Exception {
+		configure("ci:\n          name: continuous-integration-workflow", "");
+		write(".github/specs/workflows/ci.yml.template", "name: Mine\n");
+		task().update();
+		assertThat(new File(this.projectDir, ".github/workflows/continuous-integration-workflow.yml"))
+			.hasContent("name: Mine\n");
+		assertThat(new File(this.projectDir, ".github/workflows/ci.yml")).doesNotExist();
+	}
+
+	@Test
+	void updateWhenNothingNamedThenDefaultFileNamesUsed() throws Exception {
+		task().update();
+		assertThat(new File(this.projectDir, ".github/workflows/ci.yml")).exists();
+		assertThat(new File(this.projectDir, ".github/workflows/pull-request-build.yml")).exists();
+	}
+
+	@Test
+	void updateWhenNameHasExtensionThenSaysWhatToFix() throws Exception {
+		configure("ci:\n          name: ci.yml", "");
+		assertThatExceptionOfType(GradleException.class).isThrownBy(() -> task().update())
+			.withMessageContaining("'workflow.generator.workflows.release-tools.ci.name' must be the name of the"
+					+ " workflow file without its extension");
+	}
+
+	@Test
+	void updateWhenNameIsAPathThenRejectedAndNothingWritten() throws Exception {
+		configure("pr:\n          name: ../escape", "");
+		assertThatExceptionOfType(GradleException.class).isThrownBy(() -> task().update())
+			.withMessageContaining("release-tools.pr.name");
+		assertThat(new File(this.projectDir, ".github/workflows")).doesNotExist();
+	}
+
+	@Test
+	void updateWhenNameIsAnotherWorkflowsThenSaysWhatToFix() throws Exception {
+		configure("ci:\n          name: pull-request-build", "");
+		assertThatExceptionOfType(GradleException.class).isThrownBy(() -> task().update())
+			.withMessageContaining("which is already the name of another workflow");
+	}
+
+	@Test
+	void updateWhenCiIsNotAMapThenSaysWhatToFix() throws Exception {
+		configure("ci: true", "");
+		assertThatExceptionOfType(GradleException.class).isThrownBy(() -> task().update())
+			.withMessageContaining("'workflow.generator.workflows.release-tools.ci' must be a map");
+	}
+
+	@Test
 	void updateWhenReleaseToolsIsNotAMapThenSaysWhatToFix() throws Exception {
 		write(".github/workflow-generator.yml", "workflow:\n  generator:\n    workflows: true\n");
 		assertThatExceptionOfType(GradleException.class).isThrownBy(() -> task().update())
