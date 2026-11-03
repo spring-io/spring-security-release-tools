@@ -1,4 +1,4 @@
-<<#workflow.generator.workflows.release-tools.update-antora-ui>>
+<<#workflow.generator.workflows.release-tools.dependencies-antora-ui>>
 name: Update Antora UI Spring
 
 on:
@@ -45,4 +45,4 @@ jobs:
         with:
           docs-branch: 'docs-build'
           token: ${{ secrets.GITHUB_TOKEN }}
-<</workflow.generator.workflows.release-tools.update-antora-ui>>
+<</workflow.generator.workflows.release-tools.dependencies-antora-ui>>

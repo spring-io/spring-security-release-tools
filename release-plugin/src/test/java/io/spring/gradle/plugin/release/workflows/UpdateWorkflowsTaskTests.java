@@ -75,7 +75,7 @@ class UpdateWorkflowsTaskTests {
 
 	@Test
 	void updateWhenOnMainThenCodeqlWorkflowRenderedAndPinned() throws Exception {
-		configure("update-antora-ui: false", "");
+		configure("dependencies-antora-ui: false", "");
 		task("main").update();
 		WorkflowVersions.Action actions = WorkflowVersions.shipped().action("spring-io/github-actions");
 		assertThat(new File(this.projectDir, ".github/workflows/codeql.yml")).content()
@@ -86,7 +86,7 @@ class UpdateWorkflowsTaskTests {
 
 	@Test
 	void updateWhenOnBranchThatMirrorsMainThenCodeqlWorkflowRendered() throws Exception {
-		configure("update-antora-ui: false", "");
+		configure("dependencies-antora-ui: false", "");
 		task("embargoed/active/main").update();
 		assertThat(new File(this.projectDir, ".github/workflows/codeql.yml")).exists();
 	}
@@ -190,7 +190,7 @@ class UpdateWorkflowsTaskTests {
 
 	@Test
 	void updateWhenOnMainAndAntoraUiTurnedOffThenWorkflowNotRendered() throws Exception {
-		configure("update-antora-ui: false", "");
+		configure("dependencies-antora-ui: false", "");
 		task("main").update();
 		assertThat(new File(this.projectDir, ".github/workflows/update-antora-ui-spring.yml")).doesNotExist();
 	}
@@ -237,7 +237,7 @@ class UpdateWorkflowsTaskTests {
 		task.getSaganApiUrl().set("http://127.0.0.1:1");
 		assertThatExceptionOfType(GradleException.class).isThrownBy(task::update)
 			.withMessageContaining("Could not find the supported branches")
-			.withMessageContaining("update-antora-ui");
+			.withMessageContaining("dependencies-antora-ui");
 		assertThat(new File(this.projectDir, ".github/workflows/pull-request-build.yml")).doesNotExist();
 	}
 

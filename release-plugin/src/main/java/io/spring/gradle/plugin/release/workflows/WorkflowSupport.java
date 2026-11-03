@@ -61,7 +61,7 @@ final class WorkflowSupport {
 	 */
 	static final Set<String> MAIN_ONLY = Set.of("workflows/codeql.yml");
 
-	private static final String ANTORA_UI = "update-antora-ui";
+	private static final String ANTORA_UI = "dependencies-antora-ui";
 
 	/**
 	 * What a branch name may contain to be rendered into a workflow, which doesn't escape
@@ -172,7 +172,7 @@ final class WorkflowSupport {
 		}
 		catch (RuntimeException ex) {
 			throw new GradleException("Could not find the supported branches of " + slug + " at " + saganApiUrl + " ("
-					+ rootMessage(ex) + "). Try again, or turn off workflows.release-tools.update-antora-ui in"
+					+ rootMessage(ex) + "). Try again, or turn off workflows.release-tools.dependencies-antora-ui in"
 					+ " .github/workflow-generator.yml", ex);
 		}
 	}
@@ -220,7 +220,7 @@ final class WorkflowSupport {
 	 * {@code workflow.generator.branch.main} is true, and the workflows that only belong
 	 * there are rendered. The Antora UI is kept up to date from such a branch alone,
 	 * since a scheduled workflow only runs from the default branch, so on any other
-	 * branch {@code update-antora-ui} is turned off. Where it is on,
+	 * branch {@code dependencies-antora-ui} is turned off. Where it is on,
 	 * {@code workflow.generator.project.supported-branches} is the branches that are
 	 * supported.
 	 * @param model the model from {@link #config}

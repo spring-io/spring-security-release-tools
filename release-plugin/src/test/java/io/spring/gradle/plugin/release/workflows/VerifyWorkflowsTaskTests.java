@@ -106,7 +106,7 @@ class VerifyWorkflowsTaskTests {
 	void verifyWhenCodeqlWorkflowRenderedOnMainThenSucceedsWithNoBranch() throws IOException {
 		Files.writeString(new File(this.projectDir, ".github/workflow-generator.yml").toPath(),
 				"workflow:\n  generator:\n    project:\n      java:\n        versions:\n          primary: 25\n"
-						+ "    workflows:\n      release-tools:\n        update-antora-ui: false\n");
+						+ "    workflows:\n      release-tools:\n        dependencies-antora-ui: false\n");
 		UpdateWorkflowsTask update = (UpdateWorkflowsTask) this.project.getTasks()
 			.getByName(UpdateWorkflowsTask.TASK_NAME);
 		update.getSkipGenerator().set(true);
@@ -193,7 +193,7 @@ class VerifyWorkflowsTaskTests {
 	private void antoraUiOff() throws IOException {
 		Files.writeString(new File(this.projectDir, ".github/workflow-generator.yml").toPath(),
 				"workflow:\n  generator:\n    project:\n      java:\n        versions:\n          primary: 25\n"
-						+ "    workflows:\n      release-tools:\n        update-antora-ui: false\n");
+						+ "    workflows:\n      release-tools:\n        dependencies-antora-ui: false\n");
 	}
 
 	private void render(String branch, FakeSagan sagan) throws IOException {
