@@ -161,6 +161,22 @@ class UpdateWorkflowsTaskTests {
 	}
 
 	@Test
+	void updateWhenDefaultsApplyThenDeployDocsWorkflowRendered() throws Exception {
+		task().update();
+		assertThat(new File(this.projectDir, ".github/workflows/deploy-docs.yml")).content()
+			.contains("name: Deploy Docs")
+			.contains("gh workflow run deploy-docs.yml -r docs-build");
+	}
+
+	@Test
+	void updateWhenDeployDocsOffThenWorkflowNotRenderedAndRemoved() throws Exception {
+		write(".github/workflows/deploy-docs.yml", "name: Old\n");
+		configure("deploy-docs: false", "");
+		task().update();
+		assertThat(new File(this.projectDir, ".github/workflows/deploy-docs.yml")).doesNotExist();
+	}
+
+	@Test
 	void updateWhenNotOnMainThenAntoraUiWorkflowNotRendered() throws Exception {
 		task("7.0.x").update();
 		assertThat(new File(this.projectDir, ".github/workflows/update-antora-ui-spring.yml")).doesNotExist();

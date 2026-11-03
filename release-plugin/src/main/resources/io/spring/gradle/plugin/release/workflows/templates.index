@@ -3,6 +3,7 @@ workflows/codeql.yml.template
 workflows/dependabot-auto-merge-forward.yml.template
 workflows/dependabot-pull-request-automerge.yml.template
 workflows/dependabot-pull-request-build.yml.template
+workflows/deploy-docs.yml.template
 workflows/pull-request-build.yml.template
 workflows/release-announcements-publish.yml.template
 workflows/release-announcements-stage.yml.template
