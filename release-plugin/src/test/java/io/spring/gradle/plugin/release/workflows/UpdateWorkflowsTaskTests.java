@@ -196,6 +196,19 @@ class UpdateWorkflowsTaskTests {
 	}
 
 	@Test
+	void updateWhenDocsBasePathConfiguredThenAntoraPlaybookIsFoundThere() throws Exception {
+		this.project.getExtensions().getExtraProperties().set("ossRepoName", "spring-security");
+		configure("docs-base-path: .", "");
+		try (FakeSagan sagan = new FakeSagan()) {
+			UpdateWorkflowsTask task = task("main");
+			task.getSaganApiUrl().set(sagan.url());
+			task.update();
+		}
+		assertThat(new File(this.projectDir, ".github/workflows/update-antora-ui-spring.yml")).content()
+			.contains("antora-file-path: './antora-playbook.yml'");
+	}
+
+	@Test
 	void updateWhenOnMainThenMatrixIsTheBranchesTheProjectsApiSaysAndActionPinned() throws Exception {
 		this.project.getExtensions().getExtraProperties().set("ossRepoName", "spring-security");
 		try (FakeSagan sagan = new FakeSagan()) {
@@ -208,6 +221,7 @@ class UpdateWorkflowsTaskTests {
 		assertThat(new File(this.projectDir, ".github/workflows/update-antora-ui-spring.yml")).content()
 			.contains("        branch:\n          - '7.0.x'\n          - '7.1.x'\n          - 'main'\n    steps:")
 			.contains("spring-io/spring-doc-actions/update-antora-spring-ui@" + docs.sha() + " # " + docs.ref())
+			.contains("antora-file-path: 'docs/antora-playbook.yml'")
 			.contains("docs-branch: 'docs-build'");
 	}
 

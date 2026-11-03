@@ -30,7 +30,7 @@ jobs:
         with:
           docs-branch: ${{ matrix.branch }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          antora-file-path: 'docs/antora-playbook.yml'
+          antora-file-path: '<< workflow.generator.workflows.release-tools.docs-base-path >>/antora-playbook.yml'
   update-antora-ui-spring-docs-build:
     name: Update on docs-build
     if: ${{ github.event.repository.fork == false }}
