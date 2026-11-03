@@ -21,7 +21,7 @@
     "package": "ncc build src/index.ts --license licenses.txt && node scripts/add-require-shim.mjs",
     "package:watch": "npm run package -- --watch",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
-    "all": "npm run format:write && npm run lint && npm run test && npm run coverage && npm run package"
+    "all": "npm run format:write && npm run lint && npm run test && npm run package"
   },
   "license": "MIT",
   "jest": {
