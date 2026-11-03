@@ -122,9 +122,14 @@ function mockCurrentBranch(branch: string): void {
 interface OctokitOverrides {
   existingPulls?: { number: number; html_url: string }[]
 
-  createImpl?: (
-    params: any
-  ) => Promise<{ data: { number: number; html_url: string } }>
+  createImpl?: (params: {
+    owner: string
+    repo: string
+    title: string
+    body: string
+    head: string
+    base: string
+  }) => Promise<{ data: { number: number; html_url: string } }>
 }
 
 function mockOctokit(
