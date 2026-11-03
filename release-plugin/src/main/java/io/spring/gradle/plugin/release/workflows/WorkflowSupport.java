@@ -135,7 +135,7 @@ final class WorkflowSupport {
 	}
 
 	private static Map<String, Object> defaults() {
-		return releaseTools(Map.of("verify", true, ANTORA_UI, true, "deploy-docs", true, "docs-base-path", "docs"));
+		return releaseTools(Map.of("verify", true, ANTORA_UI, true, "docs-deploy", true, "docs-base-path", "docs"));
 	}
 
 	private static Map<String, Object> releaseTools(Map<String, Object> values) {

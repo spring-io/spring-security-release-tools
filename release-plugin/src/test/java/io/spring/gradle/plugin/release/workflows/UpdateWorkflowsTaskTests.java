@@ -171,7 +171,7 @@ class UpdateWorkflowsTaskTests {
 	@Test
 	void updateWhenDeployDocsOffThenWorkflowNotRenderedAndRemoved() throws Exception {
 		write(".github/workflows/deploy-docs.yml", "name: Old\n");
-		configure("deploy-docs: false", "");
+		configure("docs-deploy: false", "");
 		task().update();
 		assertThat(new File(this.projectDir, ".github/workflows/deploy-docs.yml")).doesNotExist();
 	}
