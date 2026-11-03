@@ -67,18 +67,18 @@
   "dependencies": {
     "@actions/core": "^3.0.1",
     "@actions/exec": "^3.0.0",
-    "@actions/github": "^6.0.0",
+    "@actions/github": "^9.1.1",
     "@actions/glob": "^0.7.0",
-    "js-yaml": "^4.1.0"
+    "js-yaml": "^5.5.0"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^24.0.0",
-    "@typescript-eslint/eslint-plugin": "^8.71.2",
-    "@typescript-eslint/parser": "^8.71.2",
+    "@types/node": "^26.6.5",
+    "@typescript-eslint/eslint-plugin": "^8.72.1",
+    "@typescript-eslint/parser": "^8.72.1",
     "@vercel/ncc": "^0.45.0",
-    "eslint": "^9.39.5",
+    "eslint": "^10.14.0",
     "eslint-plugin-github": "^6.1.2",
     "eslint-plugin-jest": "^29.17.0",
     "eslint-plugin-jsonc": "^3.4.2",
