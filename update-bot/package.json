@@ -17,7 +17,7 @@
     "coverage": "make-coverage-badge --output-path ./badges/coverage.svg",
     "format:write": "prettier --write **/*.ts",
     "format:check": "prettier --check **/*.ts",
-    "lint": "npx eslint . -c ./.github/linters/.eslintrc.yml",
+    "lint": "eslint .",
     "package": "ncc build src/index.ts --license licenses.txt && node scripts/add-require-shim.mjs",
     "package:watch": "npm run package -- --watch",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
@@ -88,6 +88,7 @@
     "prettier": "^3.9.10",
     "prettier-eslint": "^17.1.2",
     "ts-jest": "^29.4.15",
+    "typescript-eslint": "^8.72.1",
     "typescript": "^6.0.3"
   }
 }
