@@ -85,7 +85,7 @@
     "prettier": "^3.9.10",
     "prettier-eslint": "^17.1.2",
     "ts-jest": "^29.4.15",
-    "typescript-eslint": "^8.71.2",
+    "typescript-eslint": "^8.72.1",
     "typescript": "^6.0.3"
   }
 }
