@@ -83,6 +83,18 @@ final class WorkflowSupport {
 	 */
 	private static final Pattern BRANCH_NAME = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._/-]*");
 
+	/**
+	 * The branches that are {@code main}: the one itself and the embargoed ones that
+	 * mirror it.
+	 */
+	private static final Set<String> MAIN_BRANCHES = Set.of("main", "embargoed/frozen/main", "embargoed/active/main");
+
+	/**
+	 * Where Dependabot's configuration may live, relative to {@code .github}, which only
+	 * belongs on {@code main}.
+	 */
+	static final List<String> DEPENDABOT_FILES = List.of("dependabot.yml", "dependabot.yaml");
+
 	private static final ObjectMapper YAML = new YAMLMapper();
 
 	private WorkflowSupport() {
@@ -266,6 +278,15 @@ final class WorkflowSupport {
 	 */
 	static Map<String, Object> onMain(Map<String, Object> config) {
 		return merge(config, branch(true));
+	}
+
+	/**
+	 * @param branch the branch, or {@code null} if unknown
+	 * @return whether the branch keeps Dependabot's configuration, which is only
+	 * {@code main}, {@code embargoed/frozen/main} and {@code embargoed/active/main}
+	 */
+	static boolean hostsDependabot(String branch) {
+		return branch != null && MAIN_BRANCHES.contains(branch);
 	}
 
 	private static Map<String, Object> branch(boolean main) {

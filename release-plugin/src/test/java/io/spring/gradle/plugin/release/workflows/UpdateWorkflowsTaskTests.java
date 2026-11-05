@@ -99,6 +99,23 @@ class UpdateWorkflowsTaskTests {
 	}
 
 	@Test
+	void updateWhenNotOnMainThenDependabotConfigurationRemoved() throws Exception {
+		write(".github/dependabot.yml", "version: 2\n");
+		task("7.0.x").update();
+		assertThat(new File(this.projectDir, ".github/dependabot.yml")).doesNotExist();
+	}
+
+	@Test
+	void updateWhenOnMainOrBranchesThatMirrorItThenDependabotConfigurationKept() throws Exception {
+		for (String branch : new String[] { "main", "embargoed/frozen/main", "embargoed/active/main" }) {
+			write(".github/dependabot.yml", "version: 2\n");
+			configure("dependencies-antora-ui: false", "");
+			task(branch).update();
+			assertThat(new File(this.projectDir, ".github/dependabot.yml")).as(branch).exists();
+		}
+	}
+
+	@Test
 	void updateWhenRunTwiceThenSecondRunProducesTheSameWorkflows() throws Exception {
 		write(".github/specs/workflows/ci.yml.template", "steps:\n  - uses: actions/checkout\n");
 		task().update();

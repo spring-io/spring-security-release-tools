@@ -137,6 +137,15 @@ class VerifyWorkflowsTaskTests {
 	}
 
 	@Test
+	void verifyWhenBranchKnownAndNotOnMainThenDependabotConfigurationNotAllowed() throws IOException {
+		antoraUiOff();
+		render("7.0.x", null);
+		Files.writeString(new File(this.projectDir, ".github/dependabot.yml").toPath(), "version: 2\n");
+		assertThatExceptionOfType(GradleException.class).isThrownBy(() -> task("7.0.x", null).verify())
+			.withMessageContaining("dependabot.yml should not exist");
+	}
+
+	@Test
 	void verifyWhenBranchMirrorsMainThenCodeqlWorkflowRequired() throws IOException {
 		antoraUiOff();
 		render("embargoed/frozen/main", null);

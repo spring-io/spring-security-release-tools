@@ -53,8 +53,9 @@ import org.gradle.work.DisableCachingByDefault;
  * {@code .github/specs/workflows} or {@code .github/specs/actions} (which replace a
  * default of the same name), into {@code .github/workflows} and {@code .github/actions},
  * then runs the workflow generator, which writes the release train workflows. A template
- * that renders to nothing removes its workflow. Run it locally, after changing a spec or
- * updating this plugin, and commit the result.
+ * that renders to nothing removes its workflow, and a branch that is not {@code main} has
+ * no {@code dependabot.yml}. Run it locally, after changing a spec or updating this
+ * plugin, and commit the result.
  * <p>
  * The generator is an internal project. It is downloaded on first use, so a GitHub token
  * with access to it is needed ({@code -PgitHubAccessToken} or {@code GITHUB_TOKEN}), and
@@ -141,6 +142,7 @@ public abstract class UpdateWorkflowsTask extends DefaultTask {
 		// has been rendered
 		String java = (generator != null) ? generatorJava(generator) : null;
 		renderSpecs(versions);
+		removeDependabot();
 		if (generator != null) {
 			runGenerator(generator, java, github);
 		}
@@ -151,6 +153,23 @@ public abstract class UpdateWorkflowsTask extends DefaultTask {
 				versions);
 		problems.addAll(WorkflowVerifier.verifyPins(getActionsDirectory().get().getAsFile().toPath(), versions));
 		problems.forEach((problem) -> getLogger().warn("Not pinned: {}", problem));
+	}
+
+	/**
+	 * Dependabot only belongs on {@code main}, so remove its configuration from any other
+	 * branch. If the branch is unknown, leave it be.
+	 */
+	private void removeDependabot() throws IOException {
+		String branch = getBranch().getOrNull();
+		if (branch == null || WorkflowSupport.hostsDependabot(branch)) {
+			return;
+		}
+		for (String name : WorkflowSupport.DEPENDABOT_FILES) {
+			Path file = getGitHubDirectory().get().getAsFile().toPath().resolve(name);
+			if (Files.deleteIfExists(file)) {
+				getLogger().lifecycle("Removed {}", file);
+			}
+		}
 	}
 
 	private void renderSpecs(WorkflowVersions versions) throws IOException {

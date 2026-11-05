@@ -120,6 +120,14 @@ public abstract class VerifyWorkflowsTask extends DefaultTask {
 				templates.keySet().removeAll(WorkflowSupport.GENERATED);
 			}
 		}
+		if (branch != null && !WorkflowSupport.hostsDependabot(branch)) {
+			for (String name : WorkflowSupport.DEPENDABOT_FILES) {
+				if (Files.exists(getGitHubDirectory().get().getAsFile().toPath().resolve(name))) {
+					problems.add(".github/" + name + " should not exist on " + branch
+							+ ", which is not main; delete it, or run the updateWorkflows task to remove it for you");
+				}
+			}
+		}
 		problems.addAll(WorkflowVerifier.verifyRendered(templates, getGitHubDirectory().get().getAsFile().toPath(),
 				new WorkflowRenderer(versions, model)));
 		if (!problems.isEmpty()) {
