@@ -80,7 +80,8 @@ final class GitHubReleases {
 				return;
 			}
 		}
-		throw new IllegalStateException("release " + tag + " of " + repository + " has no asset named " + assetName);
+		throw new IllegalStateException("release " + tag + " of " + repository + " has no asset named " + assetName
+				+ ". Check that generator.version in .github/specs/versions.json names a published release");
 	}
 
 	private <T> HttpResponse<T> send(String url, String accept, boolean authenticated, Duration timeout,
@@ -101,12 +102,13 @@ final class GitHubReleases {
 					continue;
 				}
 				if (status == 404 || status == 401 || status == 403) {
-					throw new IllegalStateException(url + " returned " + status + ((this.token != null) ? ""
+					throw new IllegalStateException(url + " returned " + status + ((this.token != null)
+							? ". Check that the token can read the repository"
 							: ". If the repository is private or internal, pass a token with -PgitHubAccessToken"
 									+ " or set GITHUB_TOKEN"));
 				}
 				if (status / 100 != 2) {
-					throw new IllegalStateException(url + " returned " + status);
+					throw new IllegalStateException(url + " returned " + status + ". Try again in a moment");
 				}
 				return response;
 			}

@@ -85,16 +85,19 @@ final class WorkflowVerifier {
 			return null;
 		}
 		if (!PINNED.matcher(reference).matches()) {
-			return "'" + reference + "' is not pinned to a commit SHA";
+			return "'" + reference + "' is not pinned to a commit SHA; pin it to a full commit SHA followed by a"
+					+ " '# <version>' comment, or, if it is rendered from a spec, run updateWorkflows";
 		}
 		if (comment == null || !COMMENT.matcher(comment).matches()) {
-			return "'" + reference + "' has no trailing '# <version>' comment";
+			return "'" + reference + "' has no trailing '# <version>' comment; add one naming the version the SHA is,"
+					+ " or, if it is rendered from a spec, run updateWorkflows";
 		}
 		int at = reference.lastIndexOf('@');
 		WorkflowVersions.Action action = versions.action(WorkflowRenderer.repository(reference.substring(0, at)));
 		String ref = comment.replaceFirst("^\\s*#\\s*", "").split("\\s+")[0];
 		if (action != null && action.ref().equals(ref) && !action.sha().equals(reference.substring(at + 1))) {
-			return "'" + reference + "' says " + ref + ", which the version manifest has as " + action.sha();
+			return "'" + reference + "' says " + ref + ", which the version manifest has as " + action.sha()
+					+ "; use that SHA, or run updateWorkflows if it is rendered from a spec";
 		}
 		return null;
 	}
@@ -119,14 +122,16 @@ final class WorkflowVerifier {
 				if (expected.isBlank()) {
 					if (exists) {
 						problems.add(workflow + " should not exist, as " + template.source()
-								+ " renders to nothing; run updateWorkflows");
+								+ " renders to nothing; delete it, or run the updateWorkflows task to remove it for you");
 					}
 				}
 				else if (!exists) {
-					problems.add(workflow + " is missing; it is rendered from " + template.source());
+					problems.add(workflow + " is missing; it is rendered from " + template.source()
+							+ ", so run the updateWorkflows task to create it");
 				}
 				else if (!expected.equals(read(workflow))) {
-					problems.add(workflow + " is out of date with " + template.source() + "; run updateWorkflows");
+					problems.add(workflow + " is out of date with " + template.source()
+							+ "; run the updateWorkflows task to bring it up to date");
 				}
 			}
 			catch (IllegalStateException ex) {

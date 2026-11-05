@@ -61,7 +61,9 @@ final class WorkflowGeneratorJar {
 				String actual = sha256(download);
 				if (!generator.sha256().equals(actual)) {
 					throw new IllegalStateException("workflow generator " + generator.version() + " has checksum "
-							+ actual + " but the version manifest expects " + generator.sha256());
+							+ actual + " but the version manifest expects " + generator.sha256()
+							+ ". Retry in case the download was corrupted, or correct generator.sha256 in"
+							+ " .github/specs/versions.json");
 				}
 				Files.move(download, jar, StandardCopyOption.REPLACE_EXISTING);
 				return jar;

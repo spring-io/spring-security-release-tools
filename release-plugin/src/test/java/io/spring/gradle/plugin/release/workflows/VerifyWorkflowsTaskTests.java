@@ -162,7 +162,7 @@ class VerifyWorkflowsTaskTests {
 					Files.readString(workflow.toPath()).replace("          - '7.1.x'\n", ""));
 			assertThatExceptionOfType(GradleException.class).isThrownBy(() -> task("main", sagan).verify())
 				.withMessageContaining("update-antora-ui-spring.yml")
-				.withMessageContaining("run updateWorkflows");
+				.withMessageContaining("run the updateWorkflows task");
 		}
 	}
 
