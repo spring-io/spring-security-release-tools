@@ -69,26 +69,8 @@ public abstract class CreateSaganReleaseTask extends DefaultTask {
 		var apiDocUrl = getApiDocUrl().get();
 
 		// replace version numbers in referenceDocUrl for Antora
-		var replaceVersion = getReplaceVersionInReferenceDocUrl().get();
-		var replaceSnapshotVersion = getReplaceSnapshotVersionInReferenceDocUrl().getOrNull();
-		if (replaceSnapshotVersion != null) {
-			replaceVersion = replaceSnapshotVersion;
-		}
-
-		if (replaceVersion) {
-			var versionMatcher = SpringReleases.versionMatcher(version);
-			var majorVersion = versionMatcher.group(1);
-			var minorVersion = versionMatcher.group(2);
-			String majorMinorVersion;
-			if (version.endsWith("-SNAPSHOT")) {
-				majorMinorVersion = "%s.%s-SNAPSHOT".formatted(majorVersion, minorVersion);
-			}
-			else {
-				majorMinorVersion = "%s.%s".formatted(majorVersion, minorVersion);
-			}
-
-			referenceDocUrl = referenceDocUrl.replace("{version}", majorMinorVersion);
-		}
+		referenceDocUrl = ReferenceDocUrls.resolve(referenceDocUrl, version, getReplaceVersionInReferenceDocUrl().get(),
+				getReplaceSnapshotVersionInReferenceDocUrl().getOrNull());
 
 		var springReleases = new SpringReleases(gitHubAccessToken);
 		springReleases.createSaganRelease(repository.name(), version, referenceDocUrl, apiDocUrl);
