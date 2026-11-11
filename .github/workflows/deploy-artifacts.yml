@@ -56,12 +56,12 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Set up JDK ${{ inputs.java-version }}
-        uses: spring-io/spring-gradle-build-action@c8668747d7c264864c8c7f7026d0d277d14a78dc # v2.0.6
+        uses: spring-io/spring-gradle-build-action@99a2aa4bd02e3a216fdbc574e256ec860f791d4c # v2.0.7
         with:
           java-version: ${{ inputs.java-version }}
       - id: project-version
         name: Extract Project Version
-        uses: spring-io/spring-release-actions/compute-version@3f7412aeec60ad13127b2a536a1b19a2803a5b81 # 0.0.8
+        uses: spring-io/spring-release-actions/compute-version@967a8de4659c4273a82bcb098d73c2330c015254 # 0.0.9
       - id: branch-name
         name: Extract Branch Name
         env:

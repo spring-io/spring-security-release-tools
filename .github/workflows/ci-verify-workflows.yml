@@ -31,12 +31,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Set up JDK ${{ inputs.java-version }}
-        uses: spring-io/spring-gradle-build-action@c8668747d7c264864c8c7f7026d0d277d14a78dc  # v2.0.6
+        uses: spring-io/spring-gradle-build-action@99a2aa4bd02e3a216fdbc574e256ec860f791d4c  # v2.0.7
         with:
           java-version: ${{ inputs.java-version }}
           distribution: temurin
       - name: Verify Workflows
-        uses: spring-io/spring-security-actions/run-gradle@baf9e987cdff9f39b48279584ede21b83652a7dd # 0.0.15
+        uses: spring-io/spring-security-actions/run-gradle@5ad73de5732708b3915d28ec6bc3e076eff2f70d # 0.0.27
         env:
           ORG_GRADLE_PROJECT_releaseChannel: ${{ inputs.release-channel }}
           ORG_GRADLE_PROJECT_artifactoryUsername: ${{ secrets.artifactory-username }}

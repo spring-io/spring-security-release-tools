@@ -64,7 +64,7 @@ jobs:
         with:
           token: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
       - name: Set up JDK ${{ inputs.java-version }}
-        uses: spring-io/spring-gradle-build-action@c8668747d7c264864c8c7f7026d0d277d14a78dc # v2.0.6
+        uses: spring-io/spring-gradle-build-action@99a2aa4bd02e3a216fdbc574e256ec860f791d4c # v2.0.7
         with:
           java-version: ${{ inputs.java-version }}
       - id: next-snapshot-version
@@ -84,7 +84,7 @@ jobs:
         run: echo "version=$(./gradlew -q getPreviousReleaseMilestone -PcurrentVersion=$VERSION -PgitHubAccessToken=$TOKEN)" >> $GITHUB_OUTPUT
       - id: next-release-milestone
         name: Get Next Release Milestone
-        uses: spring-io/spring-release-actions/compute-next-version@3f7412aeec60ad13127b2a536a1b19a2803a5b81 # 0.0.8
+        uses: spring-io/spring-release-actions/compute-next-version@967a8de4659c4273a82bcb098d73c2330c015254 # 0.0.9
         with:
           version: ${{ inputs.project-version }}
           token: ${{ github.token }}
@@ -129,7 +129,7 @@ jobs:
           git commit -am "Next development version"
           git push
       - name: Announce Release on GChat
-        uses: spring-io/spring-release-actions/announce-on-gchat@3f7412aeec60ad13127b2a536a1b19a2803a5b81 # 0.0.8
+        uses: spring-io/spring-release-actions/announce-on-gchat@967a8de4659c4273a82bcb098d73c2330c015254 # 0.0.9
         with:
           version: ${{ inputs.project-version }}
           gchat-webhook-url: ${{ secrets.SPRING_RELEASE_GCHAT_WEBHOOK_URL }}
