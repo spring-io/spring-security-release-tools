@@ -90,5 +90,31 @@
     "ts-jest": "^29.4.15",
     "typescript-eslint": "^8.72.1",
     "typescript": "^6.0.3"
+  },
+  "overrides": {
+    "@actions/glob": {
+      "minimatch": "^11.0.1"
+    },
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "^11.0.1"
+    },
+    "eslint": {
+      "minimatch": "^11.0.1"
+    },
+    "jest-config": {
+      "minimatch": "^11.0.1"
+    },
+    "jest-runtime": {
+      "minimatch": "^11.0.1"
+    },
+    "@jest/reporters": {
+      "minimatch": "^11.0.1"
+    },
+    "test-exclude": {
+      "minimatch": "^11.0.1",
+      "glob": {
+        "minimatch": "^11.0.1"
+      }
+    }
   }
 }

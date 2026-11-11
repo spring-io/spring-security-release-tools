@@ -89,5 +89,10 @@
     "prettier-eslint": "^16.3.0",
     "ts-jest": "^29.1.1",
     "typescript": "^5.3.3"
+  },
+  "overrides": {
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "^11.0.1"
+    }
   }
 }
