@@ -111,7 +111,7 @@ jobs:
           find -name "*.sha*" | xargs rm -f
       - name: Deploy to Artifactory
         if: ${{ steps.deploy-location.outputs.deploy_location != 'central' }}
-        uses: spring-io/artifactory-deploy-action@9cb1c7df78cd8d1223de1dde974819fa6378af9f # v0.0.6
+        uses: spring-io/artifactory-deploy-action@c9ab821b2d7fb778b7e29f9cd6e9007e54a1eb4c # v0.0.7
         with:
           uri: "https://repo.spring.io"
           repository: ${{ steps.deploy-location.outputs.deploy_location }}

@@ -16,6 +16,6 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
-    uses: spring-io/spring-github-workflows/.github/workflows/spring-merge-dependabot-pr.yml@cc25f8c4803a68fca68bfac42910e824b0c0f427 # main
+    uses: spring-io/spring-github-workflows/.github/workflows/spring-merge-dependabot-pr.yml@6268388bc4b4aa6d3dd58e86e84ab2a1cc21e909 # main
     with:
       mergeArguments: --auto --rebase
