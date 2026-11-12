@@ -101,6 +101,107 @@ public class InternalRepositoryConventionsTests {
 		assertThat(repository.getCredentials().getPassword()).isEqualTo("password");
 	}
 
+	@Test
+	public void applyVirtualRepositoryWhenReleaseChannelUnspecifiedThenNoVirtualRepository() {
+		new InternalRepositoryConventions().applyVirtualRepository(this.project);
+
+		assertThat(names(this.project)).doesNotContain("spring-lts-virtual");
+	}
+
+	@Test
+	public void applyVirtualRepositoryWhenReleaseChannelIsOssThenNoVirtualRepository() {
+		this.project.getExtensions().getExtraProperties().set("releaseChannel", "oss");
+		new InternalRepositoryConventions().applyVirtualRepository(this.project);
+
+		assertThat(names(this.project)).doesNotContain("spring-lts-virtual");
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = { "lts", "internal", "hotfix" })
+	public void applyVirtualRepositoryWhenReleaseChannelIsNotOssThenAddsVirtualRepository(String releaseChannel) {
+		this.project.getExtensions().getExtraProperties().set("releaseChannel", releaseChannel);
+		new InternalRepositoryConventions().applyVirtualRepository(this.project);
+
+		assertThat(names(this.project)).containsExactly("spring-lts-virtual");
+	}
+
+	@Test
+	public void applyVirtualRepositoryWhenMavenCentralDeclaredThenVirtualBeforeAndMavenCentralLast() {
+		this.project.getRepositories().mavenLocal();
+		this.project.getRepositories().mavenCentral();
+		this.project.getRepositories().maven((repo) -> {
+			repo.setName("other");
+			repo.setUrl("https://example.com/maven");
+		});
+		this.project.getExtensions().getExtraProperties().set("releaseChannel", "lts");
+		new InternalRepositoryConventions().applyVirtualRepository(this.project);
+
+		assertThat(this.project.getRepositories().stream().map(ArtifactRepository::getName).toList())
+			.containsExactly("MavenLocal", "other", "spring-lts-virtual", "MavenRepo");
+	}
+
+	@Test
+	public void applyVirtualRepositoryWhenPluginPortalDeclaredThenVirtualIsBeforePluginPortalAndMavenCentral() {
+		this.project.getRepositories().gradlePluginPortal();
+		this.project.getRepositories().mavenCentral();
+		this.project.getRepositories().maven((repo) -> {
+			repo.setName("other");
+			repo.setUrl("https://example.com/maven");
+		});
+		this.project.getExtensions().getExtraProperties().set("releaseChannel", "lts");
+		new InternalRepositoryConventions().applyVirtualRepository(this.project);
+
+		assertThat(this.project.getRepositories().stream().map(ArtifactRepository::getName).toList())
+			.containsExactly("other", "spring-lts-virtual", "Gradle Central Plugin Repository", "MavenRepo");
+	}
+
+	@Test
+	public void applyVirtualRepositoryWhenSpringRepositoryDeclaredThenVirtualIsBeforeIt() {
+		this.project.getRepositories().mavenCentral();
+		this.project.getRepositories().maven((repo) -> {
+			repo.setName("spring");
+			repo.setUrl("https://repo.spring.io/release");
+		});
+		this.project.getRepositories().maven((repo) -> {
+			repo.setName("other");
+			repo.setUrl("https://example.com/maven");
+		});
+		this.project.getExtensions().getExtraProperties().set("releaseChannel", "lts");
+		new InternalRepositoryConventions().applyVirtualRepository(this.project);
+
+		assertThat(this.project.getRepositories().stream().map(ArtifactRepository::getName).toList())
+			.containsExactly("spring-lts-virtual", "spring", "other", "MavenRepo");
+	}
+
+	@Test
+	public void applyVirtualRepositoryWhenRepositoryAddedLaterThenVirtualAndMavenCentralStayLast() {
+		this.project.getRepositories().mavenCentral();
+		this.project.getExtensions().getExtraProperties().set("releaseChannel", "lts");
+		new InternalRepositoryConventions().applyVirtualRepository(this.project);
+
+		this.project.getRepositories().maven((repo) -> {
+			repo.setName("later");
+			repo.setUrl("https://example.com/maven");
+		});
+
+		assertThat(this.project.getRepositories().stream().map(ArtifactRepository::getName).toList())
+			.containsExactly("later", "spring-lts-virtual", "MavenRepo");
+	}
+
+	@Test
+	public void applyVirtualRepositoryWhenArtifactoryPropertiesPresentThenCredentialsUsed() {
+		this.project.getExtensions().getExtraProperties().set("artifactoryUsername", "user");
+		this.project.getExtensions().getExtraProperties().set("artifactoryPassword", "password");
+		this.project.getExtensions().getExtraProperties().set("releaseChannel", "lts");
+		new InternalRepositoryConventions().applyVirtualRepository(this.project);
+
+		MavenArtifactRepository repository = mavenRepository(this.project, "spring-lts-virtual");
+		assertThat(repository.getUrl().toString())
+			.isEqualTo("https://usw1.packages.broadcom.com/artifactory/spring-maven-virtual");
+		assertThat(repository.getCredentials().getUsername()).isEqualTo("user");
+		assertThat(repository.getCredentials().getPassword()).isEqualTo("password");
+	}
+
 	private void givenReleaseChannel(String releaseChannel) {
 		this.project.getExtensions().getExtraProperties().set("releaseChannel", releaseChannel);
 		new InternalRepositoryConventions().apply(this.project);

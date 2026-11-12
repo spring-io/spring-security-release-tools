@@ -14,6 +14,13 @@ gradlePlugin {
 			tags.addAll("spring", "project", "java", "kotlin", "groovy")
 			implementationClass = "io.spring.gradle.plugin.module.SpringProjectPlugin"
 		}
+		springSecurityPluginRepositoryPlugin {
+			id = "io.spring.security.plugin-repository"
+			displayName = "Spring Security Plugin Repository Plugin"
+			description = "Spring Security Plugin Repository Plugin is a Gradle settings plugin that adds the Spring plugin mirror as the first plugin and buildscript repository for non-OSS release channels."
+			tags.addAll("spring", "settings", "repository", "release")
+			implementationClass = "org.springframework.gradle.repository.SpringPluginRepositoryPlugin"
+		}
 		springSecuritySettingsPlugin {
 			id = "io.spring.security.settings"
 			displayName = "Spring Security Settings Plugin"
@@ -28,7 +35,8 @@ artifactory {
 	publish {
 		defaults {
 			publications("pluginMaven", "springSecurityProjectPluginPluginMarkerMaven",
-					"springSecuritySettingsPluginPluginMarkerMaven")
+					"springSecuritySettingsPluginPluginMarkerMaven",
+					"springSecurityPluginRepositoryPluginPluginMarkerMaven")
 		}
 	}
 }

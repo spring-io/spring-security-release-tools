@@ -22,6 +22,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.gradle.develocity.DevelocityPlugin;
+import org.springframework.gradle.repository.SpringPluginRepositoryPlugin;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -50,6 +51,13 @@ public class SpringSettingsPluginTests {
 		this.plugin.apply(this.settings);
 
 		verify(this.pluginManager).apply(DevelocityPlugin.class);
+	}
+
+	@Test
+	public void applyAppliesPluginRepositoryPlugin() {
+		this.plugin.apply(this.settings);
+
+		verify(this.pluginManager).apply(SpringPluginRepositoryPlugin.class);
 	}
 
 }

@@ -132,9 +132,35 @@ public class SpringRepositoryPluginTests {
 			.addRepositories(this.project,
 					Map.of("RELEASE_TRAIN_MAVEN_REPOSITORY_URL", "https://example.com/release-train")::get);
 
-		assertThat(names()).containsExactly("MavenRepo", "spring-staged-deployment", "spring-oss-snapshot",
+		assertThat(names()).containsExactly("spring-staged-deployment", "spring-lts-virtual", "spring-oss-snapshot",
 				"spring-oss-milestone", "spring-oss-release", "spring-internal-release", "spring-lts-release",
-				"spring-lts-snapshot");
+				"spring-lts-snapshot", "MavenRepo");
+	}
+
+	@Test
+	public void applyWhenNonOssChannelThenVirtualRepositoryIsBeforeSpringRepositoriesAndMavenCentralIsLast() {
+		this.project.getExtensions().getExtraProperties().set("releaseChannel", "lts");
+		evaluate("1.0.0");
+
+		assertThat(names()).containsExactly("spring-lts-virtual", "spring-oss-release", "spring-internal-release",
+				"spring-lts-release", "MavenRepo");
+	}
+
+	@Test
+	public void applyWhenNonOssChannelAndForceLocalThenMavenLocalIsFirst() {
+		this.project.getExtensions().getExtraProperties().set("releaseChannel", "lts");
+		force("local");
+		evaluate("1.0.0");
+
+		assertThat(names()).containsSubsequence("MavenLocal", "spring-lts-virtual", "MavenRepo");
+	}
+
+	@Test
+	public void applyWhenOssChannelThenNoVirtualRepository() {
+		this.project.getExtensions().getExtraProperties().set("releaseChannel", "oss");
+		evaluate("1.0.0");
+
+		assertThat(names()).doesNotContain("spring-lts-virtual");
 	}
 
 	@ParameterizedTest
