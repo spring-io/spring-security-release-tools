@@ -13,7 +13,7 @@
 		"spring-io/spring-doc-actions": { "ref": "v0.0.22", "sha": "415e2b11a766ba64799fffb5c97a4f7e17f677cf" },
 		"spring-io/spring-gradle-build-action": { "ref": "v2.0.7", "sha": "99a2aa4bd02e3a216fdbc574e256ec860f791d4c" },
 		"spring-io/spring-release-actions": { "ref": "0.0.9", "sha": "967a8de4659c4273a82bcb098d73c2330c015254" },
-		"spring-io/spring-security-actions": { "ref": "0.0.27", "sha": "5ad73de5732708b3915d28ec6bc3e076eff2f70d" },
+		"spring-io/spring-security-actions": { "ref": "0.0.32", "sha": "684ca83d1b00d67326499eb02e6517d4f5bd73d1" },
 		"spring-io/spring-security-release-tools": { "ref": "v${project.version}", "sha": "${project.sha}" }
 	}
 }
