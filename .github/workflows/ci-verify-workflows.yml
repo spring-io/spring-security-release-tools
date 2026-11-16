@@ -1,3 +1,4 @@
+# DEPRECATED: This workflow is deprecated and will be removed, with no replacement.
 name: Shared - CI - Verify Workflows
 
 on:
@@ -28,6 +29,8 @@ jobs:
     name: Verify Workflows
     runs-on: ${{ inputs.runner }}
     steps:
+      - name: Deprecation Notice
+        run: echo "::warning title=Deprecated Workflow::ci-verify-workflows.yml is deprecated and will be removed, with no replacement."
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Set up JDK ${{ inputs.java-version }}

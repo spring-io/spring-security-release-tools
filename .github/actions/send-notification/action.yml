@@ -1,5 +1,5 @@
 name: Send Notification
-description: Sends a Google Chat message as a notification of the job's outcome
+description: 'Deprecated and will be removed, with no replacement. Sends a Google Chat message as a notification of the job''s outcome'
 
 inputs:
   webhook-url:
@@ -9,6 +9,9 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Deprecation Notice
+      shell: bash
+      run: echo "::warning title=Deprecated Action::send-notification is deprecated and will be removed, with no replacement."
     - id: run-info
       shell: bash
       env:
