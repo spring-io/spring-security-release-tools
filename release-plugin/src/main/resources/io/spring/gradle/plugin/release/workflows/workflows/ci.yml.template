@@ -47,7 +47,7 @@ jobs:
     name: Build
     needs: setup
     if: needs.setup.outputs.snapshot == 'true'
-    uses: spring-io/spring-security-release-tools/.github/workflows/ci-build.yml
+    uses: spring-io/spring-security-actions/.github/workflows/ci-build.yml
     with:
       java-version: '<< workflow.generator.project.java.versions.primary >>'
       runner: ${{ vars.UBUNTU_RUNS_ON }}
@@ -60,7 +60,7 @@ jobs:
   deploy-artifacts:
     name: Deploy Artifacts
     needs: [ setup, build ]
-    uses: spring-io/spring-security-release-tools/.github/workflows/ci-deploy-artifacts.yml
+    uses: spring-io/spring-security-actions/.github/workflows/ci-deploy-artifacts.yml
     with:
       runner: ${{ vars.UBUNTU_RUNS_ON }}
       version: ${{ needs.setup.outputs.version }}
@@ -72,7 +72,7 @@ jobs:
     name: Deploy Schema
     needs: [ setup, deploy-artifacts ]
     if: needs.setup.outputs.release-channel == 'oss'
-    uses: spring-io/spring-security-release-tools/.github/workflows/ci-deploy-schema.yml
+    uses: spring-io/spring-security-actions/.github/workflows/ci-deploy-schema.yml
     with:
       java-version: '<< workflow.generator.project.java.versions.primary >>'
       runner: ${{ vars.UBUNTU_RUNS_ON }}
