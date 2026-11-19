@@ -16,6 +16,7 @@
 
 package org.springframework.gradle.docs;
 
+import org.gradle.api.JavaVersion;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.javadoc.Javadoc;
@@ -32,6 +33,26 @@ public class SpringJavadocOptionsPlugin implements Plugin<Project> {
 			StandardJavadocDocletOptions options = (StandardJavadocDocletOptions) javadoc.getOptions();
 			options.addStringOption("Xdoclint:none", "-quiet");
 		});
+		// Resolving the Javadoc tool finalizes the toolchain, so wait until the build
+		// script has had a chance to configure it
+		project.afterEvaluate((evaluated) -> evaluated.getTasks().withType(Javadoc.class).configureEach((javadoc) -> {
+			if (supportsNoFonts(javadoc)) {
+				// do not ship 4MB of web fonts for single modules
+				StandardJavadocDocletOptions options = (StandardJavadocDocletOptions) javadoc.getOptions();
+				options.addBooleanOption("-no-fonts", true);
+			}
+		}));
+	}
+
+	/**
+	 * The {@code --no-fonts} option was added in JDK 23, so only use it when the JDK that
+	 * runs Javadoc is at least that version.
+	 */
+	private static boolean supportsNoFonts(Javadoc javadoc) {
+		if (javadoc.getJavadocTool().isPresent()) {
+			return javadoc.getJavadocTool().get().getMetadata().getLanguageVersion().asInt() >= 23;
+		}
+		return JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_23);
 	}
 
 }
