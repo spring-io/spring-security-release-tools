@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 
 import org.gradle.api.Project;
+import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.tasks.javadoc.Javadoc;
 import org.gradle.testfixtures.ProjectBuilder;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Tests for {@link SpringJavadocOptionsPlugin}.
@@ -56,6 +58,30 @@ public class SpringJavadocOptionsPluginTests {
 		javadoc.getOptions().write(optionsFile);
 
 		assertThat(Files.readString(optionsFile.toPath())).contains("-Xdoclint:none");
+	}
+
+	@Test
+	public void applyWhenJdkSupportsNoFontsThenDisablesFonts() throws IOException {
+		assumeTrue(Runtime.version().feature() >= 23);
+		((ProjectInternal) this.project).evaluate();
+		Javadoc javadoc = (Javadoc) this.project.getTasks().getByName("javadoc");
+		File optionsFile = new File(this.projectDir, "javadoc.options");
+
+		javadoc.getOptions().write(optionsFile);
+
+		assertThat(Files.readString(optionsFile.toPath())).contains("--no-fonts");
+	}
+
+	@Test
+	public void applyWhenJdkDoesNotSupportNoFontsThenDoesNotDisableFonts() throws IOException {
+		assumeTrue(Runtime.version().feature() < 23);
+		((ProjectInternal) this.project).evaluate();
+		Javadoc javadoc = (Javadoc) this.project.getTasks().getByName("javadoc");
+		File optionsFile = new File(this.projectDir, "javadoc.options");
+
+		javadoc.getOptions().write(optionsFile);
+
+		assertThat(Files.readString(optionsFile.toPath())).doesNotContain("no-fonts");
 	}
 
 }
