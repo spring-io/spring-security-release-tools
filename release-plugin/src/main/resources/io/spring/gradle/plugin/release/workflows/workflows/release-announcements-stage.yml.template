@@ -21,6 +21,6 @@ jobs:
       contents: write
       issues: read
       pull-requests: read
-    uses: spring-io/spring-security-release-tools/.github/workflows/release-announcements-stage.yml
+    uses: spring-io/spring-security-actions/.github/workflows/release-announcements-stage.yml
     with:
       version: ${{ inputs.version || github.ref_name }}

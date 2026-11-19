@@ -34,11 +34,9 @@ import org.gradle.api.artifacts.dsl.RepositoryHandler;
  * <li>the release train repository, when {@code RELEASE_TRAIN_MAVEN_REPOSITORY_URL} is
  * set</li>
  * <li>the Spring snapshot, milestone and release repositories</li>
- * <li>the repositories for a non-OSS {@code releaseChannel}</li>
  * </ol>
- * For a non-OSS {@code releaseChannel} the virtual repository is then added before the
- * {@code repo.spring.io} repositories, and Maven Central (and the Gradle Plugin Portal,
- * which redirects to it) are moved to the end so that they are consulted last.
+ * The Spring commercial repositories are not added here: they are added by the init
+ * script of the {@code run-gradle} action of spring-io/spring-security-actions.
  * Repositories are added after the project is evaluated.
  *
  * @author Steve Riesenberg
@@ -60,8 +58,6 @@ public abstract class SpringRepositoryPlugin implements Plugin<Project> {
 	private static final String OSS_RELEASE_REPOSITORY = "release";
 
 	private final DeploymentRepositoryConventions deployment = new DeploymentRepositoryConventions();
-
-	private final InternalRepositoryConventions internal = new InternalRepositoryConventions();
 
 	@Override
 	public void apply(Project project) {
@@ -95,8 +91,6 @@ public abstract class SpringRepositoryPlugin implements Plugin<Project> {
 			repositories.maven(spec.repository("spring-oss-milestone", ossMilestoneUrl));
 		}
 		repositories.maven(spec.repository("spring-oss-release", ossReleaseUrl));
-		this.internal.apply(project);
-		this.internal.applyVirtualRepository(project);
 	}
 
 	private static List<String> getForceMavenRepositories(Project project) {

@@ -61,24 +61,6 @@ public class SpringProjectPluginTests {
 	}
 
 	@Test
-	public void applyWhenRootProjectAndReleaseChannelIsLtsThenAddsInternalRepositories() {
-		this.project.getExtensions().getExtraProperties().set("releaseChannel", "lts");
-		this.project.getPluginManager().apply(SpringProjectPlugin.class);
-		((ProjectInternal) this.project).evaluate();
-
-		assertThat(names(this.project)).contains("spring-internal-release", "spring-lts-release");
-	}
-
-	@Test
-	public void applyWhenRootProjectAndReleaseChannelIsOssThenNoInternalRepositories() {
-		this.project.getExtensions().getExtraProperties().set("releaseChannel", "oss");
-		this.project.getPluginManager().apply(SpringProjectPlugin.class);
-		((ProjectInternal) this.project).evaluate();
-
-		assertThat(names(this.project)).doesNotContain("spring-internal-release", "spring-lts-release");
-	}
-
-	@Test
 	public void applyWhenChildProjectHasNoSourcesThenSucceeds() {
 		Project child = ProjectBuilder.builder().withParent(this.project).withName("empty").build();
 
