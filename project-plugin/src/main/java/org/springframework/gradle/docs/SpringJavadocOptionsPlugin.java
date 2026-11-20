@@ -52,7 +52,8 @@ public class SpringJavadocOptionsPlugin implements Plugin<Project> {
 		if (javadoc.getJavadocTool().isPresent()) {
 			return javadoc.getJavadocTool().get().getMetadata().getLanguageVersion().asInt() >= 23;
 		}
-		return JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_23);
+		// Do not use JavaVersion.VERSION_23, it does not exist before Gradle 7.6
+		return Integer.parseInt(JavaVersion.current().getMajorVersion()) >= 23;
 	}
 
 }
