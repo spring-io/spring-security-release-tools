@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import io.spring.gradle.plugin.core.ProjectUtils;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
@@ -34,6 +35,7 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.api.tasks.options.Option;
 import org.gradle.work.DisableCachingByDefault;
 
 /**
@@ -55,6 +57,9 @@ public abstract class VerifyWorkflowsTask extends DefaultTask {
 	public static final String TASK_NAME = "verifyWorkflows";
 
 	@Internal
+	public abstract DirectoryProperty getProjectDirectory();
+
+	@Internal
 	public abstract DirectoryProperty getGitHubDirectory();
 
 	@Internal
@@ -71,6 +76,40 @@ public abstract class VerifyWorkflowsTask extends DefaultTask {
 
 	@Internal
 	public abstract RegularFileProperty getLocalVersionsFile();
+
+	/**
+	 * Where commits of the repository that has the templates are kept once downloaded.
+	 */
+	@Internal
+	public abstract DirectoryProperty getTemplatesCacheDirectory();
+
+	/**
+	 * A directory of templates, laid out like {@code .github/specs}, to use in place of
+	 * the ones the project pins.
+	 */
+	@Internal
+	public abstract DirectoryProperty getTemplatesDirectory();
+
+	/**
+	 * A git checkout of the repository that has the templates, to take the pinned commit
+	 * from instead of GitHub. A relative path is relative to the project.
+	 */
+	@Input
+	@Optional
+	public abstract Property<String> getTemplatesRepository();
+
+	@Option(option = "templates-repository",
+			description = "Take the pinned commit of spring-security-actions from this git checkout instead of GitHub")
+	public void templatesRepository(String repository) {
+		getTemplatesRepository().set(repository);
+	}
+
+	@Input
+	@Optional
+	public abstract Property<String> getGitHubAccessToken();
+
+	@Input
+	public abstract Property<String> getGitHubApiUrl();
 
 	/**
 	 * The branch being verified, which decides which workflows should be there. Defaults
@@ -94,13 +133,23 @@ public abstract class VerifyWorkflowsTask extends DefaultTask {
 		Path specs = getSpecsDirectory().get().getAsFile().toPath();
 
 		Path config = getConfigFile().get().getAsFile().toPath();
-		WorkflowVersions versions = WorkflowSupport.versions(getLocalVersionsFile().get().getAsFile().toPath());
+		Path localVersions = getLocalVersionsFile().get().getAsFile().toPath();
+		Path explicit = (getTemplatesDirectory().isPresent()) ? getTemplatesDirectory().get().getAsFile().toPath()
+				: null;
+		Path checkout = (getTemplatesRepository().isPresent())
+				? getProjectDirectory().get().getAsFile().toPath().resolve(getTemplatesRepository().get()) : null;
+		TemplateSource.Resolved source = TemplateSource.resolve(localVersions, explicit, null,
+				getTemplatesCacheDirectory().get().getAsFile().toPath(),
+				TemplateSource.repository(explicit, checkout,
+						new GitHubReleases(getGitHubApiUrl().get(), getGitHubAccessToken().getOrNull())),
+				getLogger()::lifecycle);
+		WorkflowVersions versions = WorkflowSupport.versions(localVersions, source.directory());
 		List<String> problems = new ArrayList<>();
 		problems.addAll(WorkflowVerifier.verifyPins(workflows, versions));
 		problems.addAll(WorkflowVerifier.verifyPins(actions, versions));
-		Map<String, Object> model = WorkflowSupport.config(config);
+		Map<String, Object> model = WorkflowSupport.withTemplates(WorkflowSupport.config(config), versions);
 		Map<String, WorkflowTemplates.Template> templates = new TreeMap<>(
-				WorkflowSupport.named(config, model, WorkflowTemplates.load(specs, Files.exists(config))));
+				WorkflowSupport.named(config, model, WorkflowTemplates.load(specs, Files.exists(config), source.directory())));
 		String branch = getBranch().getOrNull();
 		if (branch == null) {
 			model = WorkflowSupport.onMain(model);
@@ -142,12 +191,24 @@ public abstract class VerifyWorkflowsTask extends DefaultTask {
 			task.doNotTrackState("Reads the whole .github directory");
 
 			var github = project.getLayout().getProjectDirectory().dir(".github");
+			task.getProjectDirectory().set(project.getLayout().getProjectDirectory());
 			task.getGitHubDirectory().set(github);
 			task.getWorkflowsDirectory().set(github.dir("workflows"));
 			task.getActionsDirectory().set(github.dir("actions"));
 			task.getSpecsDirectory().set(github.dir("specs"));
 			task.getConfigFile().set(github.file("workflow-generator.yml"));
 			task.getLocalVersionsFile().set(github.file("specs/versions.json"));
+			task.getTemplatesCacheDirectory()
+				.set(project.getGradle()
+					.getGradleUserHomeDir()
+					.toPath()
+					.resolve("spring-security-release-tools/templates")
+					.toFile());
+			task.getGitHubApiUrl().convention("https://api.github.com");
+			task.getGitHubAccessToken()
+				.set(ProjectUtils.getProperty(project, "gitHubAccessToken")
+					.orElse(project.getProviders().environmentVariable("GITHUB_TOKEN"))
+					.orElse(project.getProviders().environmentVariable("GH_TOKEN")));
 			WorkflowSupport.conventions(project, task.getBranch(), task.getProjectSlug(), task.getSaganApiUrl());
 		});
 	}

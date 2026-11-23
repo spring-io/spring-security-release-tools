@@ -19,12 +19,13 @@ package io.spring.gradle.plugin.release.workflows;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 
+import org.gradle.api.GradleException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 /**
  * Tests for {@link WorkflowTemplates}.
@@ -35,50 +36,43 @@ class WorkflowTemplatesTests {
 	Path specs;
 
 	@Test
-	void shippedWhenLoadedThenEveryTemplateInTheResourcesDirectoryIsIncluded() throws IOException {
-		Path resources = Path.of("src/main/resources/io/spring/gradle/plugin/release/workflows");
-		try (var files = Files.walk(resources)) {
-			List<String> expected = files.filter(Files::isRegularFile)
-				.map((file) -> resources.relativize(file).toString())
-				.filter((name) -> name.endsWith(".template"))
-				.map((name) -> name.substring(0, name.length() - ".template".length()))
-				.toList();
-			assertThat(WorkflowTemplates.shipped().keySet()).containsExactlyInAnyOrderElementsOf(expected);
-		}
-	}
-
-	@Test
-	void shippedWhenLoadedThenReleaseTrainActionsAreIncluded() {
-		assertThat(WorkflowTemplates.shipped()).containsKeys("actions/release-train-build/action.yml",
-				"actions/release-train-test/action.yml");
+	void loadWhenDefaultsApplyThenReleaseTrainActionsAreIncluded() {
+		assertThat(WorkflowTemplates.load(this.specs, true, Fixtures.specs())).containsKeys(
+				"actions/release-train-build/action.yml", "actions/release-train-test/action.yml");
 	}
 
 	@Test
 	void loadWhenProjectTemplateHasSameNameThenReplacesDefault() throws IOException {
-		Files.writeString(workflow("dependabot-pull-request-build.yml.template"), "mine");
+		Files.writeString(workflow("dependabot-pull-request-build.spec.yml"), "mine");
 		assertThat(
-				WorkflowTemplates.load(this.specs, true).get("workflows/dependabot-pull-request-build.yml").content())
+				WorkflowTemplates.load(this.specs, true, Fixtures.specs()).get("workflows/dependabot-pull-request-build.yml").content())
 			.isEqualTo("mine");
-		assertThat(WorkflowTemplates.load(this.specs, true)).containsKey("workflows/pull-request-build.yml");
+		assertThat(WorkflowTemplates.load(this.specs, true, Fixtures.specs())).containsKey("workflows/pull-request-build.yml");
 	}
 
 	@Test
 	void loadWhenProjectTemplateHasNoDefaultThenAdded() throws IOException {
-		Files.writeString(workflow("custom.yml.template"), "custom");
-		assertThat(WorkflowTemplates.load(this.specs, true)).containsKeys("workflows/custom.yml",
+		Files.writeString(workflow("custom.spec.yml"), "custom");
+		assertThat(WorkflowTemplates.load(this.specs, true, Fixtures.specs())).containsKeys("workflows/custom.yml",
 				"workflows/pull-request-build.yml");
 	}
 
 	@Test
 	void loadWhenProjectHasActionTemplateThenReplacesDefaultOrIsAdded() throws IOException {
 		Path actions = Files.createDirectories(this.specs.resolve("actions/release-train-build"));
-		Files.writeString(actions.resolve("action.yml.template"), "mine");
-		Files.writeString(Files.createDirectories(this.specs.resolve("actions/custom")).resolve("action.yml.template"),
+		Files.writeString(actions.resolve("action.spec.yml"), "mine");
+		Files.writeString(Files.createDirectories(this.specs.resolve("actions/custom")).resolve("action.spec.yml"),
 				"custom");
-		assertThat(WorkflowTemplates.load(this.specs, true).get("actions/release-train-build/action.yml").content())
+		assertThat(WorkflowTemplates.load(this.specs, true, Fixtures.specs()).get("actions/release-train-build/action.yml").content())
 			.isEqualTo("mine");
-		assertThat(WorkflowTemplates.load(this.specs, true)).containsKeys("actions/custom/action.yml",
+		assertThat(WorkflowTemplates.load(this.specs, true, Fixtures.specs())).containsKeys("actions/custom/action.yml",
 				"actions/release-train-test/action.yml");
+	}
+
+	@Test
+	void loadWhenDefaultsApplyAndNoneAreGivenThenSaysHowToGetThem() {
+		assertThatExceptionOfType(GradleException.class).isThrownBy(() -> WorkflowTemplates.load(this.specs, true, null))
+			.withMessageContaining("--templates-version latest");
 	}
 
 	private Path workflow(String name) throws IOException {
@@ -87,8 +81,8 @@ class WorkflowTemplatesTests {
 
 	@Test
 	void loadWhenDefaultsDoNotApplyThenOnlyProjectTemplates() throws IOException {
-		Files.writeString(workflow("custom.yml.template"), "custom");
-		assertThat(WorkflowTemplates.load(this.specs, false)).containsOnlyKeys("workflows/custom.yml");
+		Files.writeString(workflow("custom.spec.yml"), "custom");
+		assertThat(WorkflowTemplates.load(this.specs, false, null)).containsOnlyKeys("workflows/custom.yml");
 	}
 
 }

@@ -46,6 +46,7 @@ class VerifyWorkflowsTaskTests {
 	void setUp() throws IOException {
 		this.project = ProjectBuilder.builder().withProjectDir(this.projectDir).build();
 		this.project.getPluginManager().apply(SpringReleasePlugin.class);
+		Fixtures.pin(this.project, this.projectDir);
 		Files.createDirectories(new File(this.projectDir, ".github").toPath());
 		Files.writeString(new File(this.projectDir, ".github/workflow-generator.yml").toPath(),
 				"workflow:\n  generator:\n    project:\n      java:\n        versions:\n          primary: 25\n");
@@ -61,7 +62,7 @@ class VerifyWorkflowsTaskTests {
 	void verifyWhenDefaultTemplatesNotRenderedThenFailsNamingTheTemplate() {
 		assertThatExceptionOfType(GradleException.class).isThrownBy(() -> task().verify())
 			.withMessageContaining("dependabot-pull-request-build.yml is missing")
-			.withMessageContaining("the default workflows/dependabot-pull-request-build.yml.template");
+			.withMessageContaining("dependabot-pull-request-build.spec.yml");
 	}
 
 	@Test
@@ -80,10 +81,10 @@ class VerifyWorkflowsTaskTests {
 		File workflows = new File(this.projectDir, ".github/workflows");
 		Files.createDirectories(specs.toPath());
 		Files.createDirectories(workflows.toPath());
-		String sha = WorkflowVersions.shipped().action("actions/checkout").sha();
-		Files.writeString(new File(specs, "ci.yml.template").toPath(), "steps:\n  - uses: actions/checkout\n");
+		String sha = Fixtures.versions().action("actions/checkout").sha();
+		Files.writeString(new File(specs, "ci.spec.yml").toPath(), "steps:\n  - uses: actions/checkout\n");
 		Files.writeString(new File(workflows, "ci.yml").toPath(), "steps:\n  - uses: actions/checkout@" + sha + " # "
-				+ WorkflowVersions.shipped().action("actions/checkout").ref() + "\n");
+				+ Fixtures.versions().action("actions/checkout").ref() + "\n");
 		render();
 		task().verify();
 	}

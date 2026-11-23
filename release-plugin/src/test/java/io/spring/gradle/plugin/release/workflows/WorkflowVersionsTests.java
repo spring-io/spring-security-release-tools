@@ -37,22 +37,6 @@ class WorkflowVersionsTests {
 	private static final String SHA_256 = "0123456789abcdef".repeat(4);
 
 	@Test
-	void shippedWhenLoadedThenEveryActionIsPinnedToATagAndSha() {
-		WorkflowVersions shipped = WorkflowVersions.shipped();
-		assertThat(shipped.actions()).isNotEmpty();
-		// a branch moves, so what it resolves to would change under a fixed plugin
-		// version
-		shipped.actions()
-			.forEach((repository, action) -> assertThat(action.ref()).as(repository)
-				.matches("v?\\d+(\\.\\d+)*(-SNAPSHOT)?"));
-	}
-
-	@Test
-	void shippedWhenLoadedThenGeneratorHasVersionAndChecksum() {
-		assertThat(WorkflowVersions.shipped().generator().version()).startsWith("v");
-	}
-
-	@Test
 	void mergeWhenLocalOverridesThenLocalWins() throws IOException {
 		WorkflowVersions shipped = load("{\"actions\":{\"a/b\":{\"ref\":\"v1\",\"sha\":\"" + SHA + "\"}}}");
 		WorkflowVersions local = load("{\"actions\":{\"a/b\":{\"ref\":\"v2\",\"sha\":\"" + SHA + "\"},"
@@ -60,13 +44,6 @@ class WorkflowVersionsTests {
 		WorkflowVersions merged = shipped.merge(local);
 		assertThat(merged.action("a/b").ref()).isEqualTo("v2");
 		assertThat(merged.action("c/d").ref()).isEqualTo("v3");
-	}
-
-	@Test
-	void shippedWhenLoadedThenThisPluginsOwnEntryHasBeenFilledIn() {
-		WorkflowVersions.Action self = WorkflowVersions.shipped().action("spring-io/spring-security-release-tools");
-		assertThat(self.ref()).startsWith("v").doesNotContain("$");
-		assertThat(self.sha()).matches("[0-9a-f]{40}");
 	}
 
 	@ParameterizedTest

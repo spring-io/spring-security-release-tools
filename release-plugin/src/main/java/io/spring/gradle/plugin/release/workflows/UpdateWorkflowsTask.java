@@ -49,7 +49,7 @@ import org.gradle.work.DisableCachingByDefault;
 
 /**
  * Brings the project's workflows and actions up to date: renders every template, the
- * plugin's defaults, for a project with a {@code workflow-generator.yml}, and any in
+ * spring-security-actions' templates, for a project with a {@code workflow-generator.yml}, and any in
  * {@code .github/specs/workflows} or {@code .github/specs/actions} (which replace a
  * default of the same name), into {@code .github/workflows} and {@code .github/actions},
  * then runs the workflow generator, which writes the release train workflows. A template
@@ -97,6 +97,49 @@ public abstract class UpdateWorkflowsTask extends DefaultTask {
 	@Internal
 	public abstract DirectoryProperty getGeneratorCacheDirectory();
 
+	/**
+	 * Where commits of the repository that has the templates are kept once downloaded.
+	 */
+	@Internal
+	public abstract DirectoryProperty getTemplatesCacheDirectory();
+
+	/**
+	 * A directory of templates, laid out like {@code .github/specs}, to use in place of
+	 * the ones the project pins.
+	 */
+	@Internal
+	public abstract DirectoryProperty getTemplatesDirectory();
+
+	/**
+	 * A tag of the repository that has the templates, or {@code latest}, to use instead of
+	 * the one the project pins, which is then recorded in the project's
+	 * {@code .github/specs/versions.json}, which is created if there is none.
+	 */
+	@Input
+	@Optional
+	public abstract Property<String> getTemplatesVersion();
+
+	@Option(option = "templates-version",
+			description = "Use this tag of spring-security-actions, or latest, and pin it in .github/specs/versions.json")
+	public void templatesVersion(String version) {
+		getTemplatesVersion().set(version);
+	}
+
+	/**
+	 * A git checkout of the repository that has the templates, to read tags and commits
+	 * from instead of GitHub, to try out a change before it is pushed. Tag the commit
+	 * first. A relative path is relative to the project.
+	 */
+	@Input
+	@Optional
+	public abstract Property<String> getTemplatesRepository();
+
+	@Option(option = "templates-repository",
+			description = "Read the templates' tags and commits from this git checkout of spring-security-actions instead of GitHub")
+	public void templatesRepository(String repository) {
+		getTemplatesRepository().set(repository);
+	}
+
 	@Input
 	@Optional
 	public abstract Property<String> getGitHubAccessToken();
@@ -135,13 +178,22 @@ public abstract class UpdateWorkflowsTask extends DefaultTask {
 
 	@TaskAction
 	public void update() throws IOException {
-		WorkflowVersions versions = WorkflowSupport.versions(getLocalVersionsFile().get().getAsFile().toPath());
 		GitHubReleases github = new GitHubReleases(getGitHubApiUrl().get(), getGitHubAccessToken().getOrNull());
+		Path localVersions = getLocalVersionsFile().get().getAsFile().toPath();
+		Path explicit = (getTemplatesDirectory().isPresent()) ? getTemplatesDirectory().get().getAsFile().toPath()
+				: null;
+		Path checkout = (getTemplatesRepository().isPresent())
+				? getProjectDirectory().get().getAsFile().toPath().resolve(getTemplatesRepository().get()) : null;
+		TemplateSource.Resolved source = TemplateSource.resolve(localVersions, explicit,
+				getTemplatesVersion().getOrNull(), getTemplatesCacheDirectory().get().getAsFile().toPath(),
+				TemplateSource.repository(explicit, checkout, github), getLogger()::lifecycle);
+		WorkflowVersions versions = WorkflowSupport.versions(localVersions, source.directory()).merge(source.overlay());
 		WorkflowVersions.Generator generator = (getSkipGenerator().get()) ? null : versions.generator();
 		// find the generator's Java first, so that a missing one fails before anything
 		// has been rendered
 		String java = (generator != null) ? generatorJava(generator) : null;
-		renderSpecs(versions);
+		renderSpecs(versions, source.directory());
+		TemplateSource.record(localVersions, source);
 		removeDependabot();
 		if (generator != null) {
 			runGenerator(generator, java, github);
@@ -172,11 +224,11 @@ public abstract class UpdateWorkflowsTask extends DefaultTask {
 		}
 	}
 
-	private void renderSpecs(WorkflowVersions versions) throws IOException {
+	private void renderSpecs(WorkflowVersions versions, Path defaults) throws IOException {
 		Path specs = getSpecsDirectory().get().getAsFile().toPath();
 		Path github = getGitHubDirectory().get().getAsFile().toPath();
 		Path config = getConfigFile().get().getAsFile().toPath();
-		Map<String, Object> model = WorkflowSupport.config(config);
+		Map<String, Object> model = WorkflowSupport.withTemplates(WorkflowSupport.config(config), versions);
 		WorkflowRenderer renderer = new WorkflowRenderer(versions,
 				WorkflowSupport.generate(model, getBranch().getOrNull(),
 						() -> WorkflowSupport.supportedBranches(getProjectSlug().get(), getSaganApiUrl().get())));
@@ -184,7 +236,7 @@ public abstract class UpdateWorkflowsTask extends DefaultTask {
 		// leaves the workflows as they were
 		Map<Path, String> rendered = new LinkedHashMap<>();
 		for (Map.Entry<String, WorkflowTemplates.Template> template : WorkflowSupport
-			.named(config, model, WorkflowTemplates.load(specs, Files.exists(config)))
+			.named(config, model, WorkflowTemplates.load(specs, Files.exists(config), defaults))
 			.entrySet()) {
 			try {
 				rendered.put(github.resolve(template.getKey()), renderer.render(template.getValue().content()));
@@ -326,6 +378,12 @@ public abstract class UpdateWorkflowsTask extends DefaultTask {
 					.getGradleUserHomeDir()
 					.toPath()
 					.resolve("spring-security-release-tools/workflow-generator")
+					.toFile());
+			task.getTemplatesCacheDirectory()
+				.set(project.getGradle()
+					.getGradleUserHomeDir()
+					.toPath()
+					.resolve("spring-security-release-tools/templates")
 					.toFile());
 			task.getGitHubApiUrl().convention("https://api.github.com");
 			WorkflowSupport.conventions(project, task.getBranch(), task.getProjectSlug(), task.getSaganApiUrl());

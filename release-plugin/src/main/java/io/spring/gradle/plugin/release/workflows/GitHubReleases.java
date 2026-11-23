@@ -29,13 +29,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * The little of the GitHub API that workflows need: a release's assets. Redirects are
+ * The little of the GitHub API that workflows need: a release's assets, and the tags and
+ * files of the repository that has the templates. Redirects are
  * followed by hand so that the token is only ever sent to GitHub's API, not to the
  * storage a release asset is served from.
  *
  * @author Josh Cummings
  */
-final class GitHubReleases {
+final class GitHubReleases implements TemplateRepository {
 
 	private static final int MAX_REDIRECTS = 5;
 
@@ -82,6 +83,70 @@ final class GitHubReleases {
 		}
 		throw new IllegalStateException("release " + tag + " of " + repository + " has no asset named " + assetName
 				+ ". Check that generator.version in .github/specs/versions.json names a published release");
+	}
+
+	@Override
+	public String latestVersion(String repository) {
+		try {
+			String tag = get("/repos/" + repository + "/releases/latest", repository + " latest release").path("tag_name")
+				.asText();
+			if (!tag.isEmpty()) {
+				return tag;
+			}
+		}
+		catch (IllegalStateException ex) {
+			// a repository with no release, which is read for its tags
+		}
+		String highest = null;
+		for (int page = 1; page <= 5; page++) {
+			JsonNode tags = get("/repos/" + repository + "/tags?per_page=100&page=" + page, repository + " tags");
+			for (JsonNode tag : tags) {
+				String name = tag.path("name").asText();
+				if (VERSION.matcher(name).matches()
+						&& (highest == null || TemplateRepository.compare(name, highest) > 0)) {
+					highest = name;
+				}
+			}
+			if (tags.size() < 100) {
+				break;
+			}
+		}
+		if (highest == null) {
+			throw new IllegalStateException(repository + " has no release, and no tag that is a version");
+		}
+		return highest;
+	}
+
+	@Override
+	public String tagCommit(String repository, String tag) {
+		JsonNode object = get("/repos/" + repository + "/git/ref/tags/" + tag, repository + " tag " + tag)
+			.path("object");
+		// an annotated tag names a tag object, which names the commit
+		for (int i = 0; i < 3 && "tag".equals(object.path("type").asText()); i++) {
+			object = get("/repos/" + repository + "/git/tags/" + object.path("sha").asText(), repository + " tag " + tag)
+				.path("object");
+		}
+		String sha = object.path("sha").asText();
+		if (!"commit".equals(object.path("type").asText()) || !sha.matches("[0-9a-f]{40}")) {
+			throw new IllegalStateException(repository + " tag " + tag + " does not name a commit");
+		}
+		return sha;
+	}
+
+	private JsonNode get(String path, String what) {
+		return json(send(this.apiUrl + path, "application/vnd.github+json", true, API_TIMEOUT,
+				HttpResponse.BodyHandlers.ofByteArray()), what);
+	}
+
+	@Override
+	public String origin() {
+		return "GitHub";
+	}
+
+	@Override
+	public void downloadArchive(String repository, String sha, Path target) {
+		send(this.apiUrl + "/repos/" + repository + "/zipball/" + sha, "application/vnd.github+json", true,
+				DOWNLOAD_TIMEOUT, HttpResponse.BodyHandlers.ofFile(target));
 	}
 
 	private <T> HttpResponse<T> send(String url, String accept, boolean authenticated, Duration timeout,

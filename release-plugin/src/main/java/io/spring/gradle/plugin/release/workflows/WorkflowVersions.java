@@ -19,6 +19,8 @@ package io.spring.gradle.plugin.release.workflows;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -27,17 +29,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * The versions that workflows are pinned to. Every entry carries the commit SHA as well
- * as the ref it came from, so that pinning never needs network access. This plugin's own
- * entry is filled in when the plugin is built, from the version and commit it is built
- * from.
+ * as the ref it came from, so that pinning never needs network access. The versions in
+ * the repository that has the templates are the base, and a project's own versions are
+ * laid over them.
  *
  * @param generator the workflow generator that produces release train workflows, if any
  * @param actions the actions and reusable workflows, keyed by {@code owner/repo}
+ * @param templates the repository, as {@code owner/repo}, that has the templates, whose pin
+ * in {@code actions} is the version of them to use, or {@code null} if a project does not
+ * use them
  * @author Josh Cummings
  */
-record WorkflowVersions(Generator generator, Map<String, Action> actions) {
-
-	private static final String SHIPPED = "versions.json";
+record WorkflowVersions(Generator generator, Map<String, Action> actions, String templates) {
 
 	private static final Pattern SHA = Pattern.compile("[0-9a-f]{40}");
 
@@ -45,16 +48,29 @@ record WorkflowVersions(Generator generator, Map<String, Action> actions) {
 
 	private static final Pattern RELEASE = Pattern.compile("v\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.]+)?");
 
+	private static final Pattern REPOSITORY = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*");
+
 	WorkflowVersions {
 		actions = (actions != null) ? Map.copyOf(actions) : Map.of();
+		if (templates != null && !REPOSITORY.matcher(templates).matches()) {
+			throw new IllegalArgumentException("templates must be a repository like owner/repo, not " + templates);
+		}
+	}
+
+	WorkflowVersions(Generator generator, Map<String, Action> actions) {
+		this(generator, actions, null);
 	}
 
 	/**
-	 * Load the versions that ship with this plugin.
-	 * @return the shipped versions
+	 * @param templates a directory of templates, which may have a {@code versions.json}
+	 * @return its versions, or none if it has no {@code versions.json}
 	 */
-	static WorkflowVersions shipped() {
-		try (InputStream in = WorkflowVersions.class.getResourceAsStream(SHIPPED)) {
+	static WorkflowVersions from(Path templates) {
+		Path file = templates.resolve("versions.json");
+		if (!Files.exists(file)) {
+			return new WorkflowVersions(null, null, null);
+		}
+		try (InputStream in = Files.newInputStream(file)) {
 			return load(in);
 		}
 		catch (IOException ex) {
@@ -74,7 +90,8 @@ record WorkflowVersions(Generator generator, Map<String, Action> actions) {
 	WorkflowVersions merge(WorkflowVersions local) {
 		Map<String, Action> merged = new LinkedHashMap<>(this.actions);
 		merged.putAll(local.actions);
-		return new WorkflowVersions((local.generator != null) ? local.generator : this.generator, merged);
+		return new WorkflowVersions((local.generator != null) ? local.generator : this.generator, merged,
+				(local.templates != null) ? local.templates : this.templates);
 	}
 
 	Action action(String repository) {

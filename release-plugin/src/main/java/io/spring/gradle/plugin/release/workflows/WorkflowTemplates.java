@@ -17,9 +17,7 @@
 package io.spring.gradle.plugin.release.workflows;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -28,31 +26,30 @@ import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import org.gradle.api.GradleException;
+
 /**
  * The templates to render, keyed by where each renders to, relative to the
  * {@code .github} directory (for example {@code workflows/ci.yml} or
  * {@code actions/release-train-build/action.yml}).
  * <p>
- * The plugin ships default templates, which apply to a project that is managed by the
- * workflow generator, that is, one with a {@code workflow-generator.yml}. A project
- * replaces a default by having a template of the same name, either
- * {@code .github/specs/workflows/<workflow>.yml.template} or
- * {@code .github/specs/actions/<action>/action.yml.template}, and adds a workflow or
- * action by having a template that has no default.
+ * The default templates are those of the repository that a project's versions file names (see
+ * {@link TemplateSource}), {@code spring-io/spring-security-actions}, which apply to a project that is managed by the workflow
+ * generator, that is, one with a {@code workflow-generator.yml}. A project replaces a
+ * default by having a template of the same name, either
+ * {@code .github/specs/workflows/<workflow>.spec.yml} or
+ * {@code .github/specs/actions/<action>/action.spec.yml}, and adds a workflow or action
+ * by having a template that has no default.
  *
  * @author Josh Cummings
  */
 final class WorkflowTemplates {
 
-	private static final String DIRECTORY = "/io/spring/gradle/plugin/release/workflows/";
-
-	private static final String INDEX = DIRECTORY + "templates.index";
-
 	private static final String WORKFLOWS = "workflows";
 
 	private static final String ACTIONS = "actions";
 
-	private static final String ACTION_TEMPLATE = "action.yml" + WorkflowVerifier.SPEC_SUFFIX;
+	private static final String ACTION_TEMPLATE = "action" + WorkflowVerifier.SPEC_SUFFIX;
 
 	private WorkflowTemplates() {
 	}
@@ -68,13 +65,22 @@ final class WorkflowTemplates {
 
 	/**
 	 * @param specs the project's {@code .github/specs} directory, which need not exist
-	 * @param defaults whether the shipped templates apply
-	 * @return the shipped templates, if they apply, replaced or added to by the project's
+	 * @param defaults whether the default templates apply, which they do to a project
+	 * that is managed by the workflow generator
+	 * @param shipped the {@code .github/specs} directory of the default templates, or
+	 * {@code null} if the project has none
+	 * @return the default templates, if they apply, replaced or added to by the project's
 	 */
-	static Map<String, Template> load(Path specs, boolean defaults) {
+	static Map<String, Template> load(Path specs, boolean defaults, Path shipped) {
 		Map<String, Template> templates = new TreeMap<>();
 		if (defaults) {
-			templates.putAll(shipped());
+			if (shipped == null) {
+				throw new GradleException("This project says it uses the default workflows, with a"
+						+ " workflow-generator.yml, but not where their templates are. Run with --templates-version"
+						+ " latest to use those of the latest release of " + TemplateSource.DEFAULT_REPOSITORY
+						+ ", which is then recorded in .github/specs/versions.json");
+			}
+			templates.putAll(project(shipped));
 		}
 		templates.putAll(project(specs));
 		return templates;
@@ -119,34 +125,8 @@ final class WorkflowTemplates {
 		}
 	}
 
-	/**
-	 * @return only the templates that ship with the plugin
-	 */
-	static Map<String, Template> shipped() {
-		Map<String, Template> templates = new TreeMap<>();
-		for (String name : read(INDEX).split("\\R")) {
-			if (!name.isBlank()) {
-				templates.put(key(name.trim()), new Template("the default " + name.trim() + " in the release plugin",
-						read(DIRECTORY + name.trim())));
-			}
-		}
-		return templates;
-	}
-
 	private static String key(String template) {
-		return template.substring(0, template.length() - WorkflowVerifier.SPEC_SUFFIX.length());
-	}
-
-	private static String read(String resource) {
-		try (InputStream in = WorkflowTemplates.class.getResourceAsStream(resource)) {
-			if (in == null) {
-				throw new IllegalStateException("Missing plugin resource " + resource);
-			}
-			return new String(in.readAllBytes(), StandardCharsets.UTF_8);
-		}
-		catch (IOException ex) {
-			throw new UncheckedIOException(ex);
-		}
+		return template.substring(0, template.length() - WorkflowVerifier.SPEC_SUFFIX.length()) + ".yml";
 	}
 
 }

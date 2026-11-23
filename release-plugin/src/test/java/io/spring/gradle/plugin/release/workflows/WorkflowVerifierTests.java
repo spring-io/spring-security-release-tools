@@ -66,7 +66,7 @@ class WorkflowVerifierTests {
 	@Test
 	void verifyRenderedWhenInSyncThenNoProblems() throws IOException {
 		WorkflowRenderer renderer = renderer();
-		write("specs/workflows/ci.yml.template", "uses: a/b\n");
+		write("specs/workflows/ci.spec.yml", "uses: a/b\n");
 		write("workflows/ci.yml", renderer.render("uses: a/b\n"));
 		assertThat(WorkflowVerifier.verifyRendered(WorkflowTemplates.project(this.directory.resolve("specs")),
 				this.directory, renderer))
@@ -75,8 +75,8 @@ class WorkflowVerifierTests {
 
 	@Test
 	void verifyRenderedWhenStaleOrMissingThenReported() throws IOException {
-		write("specs/workflows/ci.yml.template", "uses: a/b\n");
-		write("specs/workflows/pr.yml.template", "uses: a/b\n");
+		write("specs/workflows/ci.spec.yml", "uses: a/b\n");
+		write("specs/workflows/pr.spec.yml", "uses: a/b\n");
 		write("workflows/ci.yml", "uses: a/b@" + "f".repeat(40) + " # v0\n");
 		assertThat(WorkflowVerifier.verifyRendered(WorkflowTemplates.project(this.directory.resolve("specs")),
 				this.directory, renderer()))
@@ -87,11 +87,11 @@ class WorkflowVerifierTests {
 
 	@Test
 	void verifyRenderedWhenSpecCannotBeRenderedThenReported() throws IOException {
-		write("specs/workflows/ci.yml.template", "uses: unknown/repo\n");
+		write("specs/workflows/ci.spec.yml", "uses: unknown/repo\n");
 		assertThat(WorkflowVerifier.verifyRendered(WorkflowTemplates.project(this.directory.resolve("specs")),
 				this.directory, renderer()))
 			.singleElement()
-			.satisfies((problem) -> assertThat(problem).contains("ci.yml.template").contains("unknown/repo"));
+			.satisfies((problem) -> assertThat(problem).contains("ci.spec.yml").contains("unknown/repo"));
 	}
 
 	private static WorkflowRenderer renderer() {
@@ -125,7 +125,7 @@ class WorkflowVerifierTests {
 
 	@Test
 	void verifyRenderedWhenTemplateRendersToNothingThenWorkflowMustBeAbsent() throws IOException {
-		write("specs/workflows/ci.yml.template", "<<#x>>\nuses: a/b\n<</x>>\n");
+		write("specs/workflows/ci.spec.yml", "<<#x>>\nuses: a/b\n<</x>>\n");
 		Map<String, WorkflowTemplates.Template> templates = WorkflowTemplates.project(this.directory.resolve("specs"));
 		assertThat(WorkflowVerifier.verifyRendered(templates, this.directory, renderer())).isEmpty();
 		write("workflows/ci.yml", "uses: a/b@" + SHA + " # v1\n");

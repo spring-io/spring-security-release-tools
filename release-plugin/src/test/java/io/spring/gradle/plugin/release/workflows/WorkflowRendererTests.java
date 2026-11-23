@@ -69,11 +69,11 @@ class WorkflowRendererTests {
 
 	@Test
 	void renderWhenShippedCiTemplateThenDeploySchemaFollowsGeneratorConfig() {
-		String ci = WorkflowTemplates.shipped().get("workflows/ci.yml").content();
+		String ci = Fixtures.templates().get("workflows/ci.yml").content();
 		Map<String, Object> project = Map.of("java", Map.of("versions", Map.of("primary", 17)));
-		WorkflowRenderer without = new WorkflowRenderer(WorkflowVersions.shipped(),
+		WorkflowRenderer without = new WorkflowRenderer(Fixtures.versions(),
 				Map.of("workflow", Map.of("generator", Map.of("project", project))));
-		WorkflowRenderer with = new WorkflowRenderer(WorkflowVersions.shipped(), Map.of("workflow", Map.of("generator",
+		WorkflowRenderer with = new WorkflowRenderer(Fixtures.versions(), Map.of("workflow", Map.of("generator",
 				Map.of("project", project, "workflows", Map.of("release-tools", Map.of("deploy-schema", true))))));
 		assertThat(without.render(ci)).doesNotContain("deploy-schema");
 		assertThat(with.render(ci)).contains("  deploy-schema:").contains("ci-deploy-schema.yml");

@@ -39,7 +39,7 @@ import java.util.stream.Stream;
  */
 final class WorkflowVerifier {
 
-	static final String SPEC_SUFFIX = ".template";
+	static final String SPEC_SUFFIX = ".spec.yml";
 
 	/**
 	 * What the workflow generator names the workflows it writes. Actions with this prefix

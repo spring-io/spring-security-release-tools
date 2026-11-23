@@ -7,7 +7,7 @@
 #      spring-io/spring-security-release-tools
 #      (e.g. `uses: spring-io/spring-security-release-tools/update-bot@<sha>  # v1.0.17`)
 #      has its SHA and trailing version comment rewritten to match, in any
-#      *.yml, *.yaml, *.yml.template, or *.yaml.template file.
+#      *.yml or *.yaml file.
 #
 #   2. Every Gradle dependency on the release-tools plugins
 #      (io.spring.gradle:spring-security-release-plugin or
@@ -101,7 +101,7 @@ while IFS= read -r -d '' file; do
     UPDATED_FILES+=("${file}")
   fi
   rm -f "${backup}"
-done < <(find "${TARGET_DIR}" \( -name '*.yml' -o -name '*.yaml' -o -name '*.yml.template' -o -name '*.yaml.template' \) -type f -not -path '*/.git/*' -print0)
+done < <(find "${TARGET_DIR}" \( -name '*.yml' -o -name '*.yaml' \) -type f -not -path '*/.git/*' -print0)
 
 # 2. Gradle plugin coordinates, e.g.
 #    io.spring.gradle:spring-security-release-plugin:1.0.17

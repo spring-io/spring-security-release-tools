@@ -102,15 +102,21 @@ final class WorkflowSupport {
 
 	/**
 	 * @param local the project's own versions file, which need not exist
-	 * @return the versions that ship with the plugin, overlaid with the project's
+	 * @param templates the {@code .github/specs} directory of the templates, which may have
+	 * versions of its own, or {@code null}
+	 * @return the versions of the templates, overlaid with the project's
 	 */
-	static WorkflowVersions versions(Path local) {
-		WorkflowVersions versions = WorkflowVersions.shipped();
+	static WorkflowVersions versions(Path local, Path templates) {
+		WorkflowVersions versions = (templates != null) ? WorkflowVersions.from(templates)
+				: new WorkflowVersions(null, null, null);
 		if (!Files.exists(local)) {
 			return versions;
 		}
 		try (var in = Files.newInputStream(local)) {
 			return versions.merge(WorkflowVersions.load(in));
+		}
+		catch (JsonProcessingException ex) {
+			throw new GradleException(local + " could not be read: " + rootMessage(ex), ex);
 		}
 		catch (IOException ex) {
 			throw new UncheckedIOException(ex);
@@ -158,6 +164,23 @@ final class WorkflowSupport {
 			}
 			current = (Map<String, Object>) current.get(key);
 		}
+	}
+
+	/**
+	 * @param model the model from {@link #config}
+	 * @param versions the versions, whose pin of the repository that has the templates is what
+	 * {@code templates.repository} and {@code templates.ref} are, for a template to link
+	 * to a file of the repository at the version the project uses
+	 * @return the model with them, or as it was if the project doesn't pin the repository
+	 */
+	static Map<String, Object> withTemplates(Map<String, Object> model, WorkflowVersions versions) {
+		WorkflowVersions.Action pin = (versions.templates() != null) ? versions.action(versions.templates()) : null;
+		if (pin == null) {
+			return model;
+		}
+		Map<String, Object> merged = new LinkedHashMap<>(model);
+		merged.put("templates", Map.of("repository", versions.templates(), "ref", pin.ref()));
+		return merged;
 	}
 
 	/**

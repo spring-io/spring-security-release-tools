@@ -27,8 +27,8 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
 /**
- * Just enough of GitHub to serve a release and its asset, the way GitHub does: the asset
- * is a redirect to storage elsewhere.
+ * Just enough of GitHub to serve a release and its asset, or a commit as a zip, the way
+ * GitHub does: each is a redirect to storage elsewhere.
  */
 final class FakeGitHub implements AutoCloseable {
 
@@ -62,6 +62,17 @@ final class FakeGitHub implements AutoCloseable {
 		else if (path.contains("/releases/tags/")) {
 			respond(exchange, 200, "application/json",
 					"{\"assets\":[{\"id\":42,\"name\":\"github-actions-workflow-generator-0.0.7.jar\"}]}");
+		}
+		else if (path.contains("/git/ref/tags/")) {
+			respond(exchange, 200, "application/json",
+					"{\"object\":{\"type\":\"commit\",\"sha\":\"0123456789abcdef0123456789abcdef01234567\"}}");
+		}
+		else if (path.endsWith("/releases/latest")) {
+			respond(exchange, 200, "application/json", "{\"tag_name\":\"0.0.36\"}");
+		}
+		else if (path.contains("/zipball/")) {
+			exchange.getResponseHeaders().add("Location", url() + "/storage/jar");
+			exchange.sendResponseHeaders(302, -1);
 		}
 		else if (path.endsWith("/releases/assets/42")) {
 			exchange.getResponseHeaders().add("Location", url() + "/storage/jar");
