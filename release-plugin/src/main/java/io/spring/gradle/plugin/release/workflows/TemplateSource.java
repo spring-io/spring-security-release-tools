@@ -23,35 +23,34 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Enumeration;
-import java.util.Locale;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.util.DefaultIndenter;
-import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.gradle.api.GradleException;
 
 /**
  * Where the templates and the versions they are pinned to come from:
  * {@code .github/specs} in the commit of the repository that has them, which a project
- * names with {@code templates} in its {@code .github/specs/versions.json} and pins under
- * {@code actions}. That commit is downloaded once and kept, so that rendering and
- * verifying work offline after that. A project that has no pin yet asks for one with
- * {@code --templates-version}, which is then recorded.
+ * names with {@code uses} under {@code workflow.generator.workflows.release-tools} in its
+ * {@code .github/workflow-generator.yml}, like a workflow does, with the tag the commit
+ * is of in a comment:
+ *
+ * <pre>
+ * uses: spring-io/spring-security-actions@0123456789abcdef0123456789abcdef01234567 # 1.2.3
+ * </pre>
+ *
+ * That commit is downloaded once and kept, so that rendering and verifying work offline
+ * after that. A project that has no {@code uses}, or wants another version, asks for one
+ * with {@code --templates-version}, which is then recorded.
  *
  * @author Josh Cummings
  */
@@ -67,7 +66,12 @@ final class TemplateSource {
 
 	private static final Pattern TAG = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]*");
 
-	private static final ObjectMapper MAPPER = new ObjectMapper();
+	private static final Pattern SHA = Pattern.compile("[0-9a-f]{40}");
+
+	private static final Pattern USES = Pattern
+		.compile("([A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*)@(\\S+)");
+
+	private static final Pattern COMMENT = Pattern.compile("#\\s*(\\S+)");
 
 	private TemplateSource() {
 	}
@@ -94,7 +98,7 @@ final class TemplateSource {
 	 * Find the templates for a task, from what it was given.
 	 * @param project the project's directory, which a relative {@code checkout} is
 	 * relative to
-	 * @param localVersions the project's {@code .github/specs/versions.json}
+	 * @param config the project's {@code .github/workflow-generator.yml}
 	 * @param explicit a directory of templates to use instead, or {@code null}
 	 * @param requestedVersion a tag, or {@code latest}, or {@code null}
 	 * @param checkout a git checkout of the repository that has the templates, or
@@ -104,25 +108,25 @@ final class TemplateSource {
 	 * @param log where to say what is being done
 	 * @return where they are
 	 */
-	static Resolved resolve(Path project, Path localVersions, Path explicit, String requestedVersion, String checkout,
+	static Resolved resolve(Path project, Path config, Path explicit, String requestedVersion, String checkout,
 			Path cache, GitHubReleases gitHub, Consumer<String> log) {
 		Path local = (checkout != null) ? project.resolve(checkout) : null;
-		return resolve(localVersions, explicit, requestedVersion, cache, repository(explicit, local, gitHub), log);
+		return resolve(config, explicit, requestedVersion, cache, repository(explicit, local, gitHub), log);
 	}
 
 	/**
 	 * Find the templates, downloading them if they are not yet kept.
-	 * @param localVersions the project's {@code .github/specs/versions.json}, which need
-	 * not exist
+	 * @param config the project's {@code .github/workflow-generator.yml}, which need not
+	 * exist
 	 * @param explicit a directory of templates to use instead, or {@code null}
 	 * @param requestedVersion a tag, or {@code latest}, to use instead of what the
-	 * project pins, or {@code null}
+	 * project uses, or {@code null}
 	 * @param cache where commits are kept
 	 * @param repository where to read the repository that has the templates from
 	 * @param log where to say what is being done
 	 * @return where they are, which is nowhere if the project does not use them
 	 */
-	static Resolved resolve(Path localVersions, Path explicit, String requestedVersion, Path cache,
+	static Resolved resolve(Path config, Path explicit, String requestedVersion, Path cache,
 			TemplateRepository repository, Consumer<String> log) {
 		if (explicit != null) {
 			if (requestedVersion != null) {
@@ -131,24 +135,18 @@ final class TemplateSource {
 			}
 			return new Resolved(explicit, null, null, false);
 		}
-		WorkflowVersions local = read(localVersions);
-		String name = (local.templates() != null) ? local.templates()
-				: (requestedVersion != null) ? DEFAULT_REPOSITORY : null;
+		Uses uses = uses(config);
+		String name = (uses != null) ? uses.repository() : (requestedVersion != null) ? DEFAULT_REPOSITORY : null;
 		if (name == null) {
 			return Resolved.NONE;
 		}
 		WorkflowVersions.Action pin;
+		boolean changed = requestedVersion != null;
 		if (requestedVersion != null) {
 			pin = choose(name, requestedVersion, repository);
 		}
 		else {
-			pin = local.action(name);
-			if (pin == null) {
-				throw new GradleException(localVersions + " says the templates are in " + name
-						+ ", so it has to pin a version of it under \"actions\", like \"" + name
-						+ "\": { \"ref\": \"1.2.3\", \"sha\": \"<the commit of that tag>\" }, or you can run with"
-						+ " --templates-version latest to have that done for you");
-			}
+			pin = pinned(config, uses);
 		}
 		Path directory = cache.resolve(name.replace('/', '-')).resolve(pin.sha());
 		if (!Files.isDirectory(directory)) {
@@ -156,87 +154,139 @@ final class TemplateSource {
 			download(name, pin, directory, repository);
 		}
 		log.accept("Using the templates in " + name + " " + pin.ref());
-		return new Resolved(directory, name, pin, requestedVersion != null);
+		return new Resolved(directory, name, pin, changed);
 	}
 
 	/**
-	 * Record a version that was asked for in the project's versions file, which is
-	 * created if there is none. Anything else in it is kept. A version that was not asked
-	 * for is already there.
+	 * @return the version that {@code uses} says, which has to say the whole commit and
+	 * the tag of it
 	 */
-	static void record(Path localVersions, Resolved resolved) throws IOException {
-		if (!resolved.chosen()) {
-			return;
+	private static WorkflowVersions.Action pinned(Path config, Uses uses) {
+		String example = uses.repository() + "@0123456789abcdef0123456789abcdef01234567 # 1.2.3";
+		if (!SHA.matcher(uses.sha()).matches()) {
+			throw new GradleException(
+					config + ": uses under release-tools has to name the whole commit, like " + example + ", not "
+							+ uses.sha() + ". Run updateWorkflows with --templates-version latest, or with the"
+							+ " tag you want, to have it filled in");
 		}
-		ObjectNode root = root(localVersions);
-		root.put("templates", resolved.repository());
-		ObjectNode actions = (root.get("actions") instanceof ObjectNode existing) ? existing
-				: root.putObject("actions");
-		ObjectNode entry = actions.putObject(resolved.repository());
-		entry.put("ref", resolved.pin().ref());
-		entry.put("sha", resolved.pin().sha());
-		DefaultPrettyPrinter printer = new Printer();
-		Path parent = localVersions.toAbsolutePath().getParent();
-		Files.createDirectories(parent);
-		Path temporary = Files.createTempFile(parent, ".versions-", ".tmp");
+		if (uses.ref() == null || !TAG.matcher(uses.ref()).matches()) {
+			throw new GradleException(config + ": uses under release-tools has to say which tag the commit is of, in a"
+					+ " comment, like " + example);
+		}
+		return new WorkflowVersions.Action(uses.ref(), uses.sha());
+	}
+
+	/**
+	 * Say what the project's configuration would be once what was resolved is in it, so
+	 * that it can be known before anything is rendered that it can be.
+	 * @param config the project's {@code .github/workflow-generator.yml}
+	 * @param resolved what was resolved
+	 * @return the configuration with {@code uses} as it should be, or {@code null} if it
+	 * is already
+	 * @throws GradleException if there is nowhere to put it
+	 */
+	static String recorded(Path config, Resolved resolved) throws IOException {
+		if (!resolved.changed()) {
+			return null;
+		}
+		String replacement = "uses: " + resolved.repository() + "@" + resolved.pin().sha() + " # "
+				+ resolved.pin().ref();
+		if (!Files.exists(config)) {
+			throw new GradleException(config + " does not exist, so there is nowhere to record the templates. Create it"
+					+ " with workflow.generator.workflows.release-tools." + replacement);
+		}
+		List<String> lines = new ArrayList<>(List.of(Files.readString(config).split("\n", -1)));
+		String value = value(config);
+		int uses = (value != null) ? indexOf(lines, value) : -1;
+		if (value != null && uses < 0) {
+			throw new GradleException(
+					config + " has uses under release-tools, but not as a line of its own that this can"
+							+ " change. Change it to " + replacement);
+		}
+		if (uses >= 0) {
+			lines.set(uses, indent(lines.get(uses)) + replacement + ending(lines.get(uses)));
+			return String.join("\n", lines);
+		}
+		int tools = indexOfReleaseTools(lines);
+		if (tools < 0) {
+			throw new GradleException(config + " has no release-tools under workflow.generator.workflows, so there is"
+					+ " nowhere to record the templates. Add " + replacement + " to it");
+		}
+		String parent = indent(lines.get(tools));
+		boolean nested = tools + 1 < lines.size() && !lines.get(tools + 1).isBlank()
+				&& indent(lines.get(tools + 1)).length() > parent.length();
+		String child = (nested) ? indent(lines.get(tools + 1)) : parent + "  ";
+		lines.add(tools + 1, child + replacement + ending(lines.get(tools)));
+		return String.join("\n", lines);
+	}
+
+	/**
+	 * @return what {@code uses} says, or {@code null} if it does not
+	 */
+	private static Uses uses(Path config) {
+		String value = value(config);
+		if (value == null) {
+			return null;
+		}
+		Matcher matcher = USES.matcher(value);
+		if (!matcher.matches()) {
+			throw new GradleException(config + ": uses under release-tools has to look like"
+					+ " owner/repo@<commit> # <tag>, not " + value);
+		}
+		String ref = null;
 		try {
-			Files.writeString(temporary, MAPPER.writer(printer).writeValueAsString(root) + "\n");
-			permissions(localVersions, temporary);
-			Files.move(temporary, localVersions, StandardCopyOption.REPLACE_EXISTING);
-		}
-		finally {
-			Files.deleteIfExists(temporary);
-		}
-	}
-
-	/**
-	 * @return what the file has, which is nothing if there is no file
-	 * @throws GradleException if the file has something other than an object, which is
-	 * not for this to overwrite
-	 */
-	private static ObjectNode root(Path localVersions) throws IOException {
-		if (!Files.exists(localVersions)) {
-			return MAPPER.createObjectNode();
-		}
-		JsonNode node = MAPPER.readTree(localVersions.toFile());
-		if (node == null || node.isMissingNode()) {
-			return MAPPER.createObjectNode();
-		}
-		if (!(node instanceof ObjectNode object)) {
-			throw new GradleException(localVersions + " has to be a JSON object to pin the templates in it, but is "
-					+ node.getNodeType().toString().toLowerCase(Locale.ROOT) + ". Fix it, or move it aside");
-		}
-		return object;
-	}
-
-	/**
-	 * A temporary file is only readable by its owner. Keep the permissions of the file it
-	 * replaces, or else make it readable like any other file in the project.
-	 */
-	private static void permissions(Path replaced, Path temporary) throws IOException {
-		try {
-			Set<PosixFilePermission> permissions = (Files.exists(replaced)) ? Files.getPosixFilePermissions(replaced)
-					: PosixFilePermissions.fromString("rw-r--r--");
-			Files.setPosixFilePermissions(temporary, permissions);
-		}
-		catch (UnsupportedOperationException ex) {
-			// not a POSIX file system, which has no such permissions to get wrong
-		}
-	}
-
-	private static WorkflowVersions read(Path localVersions) {
-		if (!Files.exists(localVersions)) {
-			return new WorkflowVersions(null, null, null);
-		}
-		try (InputStream in = Files.newInputStream(localVersions)) {
-			return WorkflowVersions.load(in);
-		}
-		catch (JsonProcessingException ex) {
-			throw new GradleException(localVersions + " could not be read: " + WorkflowSupport.rootMessage(ex), ex);
+			List<String> lines = List.of(Files.readString(config).split("\n", -1));
+			int line = indexOf(lines, value);
+			Matcher comment = (line >= 0) ? COMMENT.matcher(lines.get(line)) : null;
+			ref = (comment != null && comment.find()) ? comment.group(1) : null;
 		}
 		catch (IOException ex) {
 			throw new UncheckedIOException(ex);
 		}
+		return new Uses(matcher.group(1), matcher.group(2), ref);
+	}
+
+	@SuppressWarnings("unchecked")
+	private static String value(Path config) {
+		Map<String, Object> model = WorkflowSupport.config(config);
+		Map<String, Object> workflow = (Map<String, Object>) model.get("workflow");
+		Map<String, Object> generator = (Map<String, Object>) workflow.get("generator");
+		Map<String, Object> workflows = (Map<String, Object>) generator.get("workflows");
+		Map<String, Object> tools = (Map<String, Object>) workflows.get("release-tools");
+		Object uses = tools.get("uses");
+		return (uses != null) ? uses.toString() : null;
+	}
+
+	private static int indexOf(List<String> lines, String value) {
+		Pattern line = Pattern.compile("\\s*uses:\\s*[\"']?" + Pattern.quote(value) + "[\"']?\\s*(#.*)?");
+		for (int i = 0; i < lines.size(); i++) {
+			if (line.matcher(lines.get(i)).matches()) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	private static int indexOfReleaseTools(List<String> lines) {
+		Pattern line = Pattern.compile("\\s*release-tools:\\s*(#.*)?");
+		for (int i = 0; i < lines.size(); i++) {
+			if (line.matcher(lines.get(i)).matches()) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	private static String indent(String line) {
+		int i = 0;
+		while (i < line.length() && (line.charAt(i) == ' ' || line.charAt(i) == '\t')) {
+			i++;
+		}
+		return line.substring(0, i);
+	}
+
+	private static String ending(String line) {
+		return line.endsWith("\r") ? "\r" : "";
 	}
 
 	private static WorkflowVersions.Action choose(String repository, String requested, TemplateRepository source) {
@@ -271,8 +321,8 @@ final class TemplateSource {
 			}
 			catch (RuntimeException ex) {
 				throw new GradleException("Could not download " + repository + " at " + pin.ref() + " ("
-						+ WorkflowSupport.rootMessage(ex) + "). Check that the pin under \"actions\" in"
-						+ " .github/specs/versions.json is a commit of " + repository, ex);
+						+ WorkflowSupport.rootMessage(ex) + "). Check that uses under release-tools in"
+						+ " .github/workflow-generator.yml is a commit of " + repository, ex);
 			}
 			if (extract(zip, temporary) == 0) {
 				throw new GradleException(repository + " at " + pin.ref() + " has nothing under .github/specs. Pin a"
@@ -362,6 +412,10 @@ final class TemplateSource {
 		}
 	}
 
+	private record Uses(String repository, String sha, String ref) {
+
+	}
+
 	/**
 	 * Where the templates are.
 	 *
@@ -369,46 +423,20 @@ final class TemplateSource {
 	 * {@code null} if the project does not use them
 	 * @param repository the repository, or {@code null}
 	 * @param pin the version of it
-	 * @param chosen whether the version was asked for, so is not yet recorded
+	 * @param changed whether {@code uses} in the project's configuration is not yet what
+	 * {@code pin} is, because a version was asked for
 	 */
-	record Resolved(Path directory, String repository, WorkflowVersions.Action pin, boolean chosen) {
+	record Resolved(Path directory, String repository, WorkflowVersions.Action pin, boolean changed) {
 
 		static final Resolved NONE = new Resolved(null, null, null, false);
 
 		/**
-		 * @return what to lay over the project's versions, which is the version that was
-		 * asked for, as it is not yet in them
+		 * @return what to lay over the project's versions, which is the version of the
+		 * templates, as that is what the workflows that link to them are pinned to
 		 */
 		WorkflowVersions overlay() {
-			return (this.chosen) ? new WorkflowVersions(null, Map.of(this.repository, this.pin), this.repository)
-					: new WorkflowVersions(null, null, null);
-		}
-
-	}
-
-	/**
-	 * Tabs, and {@code "key": value} rather than the {@code "key" : value} that Jackson
-	 * writes.
-	 */
-	private static final class Printer extends DefaultPrettyPrinter {
-
-		Printer() {
-			indentObjectsWith(new DefaultIndenter("\t", "\n"));
-			indentArraysWith(new DefaultIndenter("\t", "\n"));
-		}
-
-		private Printer(Printer base) {
-			super(base);
-		}
-
-		@Override
-		public DefaultPrettyPrinter createInstance() {
-			return new Printer(this);
-		}
-
-		@Override
-		public void writeObjectFieldValueSeparator(JsonGenerator generator) throws IOException {
-			generator.writeRaw(": ");
+			return (this.repository != null) ? new WorkflowVersions(null, Map.of(this.repository, this.pin))
+					: new WorkflowVersions(null, null);
 		}
 
 	}

@@ -76,16 +76,15 @@ TIP: By adding `gitHubAccessToken=...` to `~/.gradle/gradle.properties`, many of
 The `updateWorkflows` and `verifyWorkflows` tasks render a project's workflows and actions from templates.
 The templates are not part of this plugin; they are the `.github/specs` of a release of https://github.com/spring-io/spring-security-actions[spring-io/spring-security-actions], so that a change to the workflows does not need a new release of the plugin.
 
-A project says which version of the templates it uses in `.github/specs/versions.json`:
+A project says which version of the templates it uses in `.github/workflow-generator.yml`, the way a workflow says which version of an action it uses, with the tag in a comment:
 
-[source,json]
+[source,yaml]
 ----
-{
-	"templates": "spring-io/spring-security-actions",
-	"actions": {
-		"spring-io/spring-security-actions": { "ref": "0.0.36", "sha": "<the commit of that tag>" }
-	}
-}
+workflow:
+  generator:
+    workflows:
+      release-tools:
+        uses: spring-io/spring-security-actions@0123456789abcdef0123456789abcdef01234567 # 0.0.36
 ----
 
 A project that has a `.github/workflow-generator.yml` is rendered from all of the templates; a template in the project's own `.github/specs/workflows/<name>.spec.yml` or `.github/specs/actions/<name>/action.spec.yml` replaces the template of the same name.
@@ -93,24 +92,28 @@ A template can link to the files of the templates repository at the version the 
 
 The options under `release-tools` that are on unless a project turns them off are `dependencies-antora-ui` and `docs-deploy`.
 `verify`, which adds `verifyWorkflows` to the project's builds, is off unless the project sets `verify: true`.
+Deploying the schema is a matter of the repository variable `DEPLOY_SCHEMA` being `true`, so `deploy-schema` in this file does nothing.
 
-=== Pinning a version
+A project's own `.github/specs/versions.json` is only for what it pins differently than the templates do, such as the version of an action; it is not needed to use the templates.
 
-Run `./gradlew updateWorkflows --templates-version latest` (or a tag, like `--templates-version 0.0.36`) to look up the tag's commit and record it in `.github/specs/versions.json`, which is created if there is none.
-Any other content in the file is kept.
-A file that is not a JSON object is not changed, and the task fails.
+=== Using a version
 
-`verifyWorkflows` accepts `--templates-version`, too, to verify against a version other than the one that is pinned; it never records one.
+`uses` has to name the whole commit, and the tag it is of in a comment; a project that has neither fails with a message that says so.
+Run `./gradlew updateWorkflows --templates-version latest` (or a tag, like `--templates-version 0.0.36`) to look up the commit of the tag and record it in `uses`, which is added under `release-tools` if it is not there, or replaced if it is.
+Everything else in the file, comments included, is kept.
+The task fails, before it renders anything, if there is no `release-tools` to put `uses` in.
+
+`verifyWorkflows` accepts `--templates-version`, too, to verify against a version other than the one in `uses`; it never changes the file.
 
 [IMPORTANT]
 ====
 The version of the templates decides what runs in the project's workflows, including with its secrets.
-Review what a new version changes before committing the new pin.
+Review what a new version changes before committing it.
 ====
 
 === Where the templates are kept
 
-The commit that is pinned is downloaded once to `<gradle user home>/spring-security-release-tools/templates/<repository>/<sha>`, and is read from there afterward, so that rendering and verifying then need no network.
+The commit in `uses` is downloaded once to `<gradle user home>/spring-security-release-tools/templates/<repository>/<sha>`, and is read from there afterward, so that rendering and verifying then need no network.
 Each commit has its own directory, so nothing that is kept goes stale.
 
 NOTE: A machine that has not kept the commit yet, such as a CI runner that starts with an empty Gradle user home, downloads it when `verifyWorkflows` runs.
@@ -127,10 +130,10 @@ git -C ../spring-security-actions tag 0.0.37
 ----
 
 A relative path is relative to the project.
-The tags and commits are read with `git` instead of from GitHub, and the pin that is recorded is that of the local commit.
+The tags and commits are read with `git` instead of from GitHub, and the commit that is recorded is that of the local commit.
 
-WARNING: That commit does not exist on GitHub until it is pushed, so do not push or merge the project's `versions.json` before pinning the tag of a pushed commit.
-Use `--templates-version` without `--templates-repository` to do so.
+WARNING: That commit does not exist on GitHub until it is pushed, so do not push or merge the project's `uses` before it is replaced with that of a pushed tag.
+Run `updateWorkflows --templates-version <tag>` without `--templates-repository` to do so.
 
 == Task Reference
 

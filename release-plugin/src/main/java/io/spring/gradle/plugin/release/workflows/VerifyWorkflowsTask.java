@@ -148,7 +148,7 @@ public abstract class VerifyWorkflowsTask extends DefaultTask {
 		Path config = getConfigFile().get().getAsFile().toPath();
 		Path localVersions = getLocalVersionsFile().get().getAsFile().toPath();
 		TemplateSource.Resolved source = TemplateSource.resolve(getProjectDirectory().get().getAsFile().toPath(),
-				localVersions, WorkflowSupport.optionalPath(getTemplatesDirectory()), getTemplatesVersion().getOrNull(),
+				config, WorkflowSupport.optionalPath(getTemplatesDirectory()), getTemplatesVersion().getOrNull(),
 				getTemplatesRepository().getOrNull(), getTemplatesCacheDirectory().get().getAsFile().toPath(),
 				new GitHubReleases(getGitHubApiUrl().get(), getGitHubAccessToken().getOrNull()),
 				getLogger()::lifecycle);
@@ -156,7 +156,7 @@ public abstract class VerifyWorkflowsTask extends DefaultTask {
 		List<String> problems = new ArrayList<>();
 		problems.addAll(WorkflowVerifier.verifyPins(workflows, versions));
 		problems.addAll(WorkflowVerifier.verifyPins(actions, versions));
-		Map<String, Object> model = WorkflowSupport.withTemplates(WorkflowSupport.config(config), versions);
+		Map<String, Object> model = WorkflowSupport.withTemplates(WorkflowSupport.config(config), source);
 		Map<String, WorkflowTemplates.Template> templates = new TreeMap<>(WorkflowSupport.named(config, model,
 				WorkflowTemplates.load(specs, Files.exists(config), source.directory())));
 		String branch = getBranch().getOrNull();

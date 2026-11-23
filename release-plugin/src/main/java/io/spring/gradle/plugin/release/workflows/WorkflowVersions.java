@@ -42,7 +42,7 @@ import org.gradle.api.GradleException;
  * not use them
  * @author Josh Cummings
  */
-record WorkflowVersions(Generator generator, Map<String, Action> actions, String templates) {
+record WorkflowVersions(Generator generator, Map<String, Action> actions) {
 
 	private static final Pattern SHA = Pattern.compile("[0-9a-f]{40}");
 
@@ -50,17 +50,8 @@ record WorkflowVersions(Generator generator, Map<String, Action> actions, String
 
 	private static final Pattern RELEASE = Pattern.compile("v\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.]+)?");
 
-	private static final Pattern REPOSITORY = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*");
-
 	WorkflowVersions {
 		actions = (actions != null) ? Map.copyOf(actions) : Map.of();
-		if (templates != null && !REPOSITORY.matcher(templates).matches()) {
-			throw new IllegalArgumentException("templates must be a repository like owner/repo, not " + templates);
-		}
-	}
-
-	WorkflowVersions(Generator generator, Map<String, Action> actions) {
-		this(generator, actions, null);
 	}
 
 	/**
@@ -70,7 +61,7 @@ record WorkflowVersions(Generator generator, Map<String, Action> actions, String
 	static WorkflowVersions from(Path templates) {
 		Path file = templates.resolve("versions.json");
 		if (!Files.exists(file)) {
-			return new WorkflowVersions(null, null, null);
+			return new WorkflowVersions(null, null);
 		}
 		try (InputStream in = Files.newInputStream(file)) {
 			return load(in);
@@ -95,8 +86,7 @@ record WorkflowVersions(Generator generator, Map<String, Action> actions, String
 	WorkflowVersions merge(WorkflowVersions local) {
 		Map<String, Action> merged = new LinkedHashMap<>(this.actions);
 		merged.putAll(local.actions);
-		return new WorkflowVersions((local.generator != null) ? local.generator : this.generator, merged,
-				(local.templates != null) ? local.templates : this.templates);
+		return new WorkflowVersions((local.generator != null) ? local.generator : this.generator, merged);
 	}
 
 	Action action(String repository) {

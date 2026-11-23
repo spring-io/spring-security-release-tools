@@ -110,7 +110,7 @@ final class WorkflowSupport {
 	 */
 	static WorkflowVersions versions(Path local, Path templates) {
 		WorkflowVersions versions = (templates != null) ? WorkflowVersions.from(templates)
-				: new WorkflowVersions(null, null, null);
+				: new WorkflowVersions(null, null);
 		if (!Files.exists(local)) {
 			return versions;
 		}
@@ -210,18 +210,18 @@ final class WorkflowSupport {
 
 	/**
 	 * @param model the model from {@link #config}
-	 * @param versions the versions, whose pin of the repository that has the templates is
-	 * what {@code templates.repository} and {@code templates.ref} are, for a template to
-	 * link to a file of the repository at the version the project uses
-	 * @return the model with them, or as it was if the project doesn't pin the repository
+	 * @param source where the templates were found, whose repository and version are what
+	 * {@code templates.repository} and {@code templates.ref} are, for a template to link
+	 * to a file of the repository at the version the project uses
+	 * @return the model with them, or as it was if the project does not use the templates
+	 * of a repository
 	 */
-	static Map<String, Object> withTemplates(Map<String, Object> model, WorkflowVersions versions) {
-		WorkflowVersions.Action pin = (versions.templates() != null) ? versions.action(versions.templates()) : null;
-		if (pin == null) {
+	static Map<String, Object> withTemplates(Map<String, Object> model, TemplateSource.Resolved source) {
+		if (source.repository() == null) {
 			return model;
 		}
 		Map<String, Object> merged = new LinkedHashMap<>(model);
-		merged.put("templates", Map.of("repository", versions.templates(), "ref", pin.ref()));
+		merged.put("templates", Map.of("repository", source.repository(), "ref", source.pin().ref()));
 		return merged;
 	}
 

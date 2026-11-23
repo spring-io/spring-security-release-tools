@@ -118,9 +118,16 @@ class UpdateWorkflowsTaskTests {
 
 	@Test
 	void updateWhenTemplateLinksToTheTemplatesRepositoryThenItIsTheRepositoryAtThePinnedRef() throws Exception {
+		write(".github/workflow-generator.yml",
+				"workflow:\n  generator:\n    project:\n      java:\n"
+						+ "        versions:\n          primary: 25\n    workflows:\n      release-tools:\n        "
+						+ Fixtures.uses() + "\n");
 		write(".github/specs/workflows/ci.spec.yml",
 				"# https://github.com/<< templates.repository >>/blob/<< templates.ref >>/docs/x.md\nname: CI\n");
-		task().update();
+		UpdateWorkflowsTask task = task();
+		// from the cache, as the configuration says
+		task.getTemplatesDirectory().set((File) null);
+		task.update();
 		assertThat(new File(this.projectDir, ".github/workflows/ci.yml")).content()
 			.contains(
 					"# https://github.com/spring-io/spring-security-actions/blob/" + Fixtures.PIN.ref() + "/docs/x.md");
@@ -408,9 +415,7 @@ class UpdateWorkflowsTaskTests {
 	@Test
 	void updateWhenLocalVersionsOverrideThenLocalUsed() throws Exception {
 		write(".github/specs/versions.json",
-				Fixtures.pin()
-					.replace("\"actions\": {",
-							"\"actions\": {\"actions/checkout\":{\"ref\":\"v9\",\"sha\":\"" + "1".repeat(40) + "\"},"));
+				"{\"actions\": {\"actions/checkout\":{\"ref\":\"v9\",\"sha\":\"" + "1".repeat(40) + "\"}}}");
 		write(".github/specs/workflows/ci.spec.yml", "uses: actions/checkout\n");
 		task().update();
 		assertThat(new File(this.projectDir, ".github/workflows/ci.yml"))

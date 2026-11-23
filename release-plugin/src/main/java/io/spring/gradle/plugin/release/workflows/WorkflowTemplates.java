@@ -78,8 +78,8 @@ final class WorkflowTemplates {
 				throw new GradleException("This project says it uses the default workflows, with a"
 						+ " workflow-generator.yml, but not where their templates are. Run updateWorkflows with"
 						+ " --templates-version latest to use those of the latest release of "
-						+ TemplateSource.DEFAULT_REPOSITORY
-						+ ", which is then recorded in .github/specs/versions.json");
+						+ TemplateSource.DEFAULT_REPOSITORY + ", which is then recorded as uses under release-tools in"
+						+ " .github/workflow-generator.yml");
 			}
 			templates.putAll(project(defaultSpecs));
 		}

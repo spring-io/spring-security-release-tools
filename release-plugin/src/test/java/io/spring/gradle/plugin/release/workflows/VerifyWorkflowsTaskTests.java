@@ -77,15 +77,29 @@ class VerifyWorkflowsTaskTests {
 
 	@Test
 	void verifyWhenTemplatesNotPinnedThenSaysToPinThemWithUpdateWorkflows() throws IOException {
-		Files.delete(new File(this.projectDir, ".github/specs/versions.json").toPath());
-		assertThatExceptionOfType(GradleException.class).isThrownBy(() -> task().verify())
+		VerifyWorkflowsTask task = task();
+		task.getTemplatesDirectory().set((File) null);
+		assertThatExceptionOfType(GradleException.class).isThrownBy(task::verify)
 			.withMessageContaining("Run updateWorkflows with --templates-version latest");
 	}
 
 	@Test
-	void verifyWhenTemplatesVersionGivenThenItIsLookedUp() throws IOException {
-		Files.delete(new File(this.projectDir, ".github/specs/versions.json").toPath());
+	void verifyWhenCommitOfTemplatesNotWhollyThereThenSaysToRunUpdateWorkflows() throws Exception {
+		Files.writeString(new File(this.projectDir, ".github/workflow-generator.yml").toPath(),
+				"workflow:\n  generator:\n    project:\n      java:\n        versions:\n          primary: 25\n"
+						+ "    workflows:\n      release-tools:\n        uses: " + TemplateSource.DEFAULT_REPOSITORY
+						+ "@{SHA} # " + Fixtures.PIN.ref() + "\n");
 		VerifyWorkflowsTask task = task();
+		task.getTemplatesDirectory().set((File) null);
+		assertThatExceptionOfType(GradleException.class).isThrownBy(task::verify)
+			.withMessageContaining("has to name the whole commit")
+			.withMessageContaining("updateWorkflows");
+	}
+
+	@Test
+	void verifyWhenTemplatesVersionGivenThenItIsLookedUp() throws IOException {
+		VerifyWorkflowsTask task = task();
+		task.getTemplatesDirectory().set((File) null);
 		task.getGitHubApiUrl().set("http://127.0.0.1:1");
 		task.templatesVersion("1.2.3");
 		assertThatExceptionOfType(GradleException.class).isThrownBy(task::verify)

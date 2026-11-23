@@ -22,7 +22,6 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipEntry;
@@ -52,89 +51,147 @@ class TemplateSourceTests {
 
 	@Test
 	void resolveWhenPinnedThenSpecsAreDownloadedOnceAndVersionsLaidOverTheRepositorys() throws Exception {
-		Path local = versions("{\"templates\":\"" + REPOSITORY + "\",\"actions\":{\"a/b\":{\"ref\":\"v2\",\"sha\":\""
-				+ SHA + "\"},\"" + REPOSITORY + "\":{\"ref\":\"0.0.1\",\"sha\":\"" + SHA + "\"}}}");
+		Path config = pinned();
+		Path local = versions("{\"actions\":{\"a/b\":{\"ref\":\"v2\",\"sha\":\"" + SHA + "\"}}}");
 		try (FakeGitHub github = new FakeGitHub(archive())) {
 			Path cache = this.directory.resolve("cache");
-			TemplateSource.Resolved source = TemplateSource.resolve(local, null, null, cache,
+			TemplateSource.Resolved source = TemplateSource.resolve(config, null, null, cache,
 					new GitHubReleases(github.url(), null), this.log::add);
-			WorkflowVersions versions = WorkflowSupport.versions(local, source.directory());
+			WorkflowVersions versions = WorkflowSupport.versions(local, source);
+			assertThat(source.changed()).isFalse();
 			assertThat(versions.action("a/b").ref()).isEqualTo("v2");
 			assertThat(versions.action("c/d").ref()).isEqualTo("v1");
+			assertThat(versions.action(REPOSITORY).ref()).isEqualTo("0.0.1");
 			assertThat(WorkflowTemplates.project(source.directory())).containsOnlyKeys("workflows/ci.yml");
-			TemplateSource.resolve(local, null, null, cache, new GitHubReleases(github.url(), null), this.log::add);
+			TemplateSource.resolve(config, null, null, cache, new GitHubReleases(github.url(), null), this.log::add);
 			assertThat(github.requests).filteredOn((request) -> request.contains("/zipball/")).hasSize(1);
 			assertThat(this.log).anyMatch((line) -> line.startsWith("Downloading"))
 				.anyMatch((line) -> line.startsWith("Using"));
+			assertThat(TemplateSource.recorded(config, source)).isNull();
 		}
 	}
 
 	@Test
 	void resolveWhenNothingNamesTheTemplatesThenNothingIsResolved() {
-		TemplateSource.Resolved source = TemplateSource.resolve(this.directory.resolve("versions.json"), null, null,
-				this.directory.resolve("cache"), new GitHubReleases("http://127.0.0.1:1", null), this.log::add);
+		TemplateSource.Resolved source = TemplateSource.resolve(this.directory.resolve("workflow-generator.yml"), null,
+				null, this.directory.resolve("cache"), new GitHubReleases("http://127.0.0.1:1", null), this.log::add);
 		assertThat(source.directory()).isNull();
+		assertThat(source.overlay().actions()).isEmpty();
 	}
 
 	@Test
-	void resolveWhenNamedButNotPinnedThenSaysHowToPin() throws Exception {
-		Path local = versions("{\"templates\":\"" + REPOSITORY + "\"}");
+	void resolveWhenNoTagInTheCommentThenSaysHowToSayIt() throws Exception {
+		Path config = config("uses: " + REPOSITORY + "@" + SHA);
 		assertThatExceptionOfType(GradleException.class)
-			.isThrownBy(() -> TemplateSource.resolve(local, null, null, this.directory.resolve("cache"),
+			.isThrownBy(() -> TemplateSource.resolve(config, null, null, this.directory.resolve("cache"),
 					new GitHubReleases("http://127.0.0.1:1", null), this.log::add))
+			.withMessageContaining("which tag the commit is of")
+			.withMessageContaining("# 1.2.3");
+	}
+
+	@Test
+	void resolveWhenNotARepositoryAtACommitThenSaysWhatItShouldLookLike() throws Exception {
+		Path config = config("uses: nothing # 1.2.3");
+		assertThatExceptionOfType(GradleException.class)
+			.isThrownBy(() -> TemplateSource.resolve(config, null, null, this.directory.resolve("cache"),
+					new GitHubReleases("http://127.0.0.1:1", null), this.log::add))
+			.withMessageContaining("owner/repo@<commit> # <tag>");
+	}
+
+	@Test
+	void resolveWhenCommitIsNotWhollyThereThenSaysToHaveItFilledIn() throws Exception {
+		Path config = config("uses: " + REPOSITORY + "@{SHA} # 0.0.36");
+		assertThatExceptionOfType(GradleException.class)
+			.isThrownBy(() -> TemplateSource.resolve(config, null, null, this.directory.resolve("cache"),
+					new GitHubReleases("http://127.0.0.1:1", null), this.log::add))
+			.withMessageContaining("has to name the whole commit")
 			.withMessageContaining("--templates-version latest");
+	}
+
+	@Test
+	void resolveWhenVersionAskedForThenAnUnusableUsesIsReplaced() throws Exception {
+		Path config = Files.writeString(this.directory.resolve("workflow-generator.yml"),
+				"workflow:\n  generator:\n    workflows:\n      release-tools:\n        uses: " + REPOSITORY
+						+ "@{SHA}\n        docs-base-path: .\n");
+		try (FakeGitHub github = new FakeGitHub(archive())) {
+			TemplateSource.Resolved source = TemplateSource.resolve(config, null, "latest",
+					this.directory.resolve("cache"), new GitHubReleases(github.url(), null), this.log::add);
+			assertThat(TemplateSource.recorded(config, source))
+				.isEqualTo("workflow:\n  generator:\n    workflows:\n      release-tools:\n        uses: " + REPOSITORY
+						+ "@" + SHA + " # 0.0.36\n        docs-base-path: .\n");
+		}
 	}
 
 	@Test
 	void resolveWhenDirectoryGivenThenItIsUsedAsItIsAndCannotBeCombinedWithAVersion() {
 		Path explicit = this.directory.resolve("mine");
-		TemplateSource.Resolved source = TemplateSource.resolve(this.directory.resolve("versions.json"), explicit, null,
-				this.directory.resolve("cache"), null, this.log::add);
+		TemplateSource.Resolved source = TemplateSource.resolve(this.directory.resolve("workflow-generator.yml"),
+				explicit, null, this.directory.resolve("cache"), null, this.log::add);
 		assertThat(source.directory()).isEqualTo(explicit);
 		assertThatExceptionOfType(GradleException.class)
-			.isThrownBy(() -> TemplateSource.resolve(this.directory.resolve("versions.json"), explicit, "latest",
-					this.directory.resolve("cache"), null, this.log::add));
+			.isThrownBy(() -> TemplateSource.resolve(this.directory.resolve("workflow-generator.yml"), explicit,
+					"latest", this.directory.resolve("cache"), null, this.log::add));
 	}
 
 	@Test
-	void resolveWhenVersionAskedForThenItIsOverlaidAndRecordedOnlyWhenToldTo() throws Exception {
-		Path local = this.directory.resolve(".github/specs/versions.json");
+	void resolveWhenVersionAskedForThenItIsOverlaidAndRecordedUnderReleaseTools() throws Exception {
+		Path config = Files.writeString(this.directory.resolve("workflow-generator.yml"),
+				"workflow:\n  generator:\n    workflows:\n      # the tools\n      release-tools:\n"
+						+ "        docs-base-path: .\n");
 		try (FakeGitHub github = new FakeGitHub(archive())) {
-			TemplateSource.Resolved source = TemplateSource.resolve(local, null, "0.0.36",
+			TemplateSource.Resolved source = TemplateSource.resolve(config, null, "0.0.36",
 					this.directory.resolve("cache"), new GitHubReleases(github.url(), null), this.log::add);
-			assertThat(source.chosen()).isTrue();
+			assertThat(source.changed()).isTrue();
 			assertThat(source.overlay().action(REPOSITORY).ref()).isEqualTo("0.0.36");
-			assertThat(local).doesNotExist();
-			TemplateSource.record(local, source);
-			WorkflowVersions recorded = WorkflowVersions.load(Files.newInputStream(local));
-			assertThat(recorded.templates()).isEqualTo(REPOSITORY);
-			assertThat(recorded.action(REPOSITORY).sha()).isEqualTo(SHA);
+			assertThat(config).content().doesNotContain("uses:");
+			assertThat(TemplateSource.recorded(config, source))
+				.isEqualTo("workflow:\n  generator:\n    workflows:\n      # the tools\n      release-tools:\n"
+						+ "        uses: " + REPOSITORY + "@" + SHA + " # 0.0.36\n        docs-base-path: .\n");
 		}
 	}
 
 	@Test
 	void resolveWhenLatestThenTheLatestReleaseIsUsed() throws Exception {
 		try (FakeGitHub github = new FakeGitHub(archive())) {
-			TemplateSource.Resolved source = TemplateSource.resolve(this.directory.resolve("versions.json"), null,
-					"latest", this.directory.resolve("cache"), new GitHubReleases(github.url(), null), this.log::add);
+			TemplateSource.Resolved source = TemplateSource.resolve(this.directory.resolve("workflow-generator.yml"),
+					null, "latest", this.directory.resolve("cache"), new GitHubReleases(github.url(), null),
+					this.log::add);
 			assertThat(source.pin().ref()).isEqualTo("0.0.36");
+			assertThat(source.repository()).isEqualTo(REPOSITORY);
 		}
 	}
 
 	@Test
-	void recordWhenThereIsAVersionsFileThenTheRestOfItIsKept() throws Exception {
-		Path local = versions("{\"actions\":{\"a/b\":{\"ref\":\"v1\",\"sha\":\"" + SHA + "\"}}}");
-		TemplateSource.record(local,
-				new TemplateSource.Resolved(null, REPOSITORY, new WorkflowVersions.Action("0.0.37", SHA), true));
-		WorkflowVersions read = WorkflowVersions.load(Files.newInputStream(local));
-		assertThat(read.action("a/b").ref()).isEqualTo("v1");
-		assertThat(read.action(REPOSITORY).ref()).isEqualTo("0.0.37");
+	void recordedWhenThereIsAUsesThenOnlyThatLineChanges() throws Exception {
+		Path config = config("uses: " + REPOSITORY + "@" + SHA + " # 0.0.1", "docs-base-path: .");
+		String recorded = TemplateSource.recorded(config, new TemplateSource.Resolved(null, REPOSITORY,
+				new WorkflowVersions.Action("0.0.37", "1".repeat(40)), true));
+		assertThat(recorded)
+			.isEqualTo(Files.readString(config).replace(SHA + " # 0.0.1", "1".repeat(40) + " # 0.0.37"));
+	}
+
+	@Test
+	void recordedWhenThereIsNoReleaseToolsThenSaysWhatToAdd() throws Exception {
+		Path config = Files.writeString(this.directory.resolve("workflow-generator.yml"),
+				"workflow:\n  generator: {}\n");
+		assertThatExceptionOfType(GradleException.class)
+			.isThrownBy(() -> TemplateSource.recorded(config,
+					new TemplateSource.Resolved(null, REPOSITORY, new WorkflowVersions.Action("0.0.37", SHA), true)))
+			.withMessageContaining("nowhere to record")
+			.withMessageContaining("uses: " + REPOSITORY + "@" + SHA + " # 0.0.37");
+	}
+
+	@Test
+	void recordedWhenThereIsNoConfigurationThenSaysSo() {
+		assertThatExceptionOfType(GradleException.class)
+			.isThrownBy(() -> TemplateSource.recorded(this.directory.resolve("workflow-generator.yml"),
+					new TemplateSource.Resolved(null, REPOSITORY, new WorkflowVersions.Action("0.0.37", SHA), true)))
+			.withMessageContaining("does not exist");
 	}
 
 	@Test
 	void resolveWhenArchiveHasEntryOutsideSpecsDirectoryThenFailsAndWritesNothingThere() throws Exception {
-		Path local = versions("{\"templates\":\"" + REPOSITORY + "\",\"actions\":{\"" + REPOSITORY
-				+ "\":{\"ref\":\"0.0.1\",\"sha\":\"" + SHA + "\"}}}");
+		Path local = pinned();
 		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 		try (ZipOutputStream zip = new ZipOutputStream(bytes)) {
 			entry(zip, "root/.github/specs/../../../../evil", "no\n");
@@ -149,8 +206,7 @@ class TemplateSourceTests {
 
 	@Test
 	void resolveWhenArchiveHasNoSpecsThenSaysSo() throws Exception {
-		Path local = versions("{\"templates\":\"" + REPOSITORY + "\",\"actions\":{\"" + REPOSITORY
-				+ "\":{\"ref\":\"0.0.1\",\"sha\":\"" + SHA + "\"}}}");
+		Path local = pinned();
 		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 		try (ZipOutputStream zip = new ZipOutputStream(bytes)) {
 			entry(zip, "root/README.md", "none\n");
@@ -166,7 +222,7 @@ class TemplateSourceTests {
 	@Test
 	void checkoutWhenGivenThenTagsAndSpecsComeFromIt() throws Exception {
 		Path checkout = repository();
-		Path local = this.directory.resolve(".github/specs/versions.json");
+		Path local = this.directory.resolve("workflow-generator.yml");
 		Path cache = this.directory.resolve("cache");
 		TemplateRepository repository = TemplateSource.repository(null, checkout, null);
 		TemplateSource.Resolved source = TemplateSource.resolve(local, null, "0.0.1", cache, repository, this.log::add);
@@ -224,31 +280,8 @@ class TemplateSourceTests {
 	}
 
 	@Test
-	void recordWhenVersionsFileIsNotAnObjectThenFailsAndLeavesItAlone() throws Exception {
-		Path local = versions("[1, 2]");
-		assertThatExceptionOfType(GradleException.class)
-			.isThrownBy(() -> TemplateSource.record(local,
-					new TemplateSource.Resolved(null, REPOSITORY, new WorkflowVersions.Action("0.0.37", SHA), true)))
-			.withMessageContaining("has to be a JSON object");
-		assertThat(local).hasContent("[1, 2]");
-	}
-
-	@Test
-	void recordWhenWrittenThenFormattedLikeAnyOtherAndReadableByOthers() throws Exception {
-		Path local = this.directory.resolve(".github/specs/versions.json");
-		TemplateSource.record(local,
-				new TemplateSource.Resolved(null, REPOSITORY, new WorkflowVersions.Action("0.0.37", SHA), true));
-		String json = Files.readString(local);
-		assertThat(json).contains("\"templates\": \"" + REPOSITORY + "\"").doesNotContain(" : ").endsWith("}\n");
-		if (Files.getFileStore(local).supportsFileAttributeView("posix")) {
-			assertThat(PosixFilePermissions.toString(Files.getPosixFilePermissions(local))).isEqualTo("rw-r--r--");
-		}
-	}
-
-	@Test
 	void resolveWhenArchiveHasTooManyFilesThenFails() throws Exception {
-		Path local = versions("{\"templates\":\"" + REPOSITORY + "\",\"actions\":{\"" + REPOSITORY
-				+ "\":{\"ref\":\"0.0.1\",\"sha\":\"" + SHA + "\"}}}");
+		Path local = pinned();
 		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 		try (ZipOutputStream zip = new ZipOutputStream(bytes)) {
 			for (int i = 0; i <= 1000; i++) {
@@ -268,6 +301,18 @@ class TemplateSourceTests {
 		assertThat(TemplateRepository.compare("0.0.10", "0.0.9")).isPositive();
 		assertThat(TemplateRepository.compare("v1.0", "1.0.0")).isZero();
 		assertThat(TemplateRepository.compare("1.2", "1.10")).isNegative();
+	}
+
+	private Path pinned() throws IOException {
+		return config("uses: " + REPOSITORY + "@" + SHA + " # 0.0.1");
+	}
+
+	private Path config(String... releaseTools) throws IOException {
+		StringBuilder yaml = new StringBuilder("workflow:\n  generator:\n    workflows:\n      release-tools:\n");
+		for (String line : releaseTools) {
+			yaml.append("        ").append(line).append("\n");
+		}
+		return Files.writeString(this.directory.resolve("workflow-generator.yml"), yaml);
 	}
 
 	private Path versions(String json) throws IOException {

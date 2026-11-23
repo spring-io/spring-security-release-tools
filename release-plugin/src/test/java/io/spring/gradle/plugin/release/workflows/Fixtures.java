@@ -74,30 +74,29 @@ final class Fixtures {
 	}
 
 	/**
-	 * Pin the fixture in the project, and have its tasks read it from the cache.
+	 * Have the project's tasks use the fixture as their templates, as if its
+	 * configuration did not say where they are, and keep commits in the cache, which has
+	 * the fixture as the commit {@link #uses()} is.
 	 */
 	static void pin(Project project, File projectDir) throws IOException {
-		Path versions = projectDir.toPath().resolve(".github/specs/versions.json");
-		Files.createDirectories(versions.getParent());
-		Files.writeString(versions, pin());
 		// configured when the tasks are, so as not to realize them before a test has
 		// set what their conventions read
-		project.getTasks()
-			.named(UpdateWorkflowsTask.TASK_NAME, UpdateWorkflowsTask.class,
-					(task) -> task.getTemplatesCacheDirectory().set(CACHE.toFile()));
-		project.getTasks()
-			.named(VerifyWorkflowsTask.TASK_NAME, VerifyWorkflowsTask.class,
-					(task) -> task.getTemplatesCacheDirectory().set(CACHE.toFile()));
+		project.getTasks().named(UpdateWorkflowsTask.TASK_NAME, UpdateWorkflowsTask.class, (task) -> {
+			task.getTemplatesCacheDirectory().set(CACHE.toFile());
+			task.getTemplatesDirectory().set(specs().toFile());
+		});
+		project.getTasks().named(VerifyWorkflowsTask.TASK_NAME, VerifyWorkflowsTask.class, (task) -> {
+			task.getTemplatesCacheDirectory().set(CACHE.toFile());
+			task.getTemplatesDirectory().set(specs().toFile());
+		});
 	}
 
 	/**
-	 * @return a project's versions file that names the repository that has the templates
-	 * and pins the fixture
+	 * @return the line of a project's configuration that names the repository that has
+	 * the templates, and the commit of it that is the fixture
 	 */
-	static String pin() {
-		return "{\"templates\": \"" + TemplateSource.DEFAULT_REPOSITORY + "\", \"actions\": {\""
-				+ TemplateSource.DEFAULT_REPOSITORY + "\": {\"ref\": \"" + PIN.ref() + "\", \"sha\": \"" + PIN.sha()
-				+ "\"}}}";
+	static String uses() {
+		return "uses: " + TemplateSource.DEFAULT_REPOSITORY + "@" + PIN.sha() + " # " + PIN.ref();
 	}
 
 	private static Path cache() {

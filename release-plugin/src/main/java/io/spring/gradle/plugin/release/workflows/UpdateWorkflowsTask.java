@@ -111,15 +111,16 @@ public abstract class UpdateWorkflowsTask extends DefaultTask {
 
 	/**
 	 * A tag of the repository that has the templates, or {@code latest}, to use instead
-	 * of the one the project pins, which is then recorded in the project's
-	 * {@code .github/specs/versions.json}, which is created if there is none.
+	 * of the one the project uses, which is then recorded in {@code uses} under
+	 * {@code workflow.generator.workflows.release-tools} in the project's
+	 * {@code .github/workflow-generator.yml}.
 	 */
 	@Input
 	@Optional
 	public abstract Property<String> getTemplatesVersion();
 
 	@Option(option = "templates-version",
-			description = "Use this tag of spring-security-actions, or latest, and pin it in .github/specs/versions.json")
+			description = "Use this tag of spring-security-actions, or latest, and record it in .github/workflow-generator.yml")
 	public void templatesVersion(String version) {
 		getTemplatesVersion().set(version);
 	}
@@ -179,17 +180,22 @@ public abstract class UpdateWorkflowsTask extends DefaultTask {
 	public void update() throws IOException {
 		GitHubReleases github = new GitHubReleases(getGitHubApiUrl().get(), getGitHubAccessToken().getOrNull());
 		Path localVersions = getLocalVersionsFile().get().getAsFile().toPath();
+		Path config = getConfigFile().get().getAsFile().toPath();
 		TemplateSource.Resolved source = TemplateSource.resolve(getProjectDirectory().get().getAsFile().toPath(),
-				localVersions, WorkflowSupport.optionalPath(getTemplatesDirectory()), getTemplatesVersion().getOrNull(),
+				config, WorkflowSupport.optionalPath(getTemplatesDirectory()), getTemplatesVersion().getOrNull(),
 				getTemplatesRepository().getOrNull(), getTemplatesCacheDirectory().get().getAsFile().toPath(), github,
 				getLogger()::lifecycle);
+		// know that the version can be recorded before anything is rendered
+		String recorded = TemplateSource.recorded(config, source);
 		WorkflowVersions versions = WorkflowSupport.versions(localVersions, source);
 		WorkflowVersions.Generator generator = (getSkipGenerator().get()) ? null : versions.generator();
 		// find the generator's Java first, so that a missing one fails before anything
 		// has been rendered
 		String java = (generator != null) ? generatorJava(generator) : null;
-		renderSpecs(versions, source.directory());
-		TemplateSource.record(localVersions, source);
+		renderSpecs(versions, source);
+		if (recorded != null) {
+			Files.writeString(config, recorded);
+		}
 		removeDependabot();
 		if (generator != null) {
 			runGenerator(generator, java, github);
@@ -220,11 +226,11 @@ public abstract class UpdateWorkflowsTask extends DefaultTask {
 		}
 	}
 
-	private void renderSpecs(WorkflowVersions versions, Path defaults) throws IOException {
+	private void renderSpecs(WorkflowVersions versions, TemplateSource.Resolved source) throws IOException {
 		Path specs = getSpecsDirectory().get().getAsFile().toPath();
 		Path github = getGitHubDirectory().get().getAsFile().toPath();
 		Path config = getConfigFile().get().getAsFile().toPath();
-		Map<String, Object> model = WorkflowSupport.withTemplates(WorkflowSupport.config(config), versions);
+		Map<String, Object> model = WorkflowSupport.withTemplates(WorkflowSupport.config(config), source);
 		WorkflowRenderer renderer = new WorkflowRenderer(versions,
 				WorkflowSupport.generate(model, getBranch().getOrNull(),
 						() -> WorkflowSupport.supportedBranches(getProjectSlug().get(), getSaganApiUrl().get())));
@@ -232,7 +238,7 @@ public abstract class UpdateWorkflowsTask extends DefaultTask {
 		// leaves the workflows as they were
 		Map<Path, String> rendered = new LinkedHashMap<>();
 		for (Map.Entry<String, WorkflowTemplates.Template> template : WorkflowSupport
-			.named(config, model, WorkflowTemplates.load(specs, Files.exists(config), defaults))
+			.named(config, model, WorkflowTemplates.load(specs, Files.exists(config), source.directory()))
 			.entrySet()) {
 			try {
 				rendered.put(github.resolve(template.getKey()), renderer.render(template.getValue().content()));
