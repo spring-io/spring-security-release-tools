@@ -38,7 +38,9 @@ import io.spring.gradle.plugin.core.ProjectUtils;
 import io.spring.release.SpringReleases;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
+import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.provider.Property;
+import org.gradle.api.provider.Provider;
 
 /**
  * What {@link VerifyWorkflowsTask} and {@link UpdateWorkflowsTask} both need to read from
@@ -102,8 +104,8 @@ final class WorkflowSupport {
 
 	/**
 	 * @param local the project's own versions file, which need not exist
-	 * @param templates the {@code .github/specs} directory of the templates, which may have
-	 * versions of its own, or {@code null}
+	 * @param templates the {@code .github/specs} directory of the templates, which may
+	 * have versions of its own, or {@code null}
 	 * @return the versions of the templates, overlaid with the project's
 	 */
 	static WorkflowVersions versions(Path local, Path templates) {
@@ -167,10 +169,50 @@ final class WorkflowSupport {
 	}
 
 	/**
+	 * @param local the project's own versions file, which need not exist
+	 * @param source where the templates were found
+	 * @return the versions of the templates, overlaid with the project's, and with the
+	 * version of the templates that was asked for, if it was
+	 */
+	static WorkflowVersions versions(Path local, TemplateSource.Resolved source) {
+		return versions(local, source.directory()).merge(source.overlay());
+	}
+
+	/**
+	 * @return the path of the directory, or {@code null} if it is not set
+	 */
+	static Path optionalPath(DirectoryProperty directory) {
+		return (directory.isPresent()) ? directory.get().getAsFile().toPath() : null;
+	}
+
+	/**
+	 * @param project the project, whose Gradle user home is where commits of the
+	 * repository that has the templates are kept
+	 * @return where that is
+	 */
+	static File templatesCache(Project project) {
+		return project.getGradle()
+			.getGradleUserHomeDir()
+			.toPath()
+			.resolve("spring-security-release-tools/templates")
+			.toFile();
+	}
+
+	/**
+	 * @param project the project
+	 * @return the token to call GitHub with, if there is one
+	 */
+	static Provider<String> gitHubAccessToken(Project project) {
+		return ProjectUtils.getProperty(project, "gitHubAccessToken")
+			.orElse(project.getProviders().environmentVariable("GITHUB_TOKEN"))
+			.orElse(project.getProviders().environmentVariable("GH_TOKEN"));
+	}
+
+	/**
 	 * @param model the model from {@link #config}
-	 * @param versions the versions, whose pin of the repository that has the templates is what
-	 * {@code templates.repository} and {@code templates.ref} are, for a template to link
-	 * to a file of the repository at the version the project uses
+	 * @param versions the versions, whose pin of the repository that has the templates is
+	 * what {@code templates.repository} and {@code templates.ref} are, for a template to
+	 * link to a file of the repository at the version the project uses
 	 * @return the model with them, or as it was if the project doesn't pin the repository
 	 */
 	static Map<String, Object> withTemplates(Map<String, Object> model, WorkflowVersions versions) {

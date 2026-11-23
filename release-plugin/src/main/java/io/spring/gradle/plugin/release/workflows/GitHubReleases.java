@@ -30,9 +30,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * The little of the GitHub API that workflows need: a release's assets, and the tags and
- * files of the repository that has the templates. Redirects are
- * followed by hand so that the token is only ever sent to GitHub's API, not to the
- * storage a release asset is served from.
+ * files of the repository that has the templates. Redirects are followed by hand so that
+ * the token is only ever sent to GitHub's API, not to the storage a release asset is
+ * served from.
  *
  * @author Josh Cummings
  */
@@ -88,17 +88,19 @@ final class GitHubReleases implements TemplateRepository {
 	@Override
 	public String latestVersion(String repository) {
 		try {
-			String tag = get("/repos/" + repository + "/releases/latest", repository + " latest release").path("tag_name")
+			String tag = get("/repos/" + repository + "/releases/latest", repository + " latest release")
+				.path("tag_name")
 				.asText();
-			if (!tag.isEmpty()) {
-				return tag;
+			if (tag.isEmpty()) {
+				throw new IllegalStateException(repository + " has a latest release, but it has no tag");
 			}
+			return tag;
 		}
-		catch (IllegalStateException ex) {
-			// a repository with no release, which is read for its tags
+		catch (NotFoundException ex) {
+			// a repository with no release is read for its tags
 		}
 		String highest = null;
-		for (int page = 1; page <= 5; page++) {
+		for (int page = 1;; page++) {
 			JsonNode tags = get("/repos/" + repository + "/tags?per_page=100&page=" + page, repository + " tags");
 			for (JsonNode tag : tags) {
 				String name = tag.path("name").asText();
@@ -123,7 +125,8 @@ final class GitHubReleases implements TemplateRepository {
 			.path("object");
 		// an annotated tag names a tag object, which names the commit
 		for (int i = 0; i < 3 && "tag".equals(object.path("type").asText()); i++) {
-			object = get("/repos/" + repository + "/git/tags/" + object.path("sha").asText(), repository + " tag " + tag)
+			object = get("/repos/" + repository + "/git/tags/" + object.path("sha").asText(),
+					repository + " tag " + tag)
 				.path("object");
 		}
 		String sha = object.path("sha").asText();
@@ -131,11 +134,6 @@ final class GitHubReleases implements TemplateRepository {
 			throw new IllegalStateException(repository + " tag " + tag + " does not name a commit");
 		}
 		return sha;
-	}
-
-	private JsonNode get(String path, String what) {
-		return json(send(this.apiUrl + path, "application/vnd.github+json", true, API_TIMEOUT,
-				HttpResponse.BodyHandlers.ofByteArray()), what);
 	}
 
 	@Override
@@ -147,6 +145,11 @@ final class GitHubReleases implements TemplateRepository {
 	public void downloadArchive(String repository, String sha, Path target) {
 		send(this.apiUrl + "/repos/" + repository + "/zipball/" + sha, "application/vnd.github+json", true,
 				DOWNLOAD_TIMEOUT, HttpResponse.BodyHandlers.ofFile(target));
+	}
+
+	private JsonNode get(String path, String what) {
+		return json(send(this.apiUrl + path, "application/vnd.github+json", true, API_TIMEOUT,
+				HttpResponse.BodyHandlers.ofByteArray()), what);
 	}
 
 	private <T> HttpResponse<T> send(String url, String accept, boolean authenticated, Duration timeout,
@@ -167,10 +170,11 @@ final class GitHubReleases implements TemplateRepository {
 					continue;
 				}
 				if (status == 404 || status == 401 || status == 403) {
-					throw new IllegalStateException(url + " returned " + status + ((this.token != null)
+					String message = url + " returned " + status + ((this.token != null)
 							? ". Check that the token can read the repository"
 							: ". If the repository is private or internal, pass a token with -PgitHubAccessToken"
-									+ " or set GITHUB_TOKEN"));
+									+ " or set GITHUB_TOKEN");
+					throw (status == 404) ? new NotFoundException(message) : new IllegalStateException(message);
 				}
 				if (status / 100 != 2) {
 					throw new IllegalStateException(url + " returned " + status + ". Try again in a moment");
@@ -195,6 +199,17 @@ final class GitHubReleases implements TemplateRepository {
 		catch (IOException ex) {
 			throw new IllegalStateException("unreadable response for " + what, ex);
 		}
+	}
+
+	/**
+	 * What was asked for is not there, as opposed to not being allowed or not working.
+	 */
+	private static final class NotFoundException extends IllegalStateException {
+
+		NotFoundException(String message) {
+			super(message);
+		}
+
 	}
 
 }

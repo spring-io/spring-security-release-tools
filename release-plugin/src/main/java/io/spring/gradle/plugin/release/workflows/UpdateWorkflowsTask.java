@@ -31,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
-import io.spring.gradle.plugin.core.ProjectUtils;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
@@ -48,8 +47,8 @@ import org.gradle.jvm.toolchain.JavaToolchainService;
 import org.gradle.work.DisableCachingByDefault;
 
 /**
- * Brings the project's workflows and actions up to date: renders every template, the
- * spring-security-actions' templates, for a project with a {@code workflow-generator.yml}, and any in
+ * Brings the project's workflows and actions up to date: renders every template, those of
+ * spring-security-actions for a project with a {@code workflow-generator.yml}, and any in
  * {@code .github/specs/workflows} or {@code .github/specs/actions} (which replace a
  * default of the same name), into {@code .github/workflows} and {@code .github/actions},
  * then runs the workflow generator, which writes the release train workflows. A template
@@ -111,8 +110,8 @@ public abstract class UpdateWorkflowsTask extends DefaultTask {
 	public abstract DirectoryProperty getTemplatesDirectory();
 
 	/**
-	 * A tag of the repository that has the templates, or {@code latest}, to use instead of
-	 * the one the project pins, which is then recorded in the project's
+	 * A tag of the repository that has the templates, or {@code latest}, to use instead
+	 * of the one the project pins, which is then recorded in the project's
 	 * {@code .github/specs/versions.json}, which is created if there is none.
 	 */
 	@Input
@@ -180,14 +179,11 @@ public abstract class UpdateWorkflowsTask extends DefaultTask {
 	public void update() throws IOException {
 		GitHubReleases github = new GitHubReleases(getGitHubApiUrl().get(), getGitHubAccessToken().getOrNull());
 		Path localVersions = getLocalVersionsFile().get().getAsFile().toPath();
-		Path explicit = (getTemplatesDirectory().isPresent()) ? getTemplatesDirectory().get().getAsFile().toPath()
-				: null;
-		Path checkout = (getTemplatesRepository().isPresent())
-				? getProjectDirectory().get().getAsFile().toPath().resolve(getTemplatesRepository().get()) : null;
-		TemplateSource.Resolved source = TemplateSource.resolve(localVersions, explicit,
-				getTemplatesVersion().getOrNull(), getTemplatesCacheDirectory().get().getAsFile().toPath(),
-				TemplateSource.repository(explicit, checkout, github), getLogger()::lifecycle);
-		WorkflowVersions versions = WorkflowSupport.versions(localVersions, source.directory()).merge(source.overlay());
+		TemplateSource.Resolved source = TemplateSource.resolve(getProjectDirectory().get().getAsFile().toPath(),
+				localVersions, WorkflowSupport.optionalPath(getTemplatesDirectory()), getTemplatesVersion().getOrNull(),
+				getTemplatesRepository().getOrNull(), getTemplatesCacheDirectory().get().getAsFile().toPath(), github,
+				getLogger()::lifecycle);
+		WorkflowVersions versions = WorkflowSupport.versions(localVersions, source);
 		WorkflowVersions.Generator generator = (getSkipGenerator().get()) ? null : versions.generator();
 		// find the generator's Java first, so that a missing one fails before anything
 		// has been rendered
@@ -379,19 +375,11 @@ public abstract class UpdateWorkflowsTask extends DefaultTask {
 					.toPath()
 					.resolve("spring-security-release-tools/workflow-generator")
 					.toFile());
-			task.getTemplatesCacheDirectory()
-				.set(project.getGradle()
-					.getGradleUserHomeDir()
-					.toPath()
-					.resolve("spring-security-release-tools/templates")
-					.toFile());
+			task.getTemplatesCacheDirectory().set(WorkflowSupport.templatesCache(project));
 			task.getGitHubApiUrl().convention("https://api.github.com");
 			WorkflowSupport.conventions(project, task.getBranch(), task.getProjectSlug(), task.getSaganApiUrl());
 			task.getSkipGenerator().convention(false);
-			task.getGitHubAccessToken()
-				.set(ProjectUtils.getProperty(project, "gitHubAccessToken")
-					.orElse(project.getProviders().environmentVariable("GITHUB_TOKEN"))
-					.orElse(project.getProviders().environmentVariable("GH_TOKEN")));
+			task.getGitHubAccessToken().set(WorkflowSupport.gitHubAccessToken(project));
 		});
 	}
 

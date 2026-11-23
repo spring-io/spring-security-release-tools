@@ -76,6 +76,23 @@ class VerifyWorkflowsTaskTests {
 	}
 
 	@Test
+	void verifyWhenTemplatesNotPinnedThenSaysToPinThemWithUpdateWorkflows() throws IOException {
+		Files.delete(new File(this.projectDir, ".github/specs/versions.json").toPath());
+		assertThatExceptionOfType(GradleException.class).isThrownBy(() -> task().verify())
+			.withMessageContaining("Run updateWorkflows with --templates-version latest");
+	}
+
+	@Test
+	void verifyWhenTemplatesVersionGivenThenItIsLookedUp() throws IOException {
+		Files.delete(new File(this.projectDir, ".github/specs/versions.json").toPath());
+		VerifyWorkflowsTask task = task();
+		task.getGitHubApiUrl().set("http://127.0.0.1:1");
+		task.templatesVersion("1.2.3");
+		assertThatExceptionOfType(GradleException.class).isThrownBy(task::verify)
+			.withMessageContaining("Could not find 1.2.3 of " + TemplateSource.DEFAULT_REPOSITORY);
+	}
+
+	@Test
 	void verifyWhenSpecRendersToCheckedInWorkflowThenSucceeds() throws IOException {
 		File specs = new File(this.projectDir, ".github/specs/workflows");
 		File workflows = new File(this.projectDir, ".github/workflows");

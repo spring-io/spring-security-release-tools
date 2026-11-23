@@ -96,8 +96,8 @@ final class Fixtures {
 	 */
 	static String pin() {
 		return "{\"templates\": \"" + TemplateSource.DEFAULT_REPOSITORY + "\", \"actions\": {\""
-				+ TemplateSource.DEFAULT_REPOSITORY + "\": {\"ref\": \"" + PIN.ref() + "\", \"sha\": \""
-				+ PIN.sha() + "\"}}}";
+				+ TemplateSource.DEFAULT_REPOSITORY + "\": {\"ref\": \"" + PIN.ref() + "\", \"sha\": \"" + PIN.sha()
+				+ "\"}}}";
 	}
 
 	private static Path cache() {

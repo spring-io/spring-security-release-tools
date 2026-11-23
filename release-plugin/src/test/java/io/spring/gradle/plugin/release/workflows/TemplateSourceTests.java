@@ -22,6 +22,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipEntry;
@@ -63,7 +64,8 @@ class TemplateSourceTests {
 			assertThat(WorkflowTemplates.project(source.directory())).containsOnlyKeys("workflows/ci.yml");
 			TemplateSource.resolve(local, null, null, cache, new GitHubReleases(github.url(), null), this.log::add);
 			assertThat(github.requests).filteredOn((request) -> request.contains("/zipball/")).hasSize(1);
-			assertThat(this.log).anyMatch((line) -> line.startsWith("Downloading")).anyMatch((line) -> line.startsWith("Using"));
+			assertThat(this.log).anyMatch((line) -> line.startsWith("Downloading"))
+				.anyMatch((line) -> line.startsWith("Using"));
 		}
 	}
 
@@ -89,9 +91,9 @@ class TemplateSourceTests {
 		TemplateSource.Resolved source = TemplateSource.resolve(this.directory.resolve("versions.json"), explicit, null,
 				this.directory.resolve("cache"), null, this.log::add);
 		assertThat(source.directory()).isEqualTo(explicit);
-		assertThatExceptionOfType(GradleException.class).isThrownBy(() -> TemplateSource.resolve(
-				this.directory.resolve("versions.json"), explicit, "latest", this.directory.resolve("cache"), null,
-				this.log::add));
+		assertThatExceptionOfType(GradleException.class)
+			.isThrownBy(() -> TemplateSource.resolve(this.directory.resolve("versions.json"), explicit, "latest",
+					this.directory.resolve("cache"), null, this.log::add));
 	}
 
 	@Test
@@ -122,8 +124,8 @@ class TemplateSourceTests {
 	@Test
 	void recordWhenThereIsAVersionsFileThenTheRestOfItIsKept() throws Exception {
 		Path local = versions("{\"actions\":{\"a/b\":{\"ref\":\"v1\",\"sha\":\"" + SHA + "\"}}}");
-		TemplateSource.record(local, new TemplateSource.Resolved(null, REPOSITORY,
-				new WorkflowVersions.Action("0.0.37", SHA), true));
+		TemplateSource.record(local,
+				new TemplateSource.Resolved(null, REPOSITORY, new WorkflowVersions.Action("0.0.37", SHA), true));
 		WorkflowVersions read = WorkflowVersions.load(Files.newInputStream(local));
 		assertThat(read.action("a/b").ref()).isEqualTo("v1");
 		assertThat(read.action(REPOSITORY).ref()).isEqualTo("0.0.37");
@@ -176,8 +178,8 @@ class TemplateSourceTests {
 		git(checkout, "tag", "not-a-version");
 		assertThat(repository.latestVersion(REPOSITORY)).isEqualTo("0.0.2");
 		assertThat(repository.tagCommit(REPOSITORY, "0.0.2")).isNotEqualTo(source.pin().sha());
-		assertThatExceptionOfType(GradleException.class).isThrownBy(
-				() -> TemplateSource.resolve(local, null, "9.9.9", cache, repository, this.log::add))
+		assertThatExceptionOfType(GradleException.class)
+			.isThrownBy(() -> TemplateSource.resolve(local, null, "9.9.9", cache, repository, this.log::add))
 			.withMessageContaining("9.9.9");
 	}
 
@@ -193,6 +195,72 @@ class TemplateSourceTests {
 		assertThatExceptionOfType(GradleException.class)
 			.isThrownBy(() -> TemplateSource.repository(this.directory, repository(), null))
 			.withMessageContaining("cannot both be given");
+	}
+
+	@Test
+	void latestWhenThereIsNoReleaseThenTheHighestTagOnAnyPageIsUsed() throws Exception {
+		try (FakeGitHub github = new FakeGitHub(archive())) {
+			github.latestStatus = 404;
+			List<String> tags = new ArrayList<>();
+			for (int i = 0; i < 100; i++) {
+				tags.add("0.0." + i);
+			}
+			tags.add("not-a-version");
+			tags.add("0.1.0");
+			github.tags = tags;
+			assertThat(new GitHubReleases(github.url(), null).latestVersion(REPOSITORY)).isEqualTo("0.1.0");
+		}
+	}
+
+	@Test
+	void latestWhenReleaseCannotBeReadForAnyOtherReasonThenFailsRatherThanReadTags() throws Exception {
+		try (FakeGitHub github = new FakeGitHub(archive())) {
+			github.latestStatus = 403;
+			github.tags = List.of("0.1.0");
+			assertThatExceptionOfType(IllegalStateException.class)
+				.isThrownBy(() -> new GitHubReleases(github.url(), null).latestVersion(REPOSITORY))
+				.withMessageContaining("returned 403");
+		}
+	}
+
+	@Test
+	void recordWhenVersionsFileIsNotAnObjectThenFailsAndLeavesItAlone() throws Exception {
+		Path local = versions("[1, 2]");
+		assertThatExceptionOfType(GradleException.class)
+			.isThrownBy(() -> TemplateSource.record(local,
+					new TemplateSource.Resolved(null, REPOSITORY, new WorkflowVersions.Action("0.0.37", SHA), true)))
+			.withMessageContaining("has to be a JSON object");
+		assertThat(local).hasContent("[1, 2]");
+	}
+
+	@Test
+	void recordWhenWrittenThenFormattedLikeAnyOtherAndReadableByOthers() throws Exception {
+		Path local = this.directory.resolve(".github/specs/versions.json");
+		TemplateSource.record(local,
+				new TemplateSource.Resolved(null, REPOSITORY, new WorkflowVersions.Action("0.0.37", SHA), true));
+		String json = Files.readString(local);
+		assertThat(json).contains("\"templates\": \"" + REPOSITORY + "\"").doesNotContain(" : ").endsWith("}\n");
+		if (Files.getFileStore(local).supportsFileAttributeView("posix")) {
+			assertThat(PosixFilePermissions.toString(Files.getPosixFilePermissions(local))).isEqualTo("rw-r--r--");
+		}
+	}
+
+	@Test
+	void resolveWhenArchiveHasTooManyFilesThenFails() throws Exception {
+		Path local = versions("{\"templates\":\"" + REPOSITORY + "\",\"actions\":{\"" + REPOSITORY
+				+ "\":{\"ref\":\"0.0.1\",\"sha\":\"" + SHA + "\"}}}");
+		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+		try (ZipOutputStream zip = new ZipOutputStream(bytes)) {
+			for (int i = 0; i <= 1000; i++) {
+				entry(zip, "root/.github/specs/workflows/w" + i + ".spec.yml", "name: W\n");
+			}
+		}
+		try (FakeGitHub github = new FakeGitHub(bytes.toByteArray())) {
+			assertThatExceptionOfType(GradleException.class)
+				.isThrownBy(() -> TemplateSource.resolve(local, null, null, this.directory.resolve("cache"),
+						new GitHubReleases(github.url(), null), this.log::add))
+				.withMessageContaining("more than 1000 files");
+		}
 	}
 
 	@Test
@@ -232,10 +300,11 @@ class TemplateSourceTests {
 		try {
 			ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 			try (ZipOutputStream zip = new ZipOutputStream(bytes)) {
-				entry(zip, "spring-io-spring-security-actions-0123456/.github/specs/workflows/ci.spec.yml", "name: CI\n");
+				entry(zip, "spring-io-spring-security-actions-0123456/.github/specs/workflows/ci.spec.yml",
+						"name: CI\n");
 				entry(zip, "spring-io-spring-security-actions-0123456/.github/specs/versions.json",
-						"{\"actions\":{\"a/b\":{\"ref\":\"v1\",\"sha\":\"" + SHA + "\"},\"c/d\":{\"ref\":\"v1\",\"sha\":\""
-								+ SHA + "\"}}}");
+						"{\"actions\":{\"a/b\":{\"ref\":\"v1\",\"sha\":\"" + SHA
+								+ "\"},\"c/d\":{\"ref\":\"v1\",\"sha\":\"" + SHA + "\"}}}");
 				entry(zip, "spring-io-spring-security-actions-0123456/README.md", "not a spec\n");
 			}
 			return bytes.toByteArray();

@@ -25,7 +25,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.gradle.api.GradleException;
 
 /**
  * The versions that workflows are pinned to. Every entry carries the commit SHA as well
@@ -35,9 +37,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  *
  * @param generator the workflow generator that produces release train workflows, if any
  * @param actions the actions and reusable workflows, keyed by {@code owner/repo}
- * @param templates the repository, as {@code owner/repo}, that has the templates, whose pin
- * in {@code actions} is the version of them to use, or {@code null} if a project does not
- * use them
+ * @param templates the repository, as {@code owner/repo}, that has the templates, whose
+ * pin in {@code actions} is the version of them to use, or {@code null} if a project does
+ * not use them
  * @author Josh Cummings
  */
 record WorkflowVersions(Generator generator, Map<String, Action> actions, String templates) {
@@ -72,6 +74,9 @@ record WorkflowVersions(Generator generator, Map<String, Action> actions, String
 		}
 		try (InputStream in = Files.newInputStream(file)) {
 			return load(in);
+		}
+		catch (JsonProcessingException ex) {
+			throw new GradleException(file + " could not be read: " + WorkflowSupport.rootMessage(ex), ex);
 		}
 		catch (IOException ex) {
 			throw new UncheckedIOException(ex);

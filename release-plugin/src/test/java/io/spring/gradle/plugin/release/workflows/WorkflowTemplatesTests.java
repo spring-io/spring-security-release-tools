@@ -37,17 +37,18 @@ class WorkflowTemplatesTests {
 
 	@Test
 	void loadWhenDefaultsApplyThenReleaseTrainActionsAreIncluded() {
-		assertThat(WorkflowTemplates.load(this.specs, true, Fixtures.specs())).containsKeys(
-				"actions/release-train-build/action.yml", "actions/release-train-test/action.yml");
+		assertThat(WorkflowTemplates.load(this.specs, true, Fixtures.specs()))
+			.containsKeys("actions/release-train-build/action.yml", "actions/release-train-test/action.yml");
 	}
 
 	@Test
 	void loadWhenProjectTemplateHasSameNameThenReplacesDefault() throws IOException {
 		Files.writeString(workflow("dependabot-pull-request-build.spec.yml"), "mine");
-		assertThat(
-				WorkflowTemplates.load(this.specs, true, Fixtures.specs()).get("workflows/dependabot-pull-request-build.yml").content())
-			.isEqualTo("mine");
-		assertThat(WorkflowTemplates.load(this.specs, true, Fixtures.specs())).containsKey("workflows/pull-request-build.yml");
+		assertThat(WorkflowTemplates.load(this.specs, true, Fixtures.specs())
+			.get("workflows/dependabot-pull-request-build.yml")
+			.content()).isEqualTo("mine");
+		assertThat(WorkflowTemplates.load(this.specs, true, Fixtures.specs()))
+			.containsKey("workflows/pull-request-build.yml");
 	}
 
 	@Test
@@ -63,15 +64,17 @@ class WorkflowTemplatesTests {
 		Files.writeString(actions.resolve("action.spec.yml"), "mine");
 		Files.writeString(Files.createDirectories(this.specs.resolve("actions/custom")).resolve("action.spec.yml"),
 				"custom");
-		assertThat(WorkflowTemplates.load(this.specs, true, Fixtures.specs()).get("actions/release-train-build/action.yml").content())
-			.isEqualTo("mine");
+		assertThat(WorkflowTemplates.load(this.specs, true, Fixtures.specs())
+			.get("actions/release-train-build/action.yml")
+			.content()).isEqualTo("mine");
 		assertThat(WorkflowTemplates.load(this.specs, true, Fixtures.specs())).containsKeys("actions/custom/action.yml",
 				"actions/release-train-test/action.yml");
 	}
 
 	@Test
 	void loadWhenDefaultsApplyAndNoneAreGivenThenSaysHowToGetThem() {
-		assertThatExceptionOfType(GradleException.class).isThrownBy(() -> WorkflowTemplates.load(this.specs, true, null))
+		assertThatExceptionOfType(GradleException.class)
+			.isThrownBy(() -> WorkflowTemplates.load(this.specs, true, null))
 			.withMessageContaining("--templates-version latest");
 	}
 

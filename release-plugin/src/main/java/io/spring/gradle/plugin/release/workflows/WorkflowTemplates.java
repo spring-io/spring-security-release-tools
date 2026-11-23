@@ -33,11 +33,11 @@ import org.gradle.api.GradleException;
  * {@code .github} directory (for example {@code workflows/ci.yml} or
  * {@code actions/release-train-build/action.yml}).
  * <p>
- * The default templates are those of the repository that a project's versions file names (see
- * {@link TemplateSource}), {@code spring-io/spring-security-actions}, which apply to a project that is managed by the workflow
- * generator, that is, one with a {@code workflow-generator.yml}. A project replaces a
- * default by having a template of the same name, either
- * {@code .github/specs/workflows/<workflow>.spec.yml} or
+ * The default templates are those of the repository that a project's versions file names
+ * (see {@link TemplateSource}), {@code spring-io/spring-security-actions}, which apply to
+ * a project that is managed by the workflow generator, that is, one with a
+ * {@code workflow-generator.yml}. A project replaces a default by having a template of
+ * the same name, either {@code .github/specs/workflows/<workflow>.spec.yml} or
  * {@code .github/specs/actions/<action>/action.spec.yml}, and adds a workflow or action
  * by having a template that has no default.
  *
@@ -67,20 +67,21 @@ final class WorkflowTemplates {
 	 * @param specs the project's {@code .github/specs} directory, which need not exist
 	 * @param defaults whether the default templates apply, which they do to a project
 	 * that is managed by the workflow generator
-	 * @param shipped the {@code .github/specs} directory of the default templates, or
-	 * {@code null} if the project has none
+	 * @param defaultSpecs the {@code .github/specs} directory of the default templates,
+	 * or {@code null} if the project has none
 	 * @return the default templates, if they apply, replaced or added to by the project's
 	 */
-	static Map<String, Template> load(Path specs, boolean defaults, Path shipped) {
+	static Map<String, Template> load(Path specs, boolean defaults, Path defaultSpecs) {
 		Map<String, Template> templates = new TreeMap<>();
 		if (defaults) {
-			if (shipped == null) {
+			if (defaultSpecs == null) {
 				throw new GradleException("This project says it uses the default workflows, with a"
-						+ " workflow-generator.yml, but not where their templates are. Run with --templates-version"
-						+ " latest to use those of the latest release of " + TemplateSource.DEFAULT_REPOSITORY
+						+ " workflow-generator.yml, but not where their templates are. Run updateWorkflows with"
+						+ " --templates-version latest to use those of the latest release of "
+						+ TemplateSource.DEFAULT_REPOSITORY
 						+ ", which is then recorded in .github/specs/versions.json");
 			}
-			templates.putAll(project(shipped));
+			templates.putAll(project(defaultSpecs));
 		}
 		templates.putAll(project(specs));
 		return templates;

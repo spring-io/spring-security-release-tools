@@ -17,10 +17,15 @@
 package io.spring.gradle.plugin.release.workflows;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.gradle.api.GradleException;
 
@@ -45,8 +50,8 @@ final class LocalCheckout implements TemplateRepository {
 			git("rev-parse", "--git-dir");
 		}
 		catch (IllegalStateException ex) {
-			throw new GradleException(this.directory + " is not a git checkout (" + WorkflowSupport.rootMessage(ex) + ")",
-					ex);
+			throw new GradleException(
+					this.directory + " is not a git checkout (" + WorkflowSupport.rootMessage(ex) + ")", ex);
 		}
 	}
 
@@ -91,19 +96,25 @@ final class LocalCheckout implements TemplateRepository {
 		command[1] = "-C";
 		command[2] = this.directory.toString();
 		System.arraycopy(arguments, 0, command, 3, arguments.length);
+		ProcessBuilder builder = new ProcessBuilder(command).redirectErrorStream(true);
+		// never wait for someone to answer a prompt that nobody can see
+		builder.environment().put("GIT_TERMINAL_PROMPT", "0");
+		Process process = null;
 		try {
-			Process process = new ProcessBuilder(command).redirectErrorStream(true).start();
-			String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8).trim();
+			process = builder.start();
+			// read as it runs, as reading is what would otherwise wait on a git that
+			// does not finish
+			CompletableFuture<String> output = read(process.getInputStream());
 			if (!process.waitFor(TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
-				process.destroyForcibly();
-				throw new IllegalStateException("git " + arguments[0] + " did not finish in " + TIMEOUT_SECONDS
-						+ " seconds");
+				throw new IllegalStateException(
+						"git " + arguments[0] + " did not finish in " + TIMEOUT_SECONDS + " seconds");
 			}
+			String text = output.get(TIMEOUT_SECONDS, TimeUnit.SECONDS).trim();
 			if (process.exitValue() != 0) {
 				throw new IllegalStateException(
-						output.isEmpty() ? "git " + arguments[0] + " failed" : output.lines().findFirst().get());
+						text.isEmpty() ? "git " + arguments[0] + " failed" : text.lines().findFirst().get());
 			}
-			return output;
+			return text;
 		}
 		catch (IOException ex) {
 			throw new IllegalStateException("could not run git: " + ex.getMessage(), ex);
@@ -112,6 +123,26 @@ final class LocalCheckout implements TemplateRepository {
 			Thread.currentThread().interrupt();
 			throw new IllegalStateException("interrupted while running git", ex);
 		}
+		catch (ExecutionException | TimeoutException ex) {
+			throw new IllegalStateException("could not read what git said: " + ex.getMessage(), ex);
+		}
+		finally {
+			if (process != null) {
+				process.descendants().forEach(ProcessHandle::destroyForcibly);
+				process.destroyForcibly();
+			}
+		}
+	}
+
+	private static CompletableFuture<String> read(InputStream in) {
+		return CompletableFuture.supplyAsync(() -> {
+			try (in) {
+				return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+			}
+			catch (IOException ex) {
+				throw new UncheckedIOException(ex);
+			}
+		});
 	}
 
 }

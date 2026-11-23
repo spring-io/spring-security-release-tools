@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import io.spring.gradle.plugin.core.ProjectUtils;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
@@ -104,6 +103,20 @@ public abstract class VerifyWorkflowsTask extends DefaultTask {
 		getTemplatesRepository().set(repository);
 	}
 
+	/**
+	 * A tag of the repository that has the templates, or {@code latest}, to verify
+	 * against instead of the one the project pins, which is not recorded.
+	 */
+	@Input
+	@Optional
+	public abstract Property<String> getTemplatesVersion();
+
+	@Option(option = "templates-version",
+			description = "Verify against this tag of spring-security-actions, or latest, instead of the pinned one")
+	public void templatesVersion(String version) {
+		getTemplatesVersion().set(version);
+	}
+
 	@Input
 	@Optional
 	public abstract Property<String> getGitHubAccessToken();
@@ -134,22 +147,18 @@ public abstract class VerifyWorkflowsTask extends DefaultTask {
 
 		Path config = getConfigFile().get().getAsFile().toPath();
 		Path localVersions = getLocalVersionsFile().get().getAsFile().toPath();
-		Path explicit = (getTemplatesDirectory().isPresent()) ? getTemplatesDirectory().get().getAsFile().toPath()
-				: null;
-		Path checkout = (getTemplatesRepository().isPresent())
-				? getProjectDirectory().get().getAsFile().toPath().resolve(getTemplatesRepository().get()) : null;
-		TemplateSource.Resolved source = TemplateSource.resolve(localVersions, explicit, null,
-				getTemplatesCacheDirectory().get().getAsFile().toPath(),
-				TemplateSource.repository(explicit, checkout,
-						new GitHubReleases(getGitHubApiUrl().get(), getGitHubAccessToken().getOrNull())),
+		TemplateSource.Resolved source = TemplateSource.resolve(getProjectDirectory().get().getAsFile().toPath(),
+				localVersions, WorkflowSupport.optionalPath(getTemplatesDirectory()), getTemplatesVersion().getOrNull(),
+				getTemplatesRepository().getOrNull(), getTemplatesCacheDirectory().get().getAsFile().toPath(),
+				new GitHubReleases(getGitHubApiUrl().get(), getGitHubAccessToken().getOrNull()),
 				getLogger()::lifecycle);
-		WorkflowVersions versions = WorkflowSupport.versions(localVersions, source.directory());
+		WorkflowVersions versions = WorkflowSupport.versions(localVersions, source);
 		List<String> problems = new ArrayList<>();
 		problems.addAll(WorkflowVerifier.verifyPins(workflows, versions));
 		problems.addAll(WorkflowVerifier.verifyPins(actions, versions));
 		Map<String, Object> model = WorkflowSupport.withTemplates(WorkflowSupport.config(config), versions);
-		Map<String, WorkflowTemplates.Template> templates = new TreeMap<>(
-				WorkflowSupport.named(config, model, WorkflowTemplates.load(specs, Files.exists(config), source.directory())));
+		Map<String, WorkflowTemplates.Template> templates = new TreeMap<>(WorkflowSupport.named(config, model,
+				WorkflowTemplates.load(specs, Files.exists(config), source.directory())));
 		String branch = getBranch().getOrNull();
 		if (branch == null) {
 			model = WorkflowSupport.onMain(model);
@@ -198,17 +207,9 @@ public abstract class VerifyWorkflowsTask extends DefaultTask {
 			task.getSpecsDirectory().set(github.dir("specs"));
 			task.getConfigFile().set(github.file("workflow-generator.yml"));
 			task.getLocalVersionsFile().set(github.file("specs/versions.json"));
-			task.getTemplatesCacheDirectory()
-				.set(project.getGradle()
-					.getGradleUserHomeDir()
-					.toPath()
-					.resolve("spring-security-release-tools/templates")
-					.toFile());
+			task.getTemplatesCacheDirectory().set(WorkflowSupport.templatesCache(project));
 			task.getGitHubApiUrl().convention("https://api.github.com");
-			task.getGitHubAccessToken()
-				.set(ProjectUtils.getProperty(project, "gitHubAccessToken")
-					.orElse(project.getProviders().environmentVariable("GITHUB_TOKEN"))
-					.orElse(project.getProviders().environmentVariable("GH_TOKEN")));
+			task.getGitHubAccessToken().set(WorkflowSupport.gitHubAccessToken(project));
 			WorkflowSupport.conventions(project, task.getBranch(), task.getProjectSlug(), task.getSaganApiUrl());
 		});
 	}

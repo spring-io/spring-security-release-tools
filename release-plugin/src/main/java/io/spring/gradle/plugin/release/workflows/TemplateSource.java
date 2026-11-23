@@ -18,22 +18,29 @@ package io.spring.gradle.plugin.release.workflows;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Comparator;
 import java.util.Enumeration;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.util.DefaultIndenter;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.gradle.api.GradleException;
@@ -53,6 +60,10 @@ final class TemplateSource {
 	static final String DEFAULT_REPOSITORY = "spring-io/spring-security-actions";
 
 	private static final String SPECS = ".github/specs/";
+
+	private static final int MAX_FILES = 1000;
+
+	private static final long MAX_BYTES = 20L * 1024 * 1024;
 
 	private static final Pattern TAG = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]*");
 
@@ -80,12 +91,32 @@ final class TemplateSource {
 	}
 
 	/**
+	 * Find the templates for a task, from what it was given.
+	 * @param project the project's directory, which a relative {@code checkout} is
+	 * relative to
+	 * @param localVersions the project's {@code .github/specs/versions.json}
+	 * @param explicit a directory of templates to use instead, or {@code null}
+	 * @param requestedVersion a tag, or {@code latest}, or {@code null}
+	 * @param checkout a git checkout of the repository that has the templates, or
+	 * {@code null}
+	 * @param cache where commits are kept
+	 * @param gitHub where to read the repository from if there is no checkout
+	 * @param log where to say what is being done
+	 * @return where they are
+	 */
+	static Resolved resolve(Path project, Path localVersions, Path explicit, String requestedVersion, String checkout,
+			Path cache, GitHubReleases gitHub, Consumer<String> log) {
+		Path local = (checkout != null) ? project.resolve(checkout) : null;
+		return resolve(localVersions, explicit, requestedVersion, cache, repository(explicit, local, gitHub), log);
+	}
+
+	/**
 	 * Find the templates, downloading them if they are not yet kept.
 	 * @param localVersions the project's {@code .github/specs/versions.json}, which need
 	 * not exist
 	 * @param explicit a directory of templates to use instead, or {@code null}
-	 * @param requestedVersion a tag, or {@code latest}, to use instead of what the project
-	 * pins, or {@code null}
+	 * @param requestedVersion a tag, or {@code latest}, to use instead of what the
+	 * project pins, or {@code null}
 	 * @param cache where commits are kept
 	 * @param repository where to read the repository that has the templates from
 	 * @param log where to say what is being done
@@ -137,24 +168,59 @@ final class TemplateSource {
 		if (!resolved.chosen()) {
 			return;
 		}
-		ObjectNode root = (Files.exists(localVersions) && MAPPER.readTree(localVersions.toFile()) instanceof ObjectNode node)
-				? node : MAPPER.createObjectNode();
+		ObjectNode root = root(localVersions);
 		root.put("templates", resolved.repository());
 		ObjectNode actions = (root.get("actions") instanceof ObjectNode existing) ? existing
 				: root.putObject("actions");
 		ObjectNode entry = actions.putObject(resolved.repository());
 		entry.put("ref", resolved.pin().ref());
 		entry.put("sha", resolved.pin().sha());
-		DefaultPrettyPrinter printer = new DefaultPrettyPrinter().withObjectIndenter(new DefaultIndenter("\t", "\n"))
-			.withArrayIndenter(new DefaultIndenter("\t", "\n"));
-		Files.createDirectories(localVersions.toAbsolutePath().getParent());
-		Path temporary = Files.createTempFile(localVersions.toAbsolutePath().getParent(), ".versions-", ".tmp");
+		DefaultPrettyPrinter printer = new Printer();
+		Path parent = localVersions.toAbsolutePath().getParent();
+		Files.createDirectories(parent);
+		Path temporary = Files.createTempFile(parent, ".versions-", ".tmp");
 		try {
 			Files.writeString(temporary, MAPPER.writer(printer).writeValueAsString(root) + "\n");
+			permissions(localVersions, temporary);
 			Files.move(temporary, localVersions, StandardCopyOption.REPLACE_EXISTING);
 		}
 		finally {
 			Files.deleteIfExists(temporary);
+		}
+	}
+
+	/**
+	 * @return what the file has, which is nothing if there is no file
+	 * @throws GradleException if the file has something other than an object, which is
+	 * not for this to overwrite
+	 */
+	private static ObjectNode root(Path localVersions) throws IOException {
+		if (!Files.exists(localVersions)) {
+			return MAPPER.createObjectNode();
+		}
+		JsonNode node = MAPPER.readTree(localVersions.toFile());
+		if (node == null || node.isMissingNode()) {
+			return MAPPER.createObjectNode();
+		}
+		if (!(node instanceof ObjectNode object)) {
+			throw new GradleException(localVersions + " has to be a JSON object to pin the templates in it, but is "
+					+ node.getNodeType().toString().toLowerCase(Locale.ROOT) + ". Fix it, or move it aside");
+		}
+		return object;
+	}
+
+	/**
+	 * A temporary file is only readable by its owner. Keep the permissions of the file it
+	 * replaces, or else make it readable like any other file in the project.
+	 */
+	private static void permissions(Path replaced, Path temporary) throws IOException {
+		try {
+			Set<PosixFilePermission> permissions = (Files.exists(replaced)) ? Files.getPosixFilePermissions(replaced)
+					: PosixFilePermissions.fromString("rw-r--r--");
+			Files.setPosixFilePermissions(temporary, permissions);
+		}
+		catch (UnsupportedOperationException ex) {
+			// not a POSIX file system, which has no such permissions to get wrong
 		}
 	}
 
@@ -232,12 +298,14 @@ final class TemplateSource {
 	}
 
 	/**
-	 * Write {@code .github/specs} of the archive, whose files are in a directory named for
-	 * the commit, into {@code target}.
+	 * Write {@code .github/specs} of the archive, whose files are in a directory named
+	 * for the commit, into {@code target}.
 	 * @return the number of files written
 	 */
 	private static int extract(Path zip, Path target) throws IOException {
+		Path root = target.toAbsolutePath().normalize();
 		int files = 0;
+		long bytes = 0;
 		try (ZipFile archive = new ZipFile(zip.toFile())) {
 			Enumeration<? extends ZipEntry> entries = archive.entries();
 			while (entries.hasMoreElements()) {
@@ -247,18 +315,39 @@ final class TemplateSource {
 				if (entry.isDirectory() || slash < 0 || !name.startsWith(SPECS, slash + 1)) {
 					continue;
 				}
-				Path file = target.resolve(name.substring(slash + 1 + SPECS.length())).normalize();
-				if (!file.startsWith(target)) {
+				Path file = root.resolve(name.substring(slash + 1 + SPECS.length())).normalize();
+				if (!file.startsWith(root)) {
 					throw new GradleException("The archive has an entry that leaves its directory: " + name);
 				}
-				Files.createDirectories(file.getParent());
-				try (InputStream in = archive.getInputStream(entry)) {
-					Files.copy(in, file);
+				if (++files > MAX_FILES) {
+					throw new GradleException("The archive has more than " + MAX_FILES + " files under .github/specs,"
+							+ " which is not what templates look like");
 				}
-				files++;
+				Files.createDirectories(file.getParent());
+				try (InputStream in = archive.getInputStream(entry); OutputStream out = Files.newOutputStream(file)) {
+					bytes += copy(in, out, MAX_BYTES - bytes);
+				}
 			}
 		}
 		return files;
+	}
+
+	/**
+	 * @return how many bytes were copied
+	 * @throws GradleException if there are more than {@code limit}
+	 */
+	private static long copy(InputStream in, OutputStream out, long limit) throws IOException {
+		byte[] buffer = new byte[8192];
+		long total = 0;
+		for (int read = in.read(buffer); read >= 0; read = in.read(buffer)) {
+			total += read;
+			if (total > limit) {
+				throw new GradleException("The archive has more than " + (MAX_BYTES / 1024 / 1024)
+						+ "MB under .github/specs, which is not what templates look like");
+			}
+			out.write(buffer, 0, read);
+		}
+		return total;
 	}
 
 	private static void delete(Path path) {
@@ -293,6 +382,33 @@ final class TemplateSource {
 		WorkflowVersions overlay() {
 			return (this.chosen) ? new WorkflowVersions(null, Map.of(this.repository, this.pin), this.repository)
 					: new WorkflowVersions(null, null, null);
+		}
+
+	}
+
+	/**
+	 * Tabs, and {@code "key": value} rather than the {@code "key" : value} that Jackson
+	 * writes.
+	 */
+	private static final class Printer extends DefaultPrettyPrinter {
+
+		Printer() {
+			indentObjectsWith(new DefaultIndenter("\t", "\n"));
+			indentArraysWith(new DefaultIndenter("\t", "\n"));
+		}
+
+		private Printer(Printer base) {
+			super(base);
+		}
+
+		@Override
+		public DefaultPrettyPrinter createInstance() {
+			return new Printer(this);
+		}
+
+		@Override
+		public void writeObjectFieldValueSeparator(JsonGenerator generator) throws IOException {
+			generator.writeRaw(": ");
 		}
 
 	}

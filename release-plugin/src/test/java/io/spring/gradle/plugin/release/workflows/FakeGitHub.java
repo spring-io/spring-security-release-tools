@@ -40,6 +40,16 @@ final class FakeGitHub implements AutoCloseable {
 
 	final List<String> storageAuthorization = new ArrayList<>();
 
+	/**
+	 * What {@code /releases/latest} answers with.
+	 */
+	volatile int latestStatus = 200;
+
+	/**
+	 * The names of the tags, which are listed a hundred a page, as GitHub does.
+	 */
+	volatile List<String> tags = List.of();
+
 	FakeGitHub(byte[] asset) throws IOException {
 		this.asset = asset;
 		this.server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
@@ -68,7 +78,10 @@ final class FakeGitHub implements AutoCloseable {
 					"{\"object\":{\"type\":\"commit\",\"sha\":\"0123456789abcdef0123456789abcdef01234567\"}}");
 		}
 		else if (path.endsWith("/releases/latest")) {
-			respond(exchange, 200, "application/json", "{\"tag_name\":\"0.0.36\"}");
+			respond(exchange, this.latestStatus, "application/json", "{\"tag_name\":\"0.0.36\"}");
+		}
+		else if (path.endsWith("/tags")) {
+			respond(exchange, 200, "application/json", page(exchange.getRequestURI().getQuery()));
 		}
 		else if (path.contains("/zipball/")) {
 			exchange.getResponseHeaders().add("Location", url() + "/storage/jar");
@@ -90,6 +103,12 @@ final class FakeGitHub implements AutoCloseable {
 		else {
 			respond(exchange, 404, "application/json", "{}");
 		}
+	}
+
+	private String page(String query) {
+		int page = Integer.parseInt(query.replaceAll(".*page=(\\d+).*", "$1"));
+		List<String> names = this.tags.stream().skip((page - 1) * 100L).limit(100).toList();
+		return "[" + String.join(",", names.stream().map((name) -> "{\"name\":\"" + name + "\"}").toList()) + "]";
 	}
 
 	private static void respond(HttpExchange exchange, int status, String type, String body) throws IOException {
