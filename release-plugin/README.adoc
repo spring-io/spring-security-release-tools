@@ -91,6 +91,9 @@ A project says which version of the templates it uses in `.github/specs/versions
 A project that has a `.github/workflow-generator.yml` is rendered from all of the templates; a template in the project's own `.github/specs/workflows/<name>.spec.yml` or `.github/specs/actions/<name>/action.spec.yml` replaces the template of the same name.
 A template can link to the files of the templates repository at the version the project uses with `<< templates.repository >>` and `<< templates.ref >>`.
 
+The options under `release-tools` that are on unless a project turns them off are `dependencies-antora-ui` and `docs-deploy`.
+`verify`, which adds `verifyWorkflows` to the project's builds, is off unless the project sets `verify: true`.
+
 === Pinning a version
 
 Run `./gradlew updateWorkflows --templates-version latest` (or a tag, like `--templates-version 0.0.36`) to look up the tag's commit and record it in `.github/specs/versions.json`, which is created if there is none.

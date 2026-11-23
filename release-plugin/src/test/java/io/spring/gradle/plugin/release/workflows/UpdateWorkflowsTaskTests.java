@@ -362,7 +362,19 @@ class UpdateWorkflowsTaskTests {
 	}
 
 	@Test
-	void updateWhenVerifyNotConfiguredThenVerificationIsOn() throws Exception {
+	void updateWhenVerifyNotConfiguredThenVerificationIsOff() throws Exception {
+		task().update();
+		assertThat(new File(this.projectDir, ".github/workflows/ci.yml")).content()
+			.doesNotContain("verify-workflows")
+			.contains("deploy-artifacts:");
+		assertThat(new File(this.projectDir, ".github/workflows/pull-request-build.yml")).content()
+			.doesNotContain("verifyWorkflows");
+	}
+
+	@Test
+	void updateWhenVerifyIsTrueThenVerificationIsOn() throws Exception {
+		write(".github/workflow-generator.yml", "workflow:\n  generator:\n    project:\n      java:\n"
+				+ "        versions:\n          primary: 25\n    workflows:\n      release-tools:\n        verify: true\n");
 		task().update();
 		assertThat(new File(this.projectDir, ".github/workflows/ci.yml")).content()
 			.contains("verify-workflows:")
