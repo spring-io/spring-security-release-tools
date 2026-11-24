@@ -1,4 +1,4 @@
-name: "Local - CodeQL Advanced"
+name: "CodeQL Advanced"
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
   schedule:
     # https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#schedule
-    - cron: '39 13 * * 4'
+    - cron: '39 13 * * *'
 permissions: read-all
 jobs:
   codeql-analysis-call:

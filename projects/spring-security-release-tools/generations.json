@@ -1,0 +1,16 @@
+{
+  "generations": [
+    {
+      "name": "1.0.x",
+      "initialRelease": "2025-01",
+      "ossSupportEndDate": "2099-01",
+      "commercialSupportEndDate": "2099-01"
+    },
+    {
+      "name": "1.1.x",
+      "initialRelease": "2025-01",
+      "ossSupportEndDate": "2099-01",
+      "commercialSupportEndDate": "2099-01"
+    }
+  ]
+}

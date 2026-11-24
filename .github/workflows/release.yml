@@ -1,0 +1,175 @@
+name: Release
+
+# Releases the milestone that is due today on the branch it is run on, when it has no open issues.
+# It builds the release, deploys it to Maven Central, publishes the plugins, tags the release and
+# publishes its release notes, moves the branch to its next development version, and then closes
+# the milestone and schedules the next two.
+#
+# The release commit is pushed together with its tag, only after everything has been published, so
+# a failure leaves the branch untouched and the run can be repeated (the deployment is idempotent).
+# Merge the branch forward afterwards (1.0.x into main, with -s ours).
+
+permissions:
+  actions: write
+  contents: write
+  issues: write
+  pull-requests: read
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  planner:
+    name: Is there a release that is ready today?
+    runs-on: ubuntu-latest
+    outputs:
+      release-version: ${{ steps.release-version.outputs.release-version }}
+      should-release: ${{ steps.count-issues.outputs.count == '0' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: version
+        name: Compute Version
+        uses: spring-io/spring-release-actions/compute-version@967a8de4659c4273a82bcb098d73c2330c015254 # 0.0.9
+      - id: release-version
+        name: Compute Next Scheduled Release
+        uses: spring-io/spring-release-actions/compute-next-scheduled-milestone@967a8de4659c4273a82bcb098d73c2330c015254 # 0.0.9
+        with:
+          milestone-token: ${{ github.token }}
+          snapshot-version: ${{ steps.version.outputs.version }}
+      - id: count-issues
+        name: Count Open Issues
+        if: steps.release-version.outputs.release-version != '' && steps.release-version.outputs.days-til-release == '0'
+        uses: spring-io/spring-release-actions/count-open-issues@967a8de4659c4273a82bcb098d73c2330c015254 # 0.0.9
+        with:
+          milestone: ${{ steps.release-version.outputs.release-version }}
+      # count is only '0' when a release version exists, it is due today, and no issues are open
+      - name: Cancel if Not Ready
+        if: steps.count-issues.outputs.count != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run cancel "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY"
+          # cancellation is asynchronous; wait so this job cannot finish green first
+          sleep 60
+
+  release:
+    name: Release ${{ needs.planner.outputs.release-version }}
+    needs: planner
+    if: needs.planner.outputs.should-release == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      VERSION: ${{ needs.planner.outputs.release-version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # a token that can push to the protected branch
+          token: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
+      - name: Set Release Version
+        run: |
+          sed -i "s/^version=.*/version=$VERSION/" gradle.properties
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git commit -am "Release $VERSION"
+      - name: Build
+        uses: spring-io/spring-security-actions/build@3d12f90253904da59a24c22b96c2cd0d6cec739a # 0.0.37
+        env:
+          DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
+          ORG_GRADLE_PROJECT_signingKey: ${{ secrets.GPG_PRIVATE_KEY }}
+          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSPHRASE }}
+        with:
+          java-version: '17'
+      - id: artifact-repository
+        name: Compute Artifact Repository
+        uses: spring-io/spring-release-actions/compute-artifact-repository@967a8de4659c4273a82bcb098d73c2330c015254 # 0.0.9
+        with:
+          version: ${{ env.VERSION }}
+      - name: Deploy Artifacts to Maven Central
+        uses: spring-io/spring-security-actions/ensure-artifacts@3d12f90253904da59a24c22b96c2cd0d6cec739a # 0.0.37
+        with:
+          version: ${{ env.VERSION }}
+          username: ${{ secrets.CENTRAL_TOKEN_USERNAME }}
+          password: ${{ secrets.CENTRAL_TOKEN_PASSWORD }}
+          repository-uri: ${{ steps.artifact-repository.outputs.uri }}
+          repository-name: ${{ steps.artifact-repository.outputs.name }}
+          project: ${{ steps.artifact-repository.outputs.project }}
+          artifact-path: io/spring/gradle/spring-security-release-plugin
+      - name: Publish Plugins to the Gradle Plugin Portal
+        env:
+          DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
+          GRADLE_PUBLISH_KEY: ${{ secrets.GRADLE_PUBLISH_KEY_CREDENTIAL }}
+          GRADLE_PUBLISH_SECRET: ${{ secrets.GRADLE_PUBLISH_SECRET_CREDENTIAL }}
+          ORG_GRADLE_PROJECT_signingKey: ${{ secrets.GPG_PRIVATE_KEY }}
+          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSPHRASE }}
+        run: ./gradlew publishPlugins -Pgradle.publish.key="$GRADLE_PUBLISH_KEY" -Pgradle.publish.secret="$GRADLE_PUBLISH_SECRET" --stacktrace
+      - name: Tag and Push the Release
+        run: |
+          git tag -a "v$VERSION" -m "Release $VERSION"
+          git push --atomic origin HEAD "refs/tags/v$VERSION"
+      - name: Generate Changelog
+        uses: spring-io/github-changelog-generator@f7d7a87a3e7c627ecb8c26cf086c38ac5a939721 # v0.0.14
+        with:
+          milestone: ${{ env.VERSION }}
+          token: ${{ github.token }}
+          config-file: scripts/release/release-notes-sections.yml
+      - name: Publish Release Notes
+        uses: spring-io/spring-release-actions/publish-release-notes@967a8de4659c4273a82bcb098d73c2330c015254 # 0.0.9
+        with:
+          tag: v${{ env.VERSION }}
+      - name: Push Next Development Version
+        uses: spring-io/spring-release-actions/push-next-development-version@967a8de4659c4273a82bcb098d73c2330c015254 # 0.0.9
+        with:
+          version: ${{ env.VERSION }}
+
+  post-release:
+    name: Schedule Milestones and Announce
+    needs: [ planner, release ]
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.planner.outputs.release-version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Close Release Milestone
+        uses: spring-io/spring-release-actions/close-milestone@967a8de4659c4273a82bcb098d73c2330c015254 # 0.0.9
+        with:
+          version: ${{ env.VERSION }}
+          token: ${{ github.token }}
+      - id: next-release-milestone
+        name: Compute Milestone After ${{ env.VERSION }}
+        uses: spring-io/spring-release-actions/compute-next-version@967a8de4659c4273a82bcb098d73c2330c015254 # 0.0.9
+        with:
+          version: ${{ env.VERSION }}
+          token: ${{ github.token }}
+          projects-api-base: '.'
+      - name: Ensure ${{ steps.next-release-milestone.outputs.version }} Scheduled
+        uses: spring-io/spring-release-actions/schedule-milestone@967a8de4659c4273a82bcb098d73c2330c015254 # 0.0.9
+        with:
+          version: ${{ steps.next-release-milestone.outputs.version }}
+          version-date: ${{ steps.next-release-milestone.outputs.version-date }}
+          token: ${{ github.token }}
+      - id: next-next-release-milestone
+        name: Compute Milestone After ${{ steps.next-release-milestone.outputs.version }}
+        uses: spring-io/spring-release-actions/compute-next-version@967a8de4659c4273a82bcb098d73c2330c015254 # 0.0.9
+        with:
+          version: ${{ steps.next-release-milestone.outputs.version }}
+          token: ${{ github.token }}
+          projects-api-base: '.'
+      - name: Ensure ${{ steps.next-next-release-milestone.outputs.version }} Scheduled
+        uses: spring-io/spring-release-actions/schedule-milestone@967a8de4659c4273a82bcb098d73c2330c015254 # 0.0.9
+        with:
+          version: ${{ steps.next-next-release-milestone.outputs.version }}
+          version-date: ${{ steps.next-next-release-milestone.outputs.version-date }}
+          token: ${{ github.token }}
+      - name: Announce Release on GChat
+        uses: spring-io/spring-release-actions/announce-on-gchat@967a8de4659c4273a82bcb098d73c2330c015254 # 0.0.9
+        with:
+          version: ${{ env.VERSION }}
+          gchat-webhook-url: ${{ secrets.GOOGLE_CHAT_WEBHOOK_URL }}

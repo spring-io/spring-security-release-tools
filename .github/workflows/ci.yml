@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - 'main'
+      - '*.x'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+# Only snapshots are built and deployed here. A release is built, deployed and tagged by release.yml,
+# so the push of its release commit is skipped.
+jobs:
+  build:
+    name: Build and Deploy Snapshot
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: version
+        name: Compute Version
+        uses: spring-io/spring-release-actions/compute-version@967a8de4659c4273a82bcb098d73c2330c015254 # 0.0.9
+      - name: Build
+        if: steps.version.outputs.snapshot == 'true'
+        uses: spring-io/spring-security-actions/build@3d12f90253904da59a24c22b96c2cd0d6cec739a # 0.0.37
+        env:
+          DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
+          ORG_GRADLE_PROJECT_signingKey: ${{ secrets.GPG_PRIVATE_KEY }}
+          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSPHRASE }}
+        with:
+          java-version: '17'
+      - id: artifact-repository
+        name: Compute Artifact Repository
+        if: steps.version.outputs.snapshot == 'true'
+        uses: spring-io/spring-release-actions/compute-artifact-repository@967a8de4659c4273a82bcb098d73c2330c015254 # 0.0.9
+        with:
+          version: ${{ steps.version.outputs.version }}
+      - name: Deploy Artifacts
+        if: steps.version.outputs.snapshot == 'true'
+        uses: spring-io/spring-security-actions/ensure-artifacts@3d12f90253904da59a24c22b96c2cd0d6cec739a # 0.0.37
+        with:
+          version: ${{ steps.version.outputs.version }}
+          username: ${{ secrets.ARTIFACTORY_USERNAME }}
+          password: ${{ secrets.ARTIFACTORY_PASSWORD }}
+          repository-uri: ${{ steps.artifact-repository.outputs.uri }}
+          repository-name: ${{ steps.artifact-repository.outputs.name }}
+          project: ${{ steps.artifact-repository.outputs.project }}
+          artifact-path: io/spring/gradle/spring-security-release-plugin
