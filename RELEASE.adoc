@@ -1,7 +1,10 @@
 = Release Guidelines
 
-Release from the .x release branch, e.g. 1.0.x usign the Build and Deploy workflow.
+Releases are made by the `Release` workflow, run on the branch to release from (`1.0.x` or `main`).
+It releases the milestone of that branch that is due today and has no open issues, otherwise it cancels itself.
 
-Merge-forward using -s ours to main.
+The workflow builds the release, deploys it to Maven Central, publishes the plugins to the Gradle Plugin Portal, tags the release (`v<version>`), publishes its release notes, moves the branch to its next development version, closes the milestone and schedules the next two.
 
-Move the v1 tag forward to match the new tag for the given release you are performing.
+The generations that get milestones scheduled are in `projects/spring-security-release-tools/generations.json`; add one when a new `major.minor` line starts.
+
+Afterwards, merge forward from `1.0.x` to `main` using `-s ours`.
