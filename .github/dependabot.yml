@@ -1,19 +1,20 @@
 version: 2
 
 updates:
-  - package-ecosystem: npm
-    target-branch: 1.0.x
-    directory: /auto-merge-forward
-    milestone: 21 # 1.0.x
+
+  - package-ecosystem: gradle
+    target-branch: main
+    directory: /
+    milestone: 35 # 1.1.x
     schedule:
       interval: weekly
     labels:
       - 'type: dependency-upgrade'
 
-  - package-ecosystem: npm
-    target-branch: 1.0.x
-    directory: /update-bot
-    milestone: 21 # 1.0.x
+  - package-ecosystem: github-actions
+    target-branch: main
+    directory: /
+    milestone: 35 # 1.1.x
     schedule:
       interval: weekly
     labels:
