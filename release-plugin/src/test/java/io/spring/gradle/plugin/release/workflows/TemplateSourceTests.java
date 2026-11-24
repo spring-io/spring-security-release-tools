@@ -229,7 +229,7 @@ class TemplateSourceTests {
 		assertThat(source.pin().sha()).matches("[0-9a-f]{40}");
 		assertThat(WorkflowTemplates.project(source.directory())).containsOnlyKeys("workflows/ci.yml");
 		Files.writeString(checkout.resolve("README.md"), "two\n");
-		git(checkout, "commit", "-qam", "two");
+		git(checkout, "-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-qam", "two");
 		git(checkout, "tag", "0.0.2");
 		git(checkout, "tag", "not-a-version");
 		assertThat(repository.latestVersion(REPOSITORY)).isEqualTo("0.0.2");
