@@ -67,10 +67,8 @@ jobs:
     env:
       VERSION: ${{ needs.planner.outputs.release-version }}
     steps:
+      # the default github.token (contents: write) can push the release commit and tag
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          # a token that can push to the protected branch
-          token: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
       - name: Set Release Version
         run: |
           sed -i "s/^version=.*/version=$VERSION/" gradle.properties
