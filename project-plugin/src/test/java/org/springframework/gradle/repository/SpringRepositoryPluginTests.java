@@ -169,7 +169,8 @@ public class SpringRepositoryPluginTests {
 		this.project.setVersion("1.0.0-SNAPSHOT");
 		((ProjectInternal) this.project).evaluate();
 
-		assertThat(names()).containsExactly("MavenRepo", "spring-oss-snapshot", "spring-oss-milestone",
+		// subsequence, since the real environment may add a release train repository
+		assertThat(names()).containsSubsequence("MavenRepo", "spring-oss-snapshot", "spring-oss-milestone",
 				"spring-oss-release");
 	}
 
@@ -195,7 +196,7 @@ public class SpringRepositoryPluginTests {
 	public void applyWhenForceUnknownValueThenFailsListingAllowedValues() {
 		force("snapshots");
 
-		assertThatThrownBy(() -> evaluate("1.0.0")).hasRootCauseInstanceOf(GradleException.class)
+		assertThatThrownBy(() -> evaluate("1.0.0")).isInstanceOf(GradleException.class)
 			.hasStackTraceContaining("Unknown value 'snapshots' for forceMavenRepositories")
 			.hasStackTraceContaining("[local, snapshot, milestone, release]");
 	}
@@ -204,10 +205,11 @@ public class SpringRepositoryPluginTests {
 		this.project.getExtensions().getExtraProperties().set("forceMavenRepositories", repositories);
 	}
 
+	// Uses an empty environment so that the result does not depend on whether the machine
+	// running the tests exports the RELEASE_TRAIN_MAVEN_REPOSITORY_* variables
 	private void evaluate(String version) {
 		this.project.setVersion(version);
-		this.project.getPluginManager().apply(SpringRepositoryPlugin.class);
-		((ProjectInternal) this.project).evaluate();
+		this.project.getPlugins().apply(SpringRepositoryPlugin.class).addRepositories(this.project, (name) -> null);
 	}
 
 	private List<String> names() {
