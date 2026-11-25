@@ -202,6 +202,15 @@ final class WorkflowSupport {
 	 * @param project the project
 	 * @return the token to call GitHub with, if there is one
 	 */
+	/**
+	 * @param project the project
+	 * @return where the checkout of the repository that has the templates is, from the
+	 * {@code workflowTemplatesDir} property, if it is set
+	 */
+	static Provider<String> workflowTemplatesDir(Project project) {
+		return ProjectUtils.getProperty(project, "workflowTemplatesDir");
+	}
+
 	static Provider<String> gitHubAccessToken(Project project) {
 		return ProjectUtils.getProperty(project, "gitHubAccessToken")
 			.orElse(project.getProviders().environmentVariable("GITHUB_TOKEN"))

@@ -105,7 +105,7 @@ class TemplateSourceTests {
 			.isThrownBy(() -> TemplateSource.resolve(config, null, null, this.directory.resolve("cache"),
 					new GitHubReleases("http://127.0.0.1:1", null), this.log::add))
 			.withMessageContaining("has to name the whole commit")
-			.withMessageContaining("--templates-version latest");
+			.withMessageContaining("--uses latest");
 	}
 
 	@Test
@@ -237,6 +237,35 @@ class TemplateSourceTests {
 		assertThatExceptionOfType(GradleException.class)
 			.isThrownBy(() -> TemplateSource.resolve(local, null, "9.9.9", cache, repository, this.log::add))
 			.withMessageContaining("9.9.9");
+	}
+
+	@Test
+	void resolveWhenLocalThenTheCheckedOutCommitIsUsed() throws Exception {
+		Path checkout = repository();
+		Path project = Files.createDirectories(this.directory.resolve("project"));
+		TemplateSource.Resolved source = TemplateSource.resolve(project, project.resolve("workflow-generator.yml"),
+				null, "local", checkout.toString(), this.directory.resolve("cache"), null, this.log::add);
+		assertThat(source.pin().ref()).isEqualTo("local");
+		assertThat(source.pin().sha()).isEqualTo(new LocalCheckout(checkout).tagCommit(REPOSITORY, "0.0.1"));
+		assertThat(source.changed()).isTrue();
+	}
+
+	@Test
+	void resolveWhenLocalAndNoCheckoutThenSaysToSetWhereItIs() throws Exception {
+		Path project = Files.createDirectories(this.directory.resolve("project"));
+		assertThatExceptionOfType(GradleException.class)
+			.isThrownBy(() -> TemplateSource.resolve(project, project.resolve("workflow-generator.yml"), null, "local",
+					null, this.directory.resolve("cache"), null, this.log::add))
+			.withMessageContaining("workflowTemplatesDir");
+	}
+
+	@Test
+	void resolveWhenCheckoutGivenWithoutLocalThenItIsNotUsed() throws Exception {
+		Path project = Files.createDirectories(this.directory.resolve("project"));
+		Path config = Files.writeString(project.resolve("workflow-generator.yml"), "workflow:\n  generator: {}\n");
+		assertThat(TemplateSource.resolve(project, config, null, null, "../nowhere", this.directory.resolve("cache"),
+				null, this.log::add))
+			.isSameAs(TemplateSource.Resolved.NONE);
 	}
 
 	@Test

@@ -90,15 +90,16 @@ public abstract class VerifyWorkflowsTask extends DefaultTask {
 	public abstract DirectoryProperty getTemplatesDirectory();
 
 	/**
-	 * A git checkout of the repository that has the templates, to take the pinned commit
-	 * from instead of GitHub. A relative path is relative to the project.
+	 * Where the git checkout of the repository that has the templates is, for
+	 * {@code --uses local}. A relative path is relative to the project. Defaults to the
+	 * {@code workflowTemplatesDir} property.
 	 */
 	@Input
 	@Optional
 	public abstract Property<String> getTemplatesRepository();
 
 	@Option(option = "templates-repository",
-			description = "Take the pinned commit of spring-security-actions from this git checkout instead of GitHub")
+			description = "Where the git checkout of spring-security-actions is for --uses local; defaults to workflowTemplatesDir")
 	public void templatesRepository(String repository) {
 		getTemplatesRepository().set(repository);
 	}
@@ -109,12 +110,12 @@ public abstract class VerifyWorkflowsTask extends DefaultTask {
 	 */
 	@Input
 	@Optional
-	public abstract Property<String> getTemplatesVersion();
+	public abstract Property<String> getUses();
 
-	@Option(option = "templates-version",
-			description = "Verify against this tag of spring-security-actions, or latest, instead of the pinned one")
-	public void templatesVersion(String version) {
-		getTemplatesVersion().set(version);
+	@Option(option = "uses",
+			description = "Verify against this tag of spring-security-actions, or latest, or local to use a checkout of it, instead of the pinned one")
+	public void uses(String version) {
+		getUses().set(version);
 	}
 
 	@Input
@@ -148,7 +149,7 @@ public abstract class VerifyWorkflowsTask extends DefaultTask {
 		Path config = getConfigFile().get().getAsFile().toPath();
 		Path localVersions = getLocalVersionsFile().get().getAsFile().toPath();
 		TemplateSource.Resolved source = TemplateSource.resolve(getProjectDirectory().get().getAsFile().toPath(),
-				config, WorkflowSupport.optionalPath(getTemplatesDirectory()), getTemplatesVersion().getOrNull(),
+				config, WorkflowSupport.optionalPath(getTemplatesDirectory()), getUses().getOrNull(),
 				getTemplatesRepository().getOrNull(), getTemplatesCacheDirectory().get().getAsFile().toPath(),
 				new GitHubReleases(getGitHubApiUrl().get(), getGitHubAccessToken().getOrNull()),
 				getLogger()::lifecycle);
@@ -209,6 +210,7 @@ public abstract class VerifyWorkflowsTask extends DefaultTask {
 			task.getLocalVersionsFile().set(github.file("specs/versions.json"));
 			task.getTemplatesCacheDirectory().set(WorkflowSupport.templatesCache(project));
 			task.getGitHubApiUrl().convention("https://api.github.com");
+			task.getTemplatesRepository().convention(WorkflowSupport.workflowTemplatesDir(project));
 			task.getGitHubAccessToken().set(WorkflowSupport.gitHubAccessToken(project));
 			WorkflowSupport.conventions(project, task.getBranch(), task.getProjectSlug(), task.getSaganApiUrl());
 		});

@@ -80,7 +80,7 @@ class VerifyWorkflowsTaskTests {
 		VerifyWorkflowsTask task = task();
 		task.getTemplatesDirectory().set((File) null);
 		assertThatExceptionOfType(GradleException.class).isThrownBy(task::verify)
-			.withMessageContaining("Run updateWorkflows with --templates-version latest");
+			.withMessageContaining("Run updateWorkflows with --uses latest");
 	}
 
 	@Test
@@ -101,7 +101,7 @@ class VerifyWorkflowsTaskTests {
 		VerifyWorkflowsTask task = task();
 		task.getTemplatesDirectory().set((File) null);
 		task.getGitHubApiUrl().set("http://127.0.0.1:1");
-		task.templatesVersion("1.2.3");
+		task.uses("1.2.3");
 		assertThatExceptionOfType(GradleException.class).isThrownBy(task::verify)
 			.withMessageContaining("Could not find 1.2.3 of " + TemplateSource.DEFAULT_REPOSITORY);
 	}

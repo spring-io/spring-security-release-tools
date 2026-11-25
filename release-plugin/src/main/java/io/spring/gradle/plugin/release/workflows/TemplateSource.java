@@ -50,13 +50,20 @@ import org.gradle.api.GradleException;
  *
  * That commit is downloaded once and kept, so that rendering and verifying work offline
  * after that. A project that has no {@code uses}, or wants another version, asks for one
- * with {@code --templates-version}, which is then recorded.
+ * with {@code --uses}, which is then recorded. {@code --uses local} reads them from a
+ * local checkout of the repository, to try a change before it is pushed.
  *
  * @author Josh Cummings
  */
 final class TemplateSource {
 
 	static final String DEFAULT_REPOSITORY = "spring-io/spring-security-actions";
+
+	/**
+	 * What to ask for to use the templates in a local checkout, at the commit that is
+	 * checked out, instead of a tag.
+	 */
+	static final String LOCAL = "local";
 
 	private static final String SPECS = ".github/specs/";
 
@@ -100,9 +107,10 @@ final class TemplateSource {
 	 * relative to
 	 * @param config the project's {@code .github/workflow-generator.yml}
 	 * @param explicit a directory of templates to use instead, or {@code null}
-	 * @param requestedVersion a tag, or {@code latest}, or {@code null}
-	 * @param checkout a git checkout of the repository that has the templates, or
-	 * {@code null}
+	 * @param requestedVersion a tag, or {@code latest}, or {@code local} to use the
+	 * commit that is checked out in a local checkout, or {@code null}
+	 * @param checkout where the local checkout is, which is only used if
+	 * {@code requestedVersion} is {@code local}
 	 * @param cache where commits are kept
 	 * @param gitHub where to read the repository from if there is no checkout
 	 * @param log where to say what is being done
@@ -110,7 +118,15 @@ final class TemplateSource {
 	 */
 	static Resolved resolve(Path project, Path config, Path explicit, String requestedVersion, String checkout,
 			Path cache, GitHubReleases gitHub, Consumer<String> log) {
-		Path local = (checkout != null) ? project.resolve(checkout) : null;
+		Path local = null;
+		if (LOCAL.equals(requestedVersion)) {
+			if (checkout == null) {
+				throw new GradleException("Asking for " + LOCAL + " needs to know where the checkout of "
+						+ DEFAULT_REPOSITORY + " is. Set workflowTemplatesDir in ~/.gradle/gradle.properties, or give"
+						+ " --templates-repository");
+			}
+			local = project.resolve(checkout);
+		}
 		return resolve(config, explicit, requestedVersion, cache, repository(explicit, local, gitHub), log);
 	}
 
@@ -164,10 +180,9 @@ final class TemplateSource {
 	private static WorkflowVersions.Action pinned(Path config, Uses uses) {
 		String example = uses.repository() + "@0123456789abcdef0123456789abcdef01234567 # 1.2.3";
 		if (!SHA.matcher(uses.sha()).matches()) {
-			throw new GradleException(
-					config + ": uses under release-tools has to name the whole commit, like " + example + ", not "
-							+ uses.sha() + ". Run updateWorkflows with --templates-version latest, or with the"
-							+ " tag you want, to have it filled in");
+			throw new GradleException(config + ": uses under release-tools has to name the whole commit, like "
+					+ example + ", not " + uses.sha() + ". Run updateWorkflows with --uses latest, or with the"
+					+ " tag you want, to have it filled in");
 		}
 		if (uses.ref() == null || !TAG.matcher(uses.ref()).matches()) {
 			throw new GradleException(config + ": uses under release-tools has to say which tag the commit is of, in a"
@@ -292,7 +307,7 @@ final class TemplateSource {
 	private static WorkflowVersions.Action choose(String repository, String requested, TemplateRepository source) {
 		if (!requested.equals("latest") && !TAG.matcher(requested).matches()) {
 			throw new GradleException("'" + requested + "' is not a tag; give the tag of a release of " + repository
-					+ ", like 1.2.3, or latest");
+					+ ", like 1.2.3, or latest, or local");
 		}
 		try {
 			String tag = (requested.equals("latest")) ? source.latestVersion(repository) : requested;

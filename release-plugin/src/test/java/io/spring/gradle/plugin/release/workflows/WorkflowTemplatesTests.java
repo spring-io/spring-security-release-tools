@@ -75,7 +75,7 @@ class WorkflowTemplatesTests {
 	void loadWhenDefaultsApplyAndNoneAreGivenThenSaysHowToGetThem() {
 		assertThatExceptionOfType(GradleException.class)
 			.isThrownBy(() -> WorkflowTemplates.load(this.specs, true, null))
-			.withMessageContaining("--templates-version latest");
+			.withMessageContaining("--uses latest");
 	}
 
 	private Path workflow(String name) throws IOException {

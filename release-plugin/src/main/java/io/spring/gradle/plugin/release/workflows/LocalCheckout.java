@@ -31,7 +31,8 @@ import org.gradle.api.GradleException;
 
 /**
  * A git checkout of the repository that has the templates, which is read with {@code git}
- * so that a change can be tried before it is pushed. The commit has to be tagged.
+ * so that a change can be tried before it is pushed. The commit has to be committed, and
+ * either tagged or the one that is checked out.
  *
  * @author Josh Cummings
  */
@@ -71,6 +72,9 @@ final class LocalCheckout implements TemplateRepository {
 
 	@Override
 	public String tagCommit(String repository, String tag) {
+		if (TemplateSource.LOCAL.equals(tag)) {
+			return git("rev-parse", "--verify", "--quiet", "HEAD^{commit}");
+		}
 		try {
 			return git("rev-parse", "--verify", "--quiet", "refs/tags/" + tag + "^{commit}");
 		}

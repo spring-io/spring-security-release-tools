@@ -99,11 +99,11 @@ A project's own `.github/specs/versions.json` is only for what it pins different
 === Using a version
 
 `uses` has to name the whole commit, and the tag it is of in a comment; a project that has neither fails with a message that says so.
-Run `./gradlew updateWorkflows --templates-version latest` (or a tag, like `--templates-version 0.0.36`) to look up the commit of the tag and record it in `uses`, which is added under `release-tools` if it is not there, or replaced if it is.
+Run `./gradlew updateWorkflows --uses latest` (or a tag, like `--uses 0.0.36`) to look up the commit of the tag and record it in `uses`, which is added under `release-tools` if it is not there, or replaced if it is.
 Everything else in the file, comments included, is kept.
 The task fails, before it renders anything, if there is no `release-tools` to put `uses` in.
 
-`verifyWorkflows` accepts `--templates-version`, too, to verify against a version other than the one in `uses`; it never changes the file.
+`verifyWorkflows` accepts `--uses`, too, to verify against a version other than the one in `uses`; it never changes the file.
 
 [IMPORTANT]
 ====
@@ -121,19 +121,32 @@ GitHub limits calls that have no token, so if the download fails with a `403`, g
 
 === Trying a change to the templates
 
-To try a change to `spring-security-actions` in another project before the pull request for it is pushed, commit it in a checkout of `spring-security-actions`, tag the commit, and point the task at the checkout:
+To try a change to `spring-security-actions` in another project before the pull request for it is pushed, commit it in a checkout of `spring-security-actions` and use that checkout:
 
 [source,shell]
 ----
-git -C ../spring-security-actions tag 0.0.37
-./gradlew updateWorkflows --templates-repository ../spring-security-actions --templates-version 0.0.37
+./gradlew updateWorkflows --uses local
 ----
 
-A relative path is relative to the project.
-The tags and commits are read with `git` instead of from GitHub, and the commit that is recorded is that of the local commit.
+The templates are those of the commit that is checked out, which is read with `git` instead of from GitHub and recorded in `uses` with `local` for the tag.
+Say where the checkout is with `workflowTemplatesDir` in `~/.gradle/gradle.properties`, which is not looked for anywhere else:
+
+[source,properties]
+----
+workflowTemplatesDir=/path/to/spring-security-actions
+----
+
+Or give it for one run with `--templates-repository`, which is relative to the project if it is not absolute:
+
+[source,shell]
+----
+./gradlew updateWorkflows --uses local --templates-repository ../spring-security-actions
+----
+
+`verifyWorkflows` accepts both, too.
 
 WARNING: That commit does not exist on GitHub until it is pushed, so do not push or merge the project's `uses` before it is replaced with that of a pushed tag.
-Run `updateWorkflows --templates-version <tag>` without `--templates-repository` to do so.
+Run `updateWorkflows --uses <tag>` to do so.
 
 == Task Reference
 
