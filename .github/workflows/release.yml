@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       release-version: ${{ steps.release-version.outputs.release-version }}
-      should-release: ${{ steps.count-issues.outputs.count == '0' }}
+      should-release: ${{ steps.release-version.outputs.release-version != '' && steps.release-version.outputs.days-til-release == '0' && steps.count-issues.outputs.count == '0' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
