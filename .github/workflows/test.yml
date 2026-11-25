@@ -41,7 +41,7 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
       - name: Set up JDK ${{ inputs.java-version }}
-        uses: spring-io/spring-gradle-build-action@861640e9cfde1abc0c071b82106bca8e9d495888 # v2
+        uses: spring-io/spring-gradle-build-action@c8668747d7c264864c8c7f7026d0d277d14a78dc # v2
         with:
           java-version: ${{ inputs.java-version }}
           distribution: ${{ inputs.distribution }}
